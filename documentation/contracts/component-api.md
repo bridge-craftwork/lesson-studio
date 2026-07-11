@@ -153,10 +153,25 @@ optional `context` auction via `AuctionTable`, answer + explanation).
 | Prop | Type | Notes |
 |---|---|---|
 | `quiz` | `quiz/v1` object | The embedded snapshot (Contract 3). |
-| `revealAnswers` | boolean | Print/teacher view shows answers; a study view may hide until interaction. |
+| `variant` | `'student' \| 'teacher' \| 'projection' \| 'interactive'` | Render variant; default `'student'`. Drives answer placement (below). |
 
-Read-only in the lesson/print context; the interactive practice flow stays in
-the app.
+**Answer deferral (the quiz/answer separation).** A `QuizSnapshot` renders the
+**question** only; it never prints its own answer inline (except `variant:
+'teacher'`). Instead it contributes its answer to a document-level **answer
+registry** that the page shell drains into a single generated "Answers" section
+after a page break. This makes the separation structural rather than a CSS
+accident — answers cannot leak onto the question page regardless of authoring.
+Variant behavior:
+
+- `student` — question inline; answer deferred to the trailing Answers section.
+- `teacher` — question and answer inline.
+- `projection` — question inline; answer omitted entirely.
+- `interactive` — question inline; answer revealed on tap (platform mode; no
+  pagination).
+
+The registry/collector is a small provider the print view and editor mount; the
+component publishes `{ id, answer, explanation }` to it. The interactive
+practice flow itself stays in the app.
 
 ### `DealView` (Phase 2 — new)
 
@@ -174,6 +189,12 @@ consumes so editor and print render identically:
 - **`break-inside: avoid`** is applied by every block component's root, so a
   `HandsCompass`, `AuctionTable`, `ResponseBox`, or `QuizSnapshot` never splits
   across a print column/page break (architecture doc Open Question 4).
+- **Section-level breaks, not multicol breaks.** The print view is a sequence
+  of independently multi-column sections (questions, then the deferred Answers
+  section) with break rules *between* sections — page breaks between sequential
+  sections are reliable under Playwright, whereas breaks inside a single
+  multicol flow are not. The `pagebreak` block maps to `break-before: page`;
+  the answer-deferral break is inserted by the shell before the Answers section.
 
 ## Build status (extraction plan)
 

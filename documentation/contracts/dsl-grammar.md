@@ -22,7 +22,7 @@ kinds of structured content layered on top of ordinary prose:
    Contract 2 components in both.
 
 ```
-hand   hands   auction   response-box   deal   quiz
+hand   hands   auction   response-box   deal   quiz   pagebreak
 ```
 
 Everything else is plain CommonMark and renders normally.
@@ -270,6 +270,32 @@ schema order. Lint validates the body against the Contract 3 JSON Schema. The
 `quiz-picker` plugin (Phase 2) writes these; in Phase 1 they may be authored by
 hand.
 
+**Question/answer separation is a render concern, not source layout.** The
+embedded quiz object carries *both* the question and its answer/explanation; a
+`quiz` block renders only the **question** inline. The renderer (Contract 2)
+collects every quiz's answer in document order into a generated "Answers"
+section deferred behind a page break — so authors cannot leak answers by
+mis-placing a break, and the answer section stays synchronized as quizzes are
+reordered or deleted. The same source yields render variants (student /
+teacher-inline / projection-omitted / interactive tap-to-reveal). The DSL
+source therefore contains no answer-placement markup.
+
+### `pagebreak` — explicit page break
+
+A layout hint for general page control, distinct from the automatic
+answer-deferral break above.
+
+````markdown
+```pagebreak
+```
+````
+
+The body is empty. Maps to `break-before: page` in the print view; the editor
+renders a labeled divider. Ignored where pagination is not meaningful (e.g. the
+interactive platform variant).
+
+**Canonical form:** the bare fenced block with an empty body.
+
 ## Validation (CI lint)
 
 The lint referenced in the architecture doc's Publishing Workflow, for the
@@ -284,7 +310,8 @@ parts this contract owns:
 5. `response-box`: `title` present; every row has exactly one ` | `.
 6. `deal`: structurally well-formed (v1 does **not** resolve the reference).
 7. `quiz`: body validates against Contract 3 `quiz/v1`.
-8. Every block is already in canonical form (else `--fix` it).
+8. `pagebreak`: body is empty.
+9. Every block is already in canonical form (else `--fix` it).
 
 ## Versioning and evolution
 
@@ -300,11 +327,11 @@ parts this contract owns:
 
 ## v1 scope (Phase 1)
 
-Active in Phase 1: `hand`, `hands`, `auction`, `response-box`, front matter.
-`quiz` is defined and hand-authorable but the picker that populates it is
-Phase 2. `deal` is reserved and structurally linted but not resolved until
-Phase 2. This is exactly the vocabulary the two seed lessons (Lessons 1–6
-summary, New Minor Forcing intro) need.
+Active in Phase 1: `hand`, `hands`, `auction`, `response-box`, `pagebreak`,
+front matter. `quiz` is defined and hand-authorable but the picker that
+populates it is Phase 2. `deal` is reserved and structurally linted but not
+resolved until Phase 2. This is exactly the vocabulary the two seed lessons
+(Lessons 1–6 summary, New Minor Forcing intro) need.
 
 ## Open items for review
 

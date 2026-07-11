@@ -158,6 +158,7 @@ reserved language tags. Initial block vocabulary:
 | `deal` | Repository board reference | `repo`, stable board identity, display options (which seats, rotate-south) |
 | `quiz` | Embedded quiz snapshot | Quiz JSON per Contract 3, embedded by value |
 | `response-box` | Convention response table | Title, bid/meaning rows (e.g., Responding to Blackwood) |
+| `pagebreak` | Explicit page break | Maps to `break-before: page` in print; labeled divider in editor |
 
 Hand notation, auction formatting conventions (dealer alignment, West-leftmost,
 All Pass), and front-matter schema are specified in the DSL doc
@@ -170,6 +171,29 @@ every referencing lesson updates. `quiz` blocks embed by value because the
 `quiz/` folder is a regenerable build artifact whose contents may be
 reordered or re-derived; snapshotting keeps lessons immune to pipeline churn,
 and embedded provenance keeps staleness detectable by tooling.
+
+**Pagination semantics and answer deferral:** the quiz/answer separation
+("answers must not appear on the same physical page as questions") is a
+semantic constraint carried by the document model, not a CSS accident. Quiz
+JSON embeds both question and answer; a `quiz` block renders only the
+question inline. The renderer collects all answers in document order and
+emits a generated "Answers" section after a forced page break (the LaTeX
+exam-class deferred-solutions pattern). Authors cannot leak answers by
+mis-placing a break, and reordering or deleting quizzes keeps the answer
+section synchronized automatically. This enables **render variants** from a
+single source: student print (answers on a following page), teacher copy
+(answers inline), classroom projection (answers omitted), and platform
+interactive mode (tap-to-reveal). The explicit `pagebreak` block remains
+available for general layout control.
+
+In the print view, the answers section is a sibling top-level section after
+the questions container — page breaks between sequential sections are
+reliable under Playwright, whereas breaks inside CSS multicol flow are not.
+The print view is therefore structured as a sequence of sections, each
+independently multi-column, with break rules between sections; diagram
+blocks carry `break-inside: avoid`. The BC-PBN's embedded page breaks are a
+print-format artifact internal to the PBS pipeline; quiz JSON carries no
+pagination — placement is the consuming renderer's decision.
 
 ### Contract 2: Component package API
 

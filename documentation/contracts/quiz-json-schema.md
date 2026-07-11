@@ -20,6 +20,19 @@ The pipeline is the conversion point because it holds quizzes in structured form
 and can stamp provenance at generation time. Client-side parsing of BC-PBN was
 rejected (see architecture doc, Alternatives Considered).
 
+## Pagination and answer deferral (out of scope by design)
+
+Quiz JSON carries **no pagination and no answer-placement markup**. Each item
+embeds both the question (`hand`, `context`, `prompt`) and its answer
+(`answer`, `alternates`, `explanation`) as data; *where* the answer appears is
+the consuming renderer's decision, not the schema's. The renderer (Contract 2)
+implements the quiz/answer separation — rendering questions inline and
+deferring answers to a generated section behind a page break — and the same
+JSON drives every render variant (student print, teacher-inline, projection,
+interactive tap-to-reveal). Keeping placement out of the JSON is what lets one
+snapshot serve all of them; the BC-PBN's embedded page breaks are a
+print-format artifact that never propagates into quiz JSON.
+
 ## Design: discriminated union over a shared envelope
 
 Every quiz is one JSON object with:
