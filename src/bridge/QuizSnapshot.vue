@@ -8,7 +8,7 @@
  * per-quiz behavior only.)
  */
 import { computed } from 'vue'
-import HandDisplay from './HandDisplay.vue'
+import HandDisplay from './vendor/components/HandDisplay.vue'
 import CallLabel from './CallLabel.vue'
 
 interface QuizItem {

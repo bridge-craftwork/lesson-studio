@@ -13,6 +13,7 @@ import {
   ResponseBox,
   QuizSnapshot,
 } from '@bridge-craftwork/bridge-components'
+import CallLabel from '../bridge/CallLabel.vue'
 import {
   parseHandBlock,
   parseHandsBlock,
@@ -73,7 +74,17 @@ const model = computed<Rendered>(() => {
       <HandsCompass :hands="model.hands" :layout="model.layout as any" />
     </template>
     <template v-else-if="model.kind === 'auction'">
-      <AuctionTable :bids="model.auction.bids" :dealer="model.auction.dealer" :meanings="model.auction.meanings" />
+      <div class="auction">
+        <AuctionTable :bids="model.auction.bids" :dealer="model.auction.dealer" :meanings="model.auction.meanings" />
+        <!-- The real AuctionTable surfaces meanings only on hover; lessons and
+             print need the numbered footnotes visible, so render them here. -->
+        <ol v-if="model.auction.meanings.length" class="auction__notes">
+          <li v-for="m in model.auction.meanings" :key="m.note">
+            <span class="auction__note-num">{{ m.note }}.</span>
+            <CallLabel :value="m.bid" />: {{ m.meaning }}
+          </li>
+        </ol>
+      </div>
     </template>
     <template v-else-if="model.kind === 'response-box'">
       <ResponseBox :title="model.box.title" :rows="model.box.rows" :note="model.box.note" />
@@ -93,6 +104,17 @@ const model = computed<Rendered>(() => {
 <style scoped>
 .block-view {
   display: inline-block;
+}
+.auction__notes {
+  list-style: none;
+  margin: 0.4rem 0 0;
+  padding-left: 0;
+  font-size: 0.75rem;
+  color: var(--ls-muted, #666);
+}
+.auction__note-num {
+  font-variant-numeric: tabular-nums;
+  margin-right: 0.15rem;
 }
 .pagebreak {
   color: var(--ls-muted, #999);

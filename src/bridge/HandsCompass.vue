@@ -5,7 +5,7 @@
  * seat; hands are in component (array) form.
  */
 import { computed } from 'vue'
-import HandDisplay from './HandDisplay.vue'
+import HandDisplay from './vendor/components/HandDisplay.vue'
 
 type Seat = 'N' | 'E' | 'S' | 'W'
 type Holding = { spades: string[]; hearts: string[]; diamonds: string[]; clubs: string[] }
