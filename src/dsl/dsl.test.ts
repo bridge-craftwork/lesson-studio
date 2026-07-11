@@ -7,7 +7,7 @@ import { parseHandBlock, serializeHandBlock } from './hand-block'
 import { parseAuctionBlock, toAuctionProps } from './auction-block'
 import { parseResponseBox } from './response-box-block'
 import { parseHandsBlock } from './hands-block'
-import { formatCall } from './call'
+import { formatCall, callSegments } from './call'
 import { STARTER_LESSON } from '../editor/starter'
 
 describe('hand notation', () => {
@@ -90,6 +90,16 @@ describe('call formatting', () => {
     expect(formatCall('2D^1')).toBe('2♦')
     expect(formatCall('P')).toBe('Pass')
     expect(formatCall('X')).toBe('Dbl')
+  })
+
+  it('segments a call so only the red suit glyph is red', () => {
+    // level digit stays black; only the diamond glyph is red
+    expect(callSegments('2D^1')).toEqual([{ text: '2' }, { text: '♦', red: true }])
+    // spades glyph is not red
+    expect(callSegments('1S')).toEqual([{ text: '1' }, { text: '♠', red: false }])
+    // NT and non-bids are a single black segment
+    expect(callSegments('3NT')).toEqual([{ text: '3NT' }])
+    expect(callSegments('P')).toEqual([{ text: 'Pass' }])
   })
 })
 

@@ -40,3 +40,26 @@ export function isRedCall(call: string): boolean {
   const c = stripAnnotationMarker(call)
   return /[1-7](D|H)$/.test(c)
 }
+
+/** One display segment of a call; `red` is true only for a red suit glyph. */
+export interface CallSegment {
+  text: string
+  red?: boolean
+}
+
+/**
+ * Split a call into display segments so only the suit glyph is colored: the
+ * level digit, `NT`, and non-bid calls stay black. `"2D"` ->
+ * `[{text:"2"},{text:"♦",red:true}]`; `"3NT"` -> `[{text:"3NT"}]`;
+ * `"P"` -> `[{text:"Pass"}]`. Any annotation marker is dropped.
+ */
+export function callSegments(call: string): CallSegment[] {
+  const c = stripAnnotationMarker(call)
+  if (c === 'P') return [{ text: 'Pass' }]
+  if (c === 'X') return [{ text: 'Dbl' }]
+  if (c === 'XX') return [{ text: 'Rdbl' }]
+  const m = c.match(/^([1-7])(C|D|H|S|NT)$/)
+  if (!m) return [{ text: c }]
+  if (m[2] === 'NT') return [{ text: `${m[1]}NT` }]
+  return [{ text: m[1] }, { text: STRAIN_GLYPH[m[2]], red: m[2] === 'D' || m[2] === 'H' }]
+}

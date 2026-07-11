@@ -4,15 +4,14 @@
  * A titled bid/meaning table; the left column renders with suit glyphs when it
  * parses as a call.
  */
-import { formatCall, isCall } from '@/dsl'
+import CallLabel from './CallLabel.vue'
+import { isCall } from '@/dsl'
 
 defineProps<{
   title: string
   rows: { left: string; right: string }[]
   note?: string
 }>()
-
-const left = (s: string) => (isCall(s) ? formatCall(s) : s)
 </script>
 
 <template>
@@ -21,7 +20,7 @@ const left = (s: string) => (isCall(s) ? formatCall(s) : s)
     <table>
       <tbody>
         <tr v-for="(row, i) in rows" :key="i">
-          <td class="bid">{{ left(row.left) }}</td>
+          <td class="bid"><CallLabel v-if="isCall(row.left)" :value="row.left" /><template v-else>{{ row.left }}</template></td>
           <td class="meaning">{{ row.right }}</td>
         </tr>
       </tbody>

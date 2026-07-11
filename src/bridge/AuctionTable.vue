@@ -5,7 +5,7 @@
  * dealer — the same prop shape the real component uses.
  */
 import { computed } from 'vue'
-import { formatCall, isRedCall } from '@/dsl'
+import CallLabel from './CallLabel.vue'
 
 type Seat = 'N' | 'E' | 'S' | 'W'
 const props = defineProps<{
@@ -56,10 +56,10 @@ function flatIndex(rowIdx: number, col: number): number {
       </thead>
       <tbody>
         <tr v-for="(row, r) in rounds" :key="r">
-          <td v-for="(bid, c) in row" :key="c" :class="{ red: bid && isRedCall(bid) }">
+          <td v-for="(bid, c) in row" :key="c">
             <template v-if="bid === 'AP'"><span class="ap">All Pass</span></template>
             <template v-else-if="bid">
-              {{ formatCall(bid) }}<sup v-if="noteFor(bid, flatIndex(r, c))">{{ noteFor(bid, flatIndex(r, c))!.note }}</sup>
+              <CallLabel :value="bid" /><sup v-if="noteFor(bid, flatIndex(r, c))">{{ noteFor(bid, flatIndex(r, c))!.note }}</sup>
             </template>
           </td>
         </tr>
@@ -67,7 +67,7 @@ function flatIndex(rowIdx: number, col: number): number {
     </table>
     <ol v-if="meanings && meanings.length" class="notes">
       <li v-for="(m, i) in meanings" :key="i">
-        <span class="note-num">{{ m.note }}.</span> {{ formatCall(m.bid) }}: {{ m.meaning }}
+        <span class="note-num">{{ m.note }}.</span> <CallLabel :value="m.bid" />: {{ m.meaning }}
       </li>
     </ol>
   </div>
@@ -92,9 +92,6 @@ th {
   font-size: 0.7rem;
   color: var(--ls-muted, #666);
   background: var(--ls-panel, #f7f7f8);
-}
-td.red {
-  color: #c81e1e;
 }
 .ap {
   color: var(--ls-muted, #666);

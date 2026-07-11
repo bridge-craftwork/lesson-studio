@@ -9,7 +9,7 @@
  */
 import { computed } from 'vue'
 import HandDisplay from './HandDisplay.vue'
-import { formatCall } from '@/dsl'
+import CallLabel from './CallLabel.vue'
 
 interface QuizItem {
   hand: { spades: string; hearts: string; diamonds: string; clubs: string }
@@ -48,14 +48,14 @@ const asComponent = (h: QuizItem['hand']) => ({
       <li v-for="(item, i) in quiz.items" :key="i" class="item">
         <span class="num">{{ i + 1 }}</span>
         <HandDisplay :hand="asComponent(item.hand)" />
-        <span v-if="showAnswers" class="answer">→ {{ formatCall(item.answer) }}</span>
+        <span v-if="showAnswers" class="answer">→ <CallLabel :value="item.answer" /></span>
       </li>
     </ol>
     <div v-if="deferAnswers" class="answers">
       <div class="answers-head">Answers</div>
       <ol>
         <li v-for="(item, i) in quiz.items" :key="i">
-          {{ formatCall(item.answer) }}<template v-if="item.explanation"> — {{ item.explanation }}</template>
+          <CallLabel :value="item.answer" /><template v-if="item.explanation"> — {{ item.explanation }}</template>
         </li>
       </ol>
     </div>
