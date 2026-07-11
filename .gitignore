@@ -34,3 +34,7 @@ pnpm-debug.log*
 .env
 .env.*
 !.env.example
+
+# Local test artifacts
+.playwright-mcp/
+hand-node-view.png

@@ -17,7 +17,8 @@
     "noFallthroughCasesInSwitch": true,
     "types": ["node", "vitest/globals"],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./src/*"],
+      "@bridge-craftwork/bridge-components": ["./src/bridge"]
     }
   },
   "include": ["src", "vite.config.ts"]

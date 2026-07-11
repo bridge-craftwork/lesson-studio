@@ -12,4 +12,5 @@
 export * from './types'
 export * from './call'
 export * from './hand'
+export * from './hand-block'
 export * from './scan'

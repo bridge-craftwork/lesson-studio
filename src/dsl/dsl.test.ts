@@ -3,6 +3,7 @@ import { normalizeHolding, normalizeHand, handHcp, cardCount, toComponentHand } 
 import { isCall, stripAnnotationMarker, annotationIndex } from './call'
 import { scanReservedBlocks } from './scan'
 import { isReservedBlock } from './types'
+import { parseHandBlock, serializeHandBlock } from './hand-block'
 import { STARTER_LESSON } from '../editor/starter'
 
 describe('hand notation', () => {
@@ -49,6 +50,32 @@ describe('call notation', () => {
     expect(stripAnnotationMarker('2C^1')).toBe('2C')
     expect(annotationIndex('2C^1')).toBe(1)
     expect(annotationIndex('2C')).toBeNull()
+  })
+})
+
+describe('hand block parse/serialize', () => {
+  const canonical = ['seat: S', 'S: A Q 5 4', 'H: K J 3', 'D: A 7 2', 'C: Q 8 5'].join('\n')
+
+  it('parses keys and holdings', () => {
+    const b = parseHandBlock(canonical)
+    expect(b.seat).toBe('S')
+    expect(b.hand).toEqual({ spades: 'AQ54', hearts: 'KJ3', diamonds: 'A72', clubs: 'Q85' })
+  })
+
+  it('serializes to the canonical form (--fix)', () => {
+    expect(serializeHandBlock(parseHandBlock(canonical))).toBe(canonical)
+  })
+
+  it('round-trips permissive input to canonical (packed, reordered, void, lowercase)', () => {
+    const messy = ['C: q85', 'H: KJ3', 'S: aq54', 'D: -', 'seat: s'].join('\n')
+    const once = serializeHandBlock(parseHandBlock(messy))
+    expect(once).toBe(['seat: S', 'S: A Q 5 4', 'H: K J 3', 'D: -', 'C: Q 8 5'].join('\n'))
+    // idempotent: re-running the formatter is a no-op
+    expect(serializeHandBlock(parseHandBlock(once))).toBe(once)
+  })
+
+  it('rejects an illegal seat', () => {
+    expect(() => parseHandBlock('seat: Z\nS: A')).toThrow(/illegal seat/)
   })
 })
 

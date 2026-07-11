@@ -19,11 +19,13 @@
     "@milkdown/prose": "^7.5.0",
     "@milkdown/transformer": "^7.5.0",
     "@milkdown/vue": "^7.5.0",
+    "@prosemirror-adapter/vue": "^0.5.3",
     "vue": "^3.5.13"
   },
   "devDependencies": {
     "@types/node": "^26.1.1",
     "@vitejs/plugin-vue": "^5.2.1",
+    "happy-dom": "^20.10.6",
     "typescript": "~5.7.2",
     "vite": "^6.0.7",
     "vitest": "^2.1.8",
