@@ -8,7 +8,7 @@ import { parseAuctionBlock, toAuctionProps } from './auction-block'
 import { parseResponseBox } from './response-box-block'
 import { parseHandsBlock } from './hands-block'
 import { formatCall, callSegments } from './call'
-import { splitFrontMatter, joinFrontMatter, lessonTitle } from './front-matter'
+import { splitFrontMatter, joinFrontMatter, lessonTitle, serializeFrontMatter } from './front-matter'
 import { STARTER_LESSON } from '../editor/starter'
 
 describe('hand notation', () => {
@@ -166,6 +166,22 @@ describe('front matter', () => {
     expect(lessonTitle(STARTER_LESSON)).toBe('New Minor Forcing')
     expect(lessonTitle('# Just A Heading\n\ntext')).toBe('Just A Heading')
     expect(lessonTitle('no title anywhere')).toBe('Untitled lesson')
+  })
+
+  it('serializes front matter to a canonical ordered block', () => {
+    const block = serializeFrontMatter({
+      title: 'New Minor Forcing',
+      skill_paths: ['bidding_conventions/new_minor_forcing'],
+      primary: 'bidding_conventions/new_minor_forcing',
+      level: 'intermediate',
+      author: 'Rick',
+      status: 'published',
+      'reviewed-by': 'self',
+    })
+    // parses back to the same data, and omits empty optionals
+    expect(splitFrontMatter(block).data).toMatchObject({ title: 'New Minor Forcing', level: 'intermediate' })
+    expect(block.startsWith('---\ntitle: New Minor Forcing')).toBe(true)
+    expect(serializeFrontMatter({ title: '' })).toBe('')
   })
 })
 

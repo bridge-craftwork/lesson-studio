@@ -1,4 +1,4 @@
-import { parse as parseYaml } from 'yaml'
+import { parse as parseYaml, stringify as stringifyYaml } from 'yaml'
 import type { FrontMatter } from './types'
 
 /** A lesson split into its front matter and body (Contract 1 / Contract 4). */
@@ -36,6 +36,24 @@ export function splitFrontMatter(markdown: string): SplitDocument {
 /** Re-prepend the raw front matter to a body (the inverse of splitting). */
 export function joinFrontMatter(raw: string | null, body: string): string {
   return raw ? raw + body : body
+}
+
+/**
+ * Serialize front matter to a canonical `---` block, fields in a fixed order,
+ * empty optional fields omitted. Returns '' when there's no `title` (so a plain
+ * markdown document without metadata stays plain). This is the write path when
+ * front matter is edited — it replaces the verbatim `raw` with canonical YAML.
+ */
+export function serializeFrontMatter(fm: Partial<FrontMatter>): string {
+  if (!fm.title) return ''
+  const ordered: Record<string, unknown> = { title: fm.title }
+  if (fm.skill_paths?.length) ordered.skill_paths = fm.skill_paths
+  if (fm.primary) ordered.primary = fm.primary
+  if (fm.level) ordered.level = fm.level
+  if (fm.author) ordered.author = fm.author
+  if (fm.status) ordered.status = fm.status
+  if (fm['reviewed-by']) ordered['reviewed-by'] = fm['reviewed-by']
+  return `---\n${stringifyYaml(ordered).trimEnd()}\n---\n`
 }
 
 /**

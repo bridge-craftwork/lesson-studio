@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { reactive, ref, watch, computed, nextTick } from 'vue'
 import { MilkdownProvider } from '@milkdown/vue'
 import { ProsemirrorAdapterProvider } from '@prosemirror-adapter/vue'
 import MilkdownEditor from './MilkdownEditor.vue'
-import LessonHeader from './LessonHeader.vue'
-import { splitFrontMatter, joinFrontMatter } from '@/dsl'
+import FrontMatterPanel, { type FrontMatterFields } from './FrontMatterPanel.vue'
+import { splitFrontMatter, serializeFrontMatter } from '@/dsl'
 
-// A full lesson document: the YAML front matter is split out and rendered as a
-// header (not raw text in the editor surface), and only the body is fed to
-// Milkdown. On edit, the body is recombined with the preserved raw front matter
-// and emitted as the full lesson markdown for saving.
+// A full lesson document. The YAML front matter is split out and edited through
+// the FrontMatterPanel; the body is edited in Milkdown. Either edit source
+// reconstructs the full lesson markdown, which is emitted for saving. No emit
+// happens on load, so opening a file isn't spuriously "dirty".
 const props = withDefaults(
   defineProps<{ markdown: string; editable?: boolean }>(),
   { editable: true },
@@ -17,23 +17,67 @@ const props = withDefaults(
 
 const emit = defineEmits<{ 'update:markdown': [string] }>()
 
-const doc = computed(() => splitFrontMatter(props.markdown))
+function defaults(): FrontMatterFields {
+  return {
+    title: '',
+    skill_paths: [],
+    primary: '',
+    level: 'intermediate',
+    author: '',
+    status: 'draft',
+    'reviewed-by': '',
+  }
+}
+
+const fm = reactive<FrontMatterFields>(defaults())
+const bodyMarkdown = ref('')
+// The body handed to Milkdown at mount; recomputed only when a new doc loads.
+const initialBody = computed(() => splitFrontMatter(props.markdown).body)
+
+let loading = false
+
+// Reset state whenever a new lesson loads (props.markdown changes on
+// New/Open/Restore). This must NOT trigger an emit.
+watch(
+  () => props.markdown,
+  (md) => {
+    loading = true
+    const { data, body } = splitFrontMatter(md)
+    Object.assign(fm, defaults(), data ?? {})
+    bodyMarkdown.value = body
+    // The deep `fm` watch fires on the flush after this sync reset; keep the
+    // guard up until then so the reset doesn't emit as if it were an edit.
+    nextTick(() => {
+      loading = false
+    })
+  },
+  { immediate: true },
+)
+
+function emitFull() {
+  if (loading) return
+  const front = serializeFrontMatter(fm)
+  const body = bodyMarkdown.value
+  emit('update:markdown', front ? `${front}\n${body.replace(/^\n+/, '')}` : body)
+}
 
 function onBody(body: string) {
-  // Keep one blank line between the front matter and the body.
-  const spacedBody = doc.value.raw ? `\n${body.replace(/^\n+/, '')}` : body
-  emit('update:markdown', joinFrontMatter(doc.value.raw, spacedBody))
+  bodyMarkdown.value = body
+  emitFull()
 }
+
+// Front-matter panel mutates `fm` in place; a deep watch catches every field.
+watch(fm, emitFull, { deep: true })
 </script>
 
 <template>
   <div class="lesson-document">
-    <LessonHeader :data="doc.data" />
+    <FrontMatterPanel :data="fm" :editable="editable" />
     <MilkdownProvider>
       <ProsemirrorAdapterProvider>
         <MilkdownEditor
           :key="String(editable)"
-          :initial-markdown="doc.body"
+          :initial-markdown="initialBody"
           :editable="editable"
           @update:body="onBody"
         />
