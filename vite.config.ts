@@ -19,6 +19,9 @@ const bridgeComponents = siblingSrc
   : fileURLToPath(new URL('./src/bridge', import.meta.url))
 
 export default defineConfig({
+  // '/' for local dev and preview; the Pages build sets VITE_BASE to the
+  // project subpath (e.g. '/lesson-studio/') so assets and links resolve.
+  base: process.env.VITE_BASE ?? '/',
   plugins: [vue()],
   resolve: {
     alias: {
