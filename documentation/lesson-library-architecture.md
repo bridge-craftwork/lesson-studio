@@ -101,9 +101,20 @@ The authoring application and the DSL definition. Owns:
 Contributes two published artifacts:
 
 - **`@bridge-craftwork/bridge-components`** (Contract 2): the Vue hand,
-  auction, and quiz rendering components, extracted from the app into a
-  package on GitHub Packages. Extraction happens *after* lesson-studio proves
-  the components work copied-in (see Roadmap).
+  auction, and quiz rendering components, extracted *in place* into
+  `packages/bridge-components/` within this repo — its own `package.json`,
+  `vue` as a peer dependency, and no imports from app stores, router, or API
+  layers. The Bridge-Classroom app consumes its own components through the
+  same boundary. Published to GitHub Packages on tag.
+
+  **Consumption model — live in dev, pinned in CI:** during development,
+  lesson-studio Vite-aliases the package name to a sibling Bridge-Classroom
+  checkout (`resolve.alias` to `packages/bridge-components/src`, with
+  `resolve.dedupe: ['vue']` to prevent duplicate-Vue reactivity bugs), giving
+  cross-repo HMR — component edits in Bridge-Classroom hot-reload in
+  lesson-studio immediately. CI and release builds install the published
+  package at a pinned version so lesson rendering is reproducible;
+  Dependabot/Renovate PRs deliver version bumps.
 - **Taxonomy JSON** (Contract 4): the canonical machine-readable skill-path
   taxonomy, derived from CARD_TAXONOMY_MAPPING.md and published versioned —
   naturally alongside or inside the component package. Known consumers:
@@ -178,7 +189,10 @@ Owned jointly, as an addition to the bilateral deal-repository contract
   PBS pipeline version, generation date.
 
 The schema must be settled in this document's review **before** David
-implements the emitter, so neither side builds against a guess.
+implements the emitter, so neither side builds against a guess. The full
+schema — discriminated union over a shared envelope, `bidding` type defined,
+other types reserved — is specified in
+[contracts/quiz-json-schema.md](contracts/quiz-json-schema.md).
 
 ### Contract 4: Taxonomy JSON + front-matter schema
 
@@ -230,7 +244,9 @@ volunteer typos cannot silently fragment the linkage.
 
 - DSL spec v1: `hand`, `hands`, `auction`, `response-box`; front-matter
   schema. Deal references stubbed (inline hands only).
-- lesson-studio editor with components *copied in* from Bridge-Classroom.
+- In-place extraction of `packages/bridge-components/` in Bridge-Classroom
+  (the store/router/API untangling); lesson-studio consumes via sibling-checkout
+  Vite alias with cross-repo HMR.
 - Print view + Playwright render + pdf-handouts integration.
 - Seed lesson-library with the two real deliverables: Lessons 1–6 beginner
   summary and New Minor Forcing intro. These force the v1 vocabulary.
@@ -238,8 +254,9 @@ volunteer typos cannot silently fragment the linkage.
 
 **Phase 2 — integration:**
 
-- Extract `@bridge-craftwork/bridge-components` against the now-proven
-  consumer; lesson-studio switches from copies to the package.
+- Publish `@bridge-craftwork/bridge-components` to GitHub Packages
+  (tag-triggered Action); CI builds switch from the dev alias to pinned
+  published versions with Dependabot bumps.
 - Publish taxonomy JSON; wire front-matter lint; retrofit Hand Curator
   pulldowns to the same file.
 - `deal` block wired to bba-filtered references.
