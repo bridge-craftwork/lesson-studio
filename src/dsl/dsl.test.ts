@@ -102,7 +102,7 @@ describe('auction block', () => {
     expect(block.notes[1]).toBe('NMF')
     const props = toAuctionProps(block)
     expect(props.bids[6]).toBe('2D')
-    expect(props.meanings).toEqual([{ position: 6, bid: '2D', meaning: 'NMF' }])
+    expect(props.meanings).toEqual([{ position: 6, bid: '2D', meaning: 'NMF', note: 1 }])
   })
 
   it('keeps AP and rejects an illegal call', () => {

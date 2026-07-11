@@ -1,11 +1,15 @@
 import type { NodeViewFactory } from '@prosemirror-adapter/vue'
-import { handBlock } from './hand'
+import { V1_ACTIVE_BLOCKS } from '@/dsl'
+import { reservedBlockNode } from './reservedBlockNode'
 
 /**
- * All active bridge-block plugins, bound to the adapter's node-view factory.
- * Each new block (hands, auction, response-box, quiz, pagebreak) is added here
- * as it lands.
+ * All active bridge-block plugins (Contract 1 v1 vocabulary), each a Milkdown
+ * node + Vue node view bound to the adapter factory. Registered before
+ * commonmark by the editor so their parseMarkdown matchers win.
  */
 export function bridgeBlocks(factory: NodeViewFactory) {
-  return [...handBlock(factory)]
+  return V1_ACTIVE_BLOCKS.flatMap((tag) => {
+    const { schema, view } = reservedBlockNode(tag)
+    return [schema, view(factory)]
+  })
 }

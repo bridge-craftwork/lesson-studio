@@ -3,7 +3,7 @@ import { describe, it, expect } from 'vitest'
 import { Editor, rootCtx, defaultValueCtx, editorViewCtx } from '@milkdown/core'
 import { commonmark } from '@milkdown/preset-commonmark'
 import { getMarkdown } from '@milkdown/utils'
-import { handSchema } from './hand'
+import { reservedBlockNode } from './reservedBlockNode'
 
 /**
  * The Contract 1 round-trip requirement, exercised through Milkdown's real
@@ -16,25 +16,30 @@ import { handSchema } from './hand'
  * test cannot pass trivially via code_block (which would also preserve the
  * ```hand fence).
  */
-async function roundTrip(markdown: string): Promise<{ out: string; hasHandNode: boolean }> {
+const blockSchemas = (['hand', 'auction', 'pagebreak'] as const).map(
+  (t) => reservedBlockNode(t).schema,
+)
+
+async function roundTrip(
+  markdown: string,
+  expectNode = 'hand',
+): Promise<{ out: string; hasNode: boolean }> {
   const root = document.createElement('div')
-  const editor = await Editor.make()
-    .config((ctx) => {
-      ctx.set(rootCtx, root)
-      ctx.set(defaultValueCtx, markdown)
-    })
-    .use(handSchema)
-    .use(commonmark)
-    .create()
+  const make = Editor.make().config((ctx) => {
+    ctx.set(rootCtx, root)
+    ctx.set(defaultValueCtx, markdown)
+  })
+  blockSchemas.forEach((s) => make.use(s))
+  const editor = await make.use(commonmark).create()
   const out = editor.action(getMarkdown())
-  let hasHandNode = false
+  let hasNode = false
   editor.action((ctx) => {
     ctx.get(editorViewCtx).state.doc.descendants((node) => {
-      if (node.type.name === 'hand') hasHandNode = true
+      if (node.type.name === expectNode) hasNode = true
     })
   })
   await editor.destroy()
-  return { out, hasHandNode }
+  return { out, hasNode }
 }
 
 describe('hand block Milkdown round-trip', () => {
@@ -42,8 +47,8 @@ describe('hand block Milkdown round-trip', () => {
     const md = ['```hand', 'seat: S', 'S: A Q 5 4', 'H: K J 3', 'D: A 7 2', 'C: Q 8 5', '```'].join(
       '\n',
     )
-    const { out, hasHandNode } = await roundTrip(md)
-    expect(hasHandNode).toBe(true)
+    const { out, hasNode } = await roundTrip(md)
+    expect(hasNode).toBe(true)
     expect(out.trim()).toBe(md)
   })
 
@@ -51,8 +56,22 @@ describe('hand block Milkdown round-trip', () => {
     const md = ['# Lesson', '', 'Consider:', '', '```hand', 'S: A K Q', 'H: -', 'D: -', 'C: -', '```'].join(
       '\n',
     )
-    const { out, hasHandNode } = await roundTrip(md)
-    expect(hasHandNode).toBe(true)
+    const { out, hasNode } = await roundTrip(md)
+    expect(hasNode).toBe(true)
+    expect(out.trim()).toBe(md)
+  })
+
+  it('preserves an auction block (with notes) via the auction node', async () => {
+    const md = ['```auction', 'dealer: N', '1C   P    1S   P', '1NT  P    2D^1  P', '2H', '---', '1. New Minor Forcing'].join('\n') + '\n```'
+    const { out, hasNode } = await roundTrip(md, 'auction')
+    expect(hasNode).toBe(true)
+    expect(out.trim()).toBe(md)
+  })
+
+  it('preserves an empty pagebreak block', async () => {
+    const md = ['```pagebreak', '```'].join('\n')
+    const { out, hasNode } = await roundTrip(md, 'pagebreak')
+    expect(hasNode).toBe(true)
     expect(out.trim()).toBe(md)
   })
 })

@@ -39,3 +39,4 @@ pnpm-debug.log*
 .playwright-mcp/
 hand-node-view.png
 block-gallery.png
+editor-rendered.png

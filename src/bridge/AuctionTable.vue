@@ -11,7 +11,7 @@ type Seat = 'N' | 'E' | 'S' | 'W'
 const props = defineProps<{
   bids: string[]
   dealer: Seat
-  meanings?: { position: number; bid: string; meaning: string }[]
+  meanings?: { position: number; bid: string; meaning: string; note: number }[]
 }>()
 
 const DISPLAY: Seat[] = ['W', 'N', 'E', 'S']
@@ -59,14 +59,16 @@ function flatIndex(rowIdx: number, col: number): number {
           <td v-for="(bid, c) in row" :key="c" :class="{ red: bid && isRedCall(bid) }">
             <template v-if="bid === 'AP'"><span class="ap">All Pass</span></template>
             <template v-else-if="bid">
-              {{ formatCall(bid) }}<sup v-if="noteFor(bid, flatIndex(r, c))">*</sup>
+              {{ formatCall(bid) }}<sup v-if="noteFor(bid, flatIndex(r, c))">{{ noteFor(bid, flatIndex(r, c))!.note }}</sup>
             </template>
           </td>
         </tr>
       </tbody>
     </table>
     <ol v-if="meanings && meanings.length" class="notes">
-      <li v-for="(m, i) in meanings" :key="i">{{ formatCall(m.bid) }}: {{ m.meaning }}</li>
+      <li v-for="(m, i) in meanings" :key="i">
+        <span class="note-num">{{ m.note }}.</span> {{ formatCall(m.bid) }}: {{ m.meaning }}
+      </li>
     </ol>
   </div>
 </template>
@@ -99,9 +101,13 @@ td.red {
   font-style: italic;
 }
 .notes {
+  list-style: none;
   margin: 0.4rem 0 0;
-  padding-left: 1.2rem;
+  padding-left: 0;
   font-size: 0.75rem;
   color: var(--ls-muted, #666);
+}
+.note-num {
+  font-variant-numeric: tabular-nums;
 }
 </style>

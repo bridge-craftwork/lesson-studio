@@ -14,7 +14,8 @@ export interface AuctionBlock {
 export interface AuctionProps {
   dealer: Seat
   bids: string[]
-  meanings: { position: number; bid: string; meaning: string }[]
+  /** `note` is the annotation number, shared by the superscript and the list. */
+  meanings: { position: number; bid: string; meaning: string; note: number }[]
 }
 
 const SEATS: Seat[] = ['N', 'E', 'S', 'W']
@@ -63,7 +64,7 @@ export function toAuctionProps(block: AuctionBlock): AuctionProps {
     .map((call, position) => {
       const idx = annotationIndex(call)
       return idx != null && block.notes[idx]
-        ? { position, bid: stripAnnotationMarker(call), meaning: block.notes[idx] }
+        ? { position, bid: stripAnnotationMarker(call), meaning: block.notes[idx], note: idx }
         : null
     })
     .filter((m): m is AuctionProps['meanings'][number] => m !== null)
