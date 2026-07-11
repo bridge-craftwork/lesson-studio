@@ -37,3 +37,14 @@ export function splitFrontMatter(markdown: string): SplitDocument {
 export function joinFrontMatter(raw: string | null, body: string): string {
   return raw ? raw + body : body
 }
+
+/**
+ * A human title for a lesson: the front-matter `title`, else the first H1
+ * heading in the body, else 'Untitled lesson'.
+ */
+export function lessonTitle(markdown: string): string {
+  const { data, body } = splitFrontMatter(markdown)
+  if (data?.title) return data.title
+  const heading = body.match(/^#\s+(.+)$/m)
+  return heading ? heading[1].trim() : 'Untitled lesson'
+}

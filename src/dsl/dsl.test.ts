@@ -8,7 +8,7 @@ import { parseAuctionBlock, toAuctionProps } from './auction-block'
 import { parseResponseBox } from './response-box-block'
 import { parseHandsBlock } from './hands-block'
 import { formatCall, callSegments } from './call'
-import { splitFrontMatter, joinFrontMatter } from './front-matter'
+import { splitFrontMatter, joinFrontMatter, lessonTitle } from './front-matter'
 import { STARTER_LESSON } from '../editor/starter'
 
 describe('hand notation', () => {
@@ -160,6 +160,12 @@ describe('front matter', () => {
     expect(raw).toBeNull()
     expect(data).toBeNull()
     expect(body).toBe(md)
+  })
+
+  it('derives a lesson title from front matter, else first heading, else fallback', () => {
+    expect(lessonTitle(STARTER_LESSON)).toBe('New Minor Forcing')
+    expect(lessonTitle('# Just A Heading\n\ntext')).toBe('Just A Heading')
+    expect(lessonTitle('no title anywhere')).toBe('Untitled lesson')
   })
 })
 

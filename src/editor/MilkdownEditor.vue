@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { Editor, rootCtx, defaultValueCtx, editorViewOptionsCtx } from '@milkdown/core'
 import { commonmark } from '@milkdown/preset-commonmark'
+import { listener, listenerCtx } from '@milkdown/plugin-listener'
 import { Milkdown, useEditor } from '@milkdown/vue'
 import { useNodeViewFactory } from '@prosemirror-adapter/vue'
 import { bridgeBlocks } from '../blocks'
@@ -10,13 +11,12 @@ const props = withDefaults(
   { editable: true },
 )
 
-// The adapter factory turns Vue components into ProseMirror node views. It must
-// be resolved under a ProsemirrorAdapterProvider (see LessonDocument.vue).
+// Emits the serialized body markdown whenever the document changes, so the
+// parent can reconstruct + persist the full lesson.
+const emit = defineEmits<{ 'update:body': [string] }>()
+
 const nodeViewFactory = useNodeViewFactory()
 
-// Phase 1: CommonMark round-trip via remark, plus the reserved bridge blocks
-// (Contract 1) as custom nodes with live Vue node views. The same surface
-// renders read-only for the print view (editable: false).
 useEditor((root) =>
   Editor.make()
     .config((ctx) => {
@@ -26,12 +26,15 @@ useEditor((root) =>
         ...prev,
         editable: () => props.editable,
       }))
+      ctx.get(listenerCtx).markdownUpdated((_ctx, markdown) => {
+        emit('update:body', markdown)
+      })
     })
     // Bridge blocks are registered BEFORE commonmark so their parseMarkdown
-    // matchers (e.g. code[lang=hand]) take precedence over the generic
-    // code_block — Milkdown's parser matches node specs in registration order.
+    // matchers take precedence over the generic code_block.
     .use(bridgeBlocks(nodeViewFactory))
-    .use(commonmark),
+    .use(commonmark)
+    .use(listener),
 )
 </script>
 
