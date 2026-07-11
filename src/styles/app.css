@@ -1,0 +1,77 @@
+:root {
+  --ls-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --ls-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
+  --ls-fg: #1a1a1a;
+  --ls-muted: #6b7280;
+  --ls-bg: #ffffff;
+  --ls-panel: #f7f7f8;
+  --ls-border: #e4e4e7;
+  --ls-accent: #1d4ed8;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--ls-font);
+  color: var(--ls-fg);
+  background: var(--ls-bg);
+}
+
+.studio {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+}
+
+.studio__header {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  padding: 0.75rem 1.25rem;
+  border-bottom: 1px solid var(--ls-border);
+  background: var(--ls-panel);
+}
+
+.studio__title {
+  font-size: 1rem;
+  font-weight: 650;
+  margin: 0;
+}
+
+.studio__subtitle {
+  font-size: 0.8rem;
+  color: var(--ls-muted);
+}
+
+.studio__body {
+  overflow: auto;
+  padding: 1.5rem;
+}
+
+.lesson-editor {
+  max-width: 44rem;
+  margin: 0 auto;
+}
+
+/* Milkdown's ProseMirror surface */
+.lesson-editor .milkdown {
+  outline: none;
+}
+
+.lesson-editor .ProseMirror {
+  min-height: 60vh;
+  line-height: 1.55;
+}
+
+.lesson-editor .ProseMirror:focus {
+  outline: none;
+}
