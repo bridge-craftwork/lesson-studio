@@ -160,8 +160,9 @@ reserved language tags. Initial block vocabulary:
 | `response-box` | Convention response table | Title, bid/meaning rows (e.g., Responding to Blackwood) |
 
 Hand notation, auction formatting conventions (dealer alignment, West-leftmost,
-All Pass), and front-matter schema are specified in the DSL doc. Every block
-must round-trip losslessly through Milkdown's markdown serialization.
+All Pass), and front-matter schema are specified in the DSL doc
+([contracts/dsl-grammar.md](contracts/dsl-grammar.md)). Every block must
+round-trip losslessly through Milkdown's markdown serialization.
 
 **Reference vs. value:** `deal` blocks reference by identity because
 bba-filtered boards are stable under ADR-0001 — edit the deal in the repo and
