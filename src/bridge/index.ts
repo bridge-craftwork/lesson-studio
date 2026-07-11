@@ -5,3 +5,7 @@
  * Vite alias at a sibling Bridge-Classroom checkout.
  */
 export { default as HandDisplay } from './HandDisplay.vue'
+export { default as HandsCompass } from './HandsCompass.vue'
+export { default as AuctionTable } from './AuctionTable.vue'
+export { default as ResponseBox } from './ResponseBox.vue'
+export { default as QuizSnapshot } from './QuizSnapshot.vue'

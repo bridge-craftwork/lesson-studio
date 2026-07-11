@@ -38,3 +38,4 @@ pnpm-debug.log*
 # Local test artifacts
 .playwright-mcp/
 hand-node-view.png
+block-gallery.png

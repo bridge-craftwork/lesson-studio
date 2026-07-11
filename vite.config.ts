@@ -29,4 +29,12 @@ export default defineConfig({
     // prevents duplicate-Vue reactivity bugs. Required by Contract 2.
     dedupe: ['vue'],
   },
+  build: {
+    rollupOptions: {
+      input: {
+        main: fileURLToPath(new URL('./index.html', import.meta.url)),
+        gallery: fileURLToPath(new URL('./gallery.html', import.meta.url)),
+      },
+    },
+  },
 })

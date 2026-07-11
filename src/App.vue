@@ -10,6 +10,7 @@ import { STARTER_LESSON } from './editor/starter'
       <span class="studio__subtitle">
         Bridge Classroom lesson authoring — Phase 1 scaffold
       </span>
+      <a class="studio__link" href="/gallery.html">Block gallery →</a>
     </header>
     <main class="studio__body">
       <LessonEditor :initial-markdown="STARTER_LESSON" />

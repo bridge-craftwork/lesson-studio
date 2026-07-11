@@ -4,6 +4,10 @@ import { isCall, stripAnnotationMarker, annotationIndex } from './call'
 import { scanReservedBlocks } from './scan'
 import { isReservedBlock } from './types'
 import { parseHandBlock, serializeHandBlock } from './hand-block'
+import { parseAuctionBlock, toAuctionProps } from './auction-block'
+import { parseResponseBox } from './response-box-block'
+import { parseHandsBlock } from './hands-block'
+import { formatCall } from './call'
 import { STARTER_LESSON } from '../editor/starter'
 
 describe('hand notation', () => {
@@ -76,6 +80,55 @@ describe('hand block parse/serialize', () => {
 
   it('rejects an illegal seat', () => {
     expect(() => parseHandBlock('seat: Z\nS: A')).toThrow(/illegal seat/)
+  })
+})
+
+describe('call formatting', () => {
+  it('renders strains as glyphs and calls as words', () => {
+    expect(formatCall('1C')).toBe('1♣')
+    expect(formatCall('3NT')).toBe('3NT')
+    expect(formatCall('2D^1')).toBe('2♦')
+    expect(formatCall('P')).toBe('Pass')
+    expect(formatCall('X')).toBe('Dbl')
+  })
+})
+
+describe('auction block', () => {
+  it('parses dealer, flat calls, and notes; adapts to component props', () => {
+    const body = ['dealer: N', '1C   P    1S   P', '1NT  P    2D^1  P', '2H', '---', '1. NMF'].join('\n')
+    const block = parseAuctionBlock(body)
+    expect(block.dealer).toBe('N')
+    expect(block.calls).toEqual(['1C', 'P', '1S', 'P', '1NT', 'P', '2D^1', 'P', '2H'])
+    expect(block.notes[1]).toBe('NMF')
+    const props = toAuctionProps(block)
+    expect(props.bids[6]).toBe('2D')
+    expect(props.meanings).toEqual([{ position: 6, bid: '2D', meaning: 'NMF' }])
+  })
+
+  it('keeps AP and rejects an illegal call', () => {
+    expect(parseAuctionBlock('dealer: E\n1H 1S X 2S\n3H AP').calls).toContain('AP')
+    expect(() => parseAuctionBlock('dealer: N\n1Z')).toThrow(/illegal call/)
+  })
+})
+
+describe('response-box block', () => {
+  it('parses title, rows, and note', () => {
+    const box = parseResponseBox(['title: RKCB', '5C | 1 or 4', '5D | 0 or 3', '---', 'Note here'].join('\n'))
+    expect(box.title).toBe('RKCB')
+    expect(box.rows).toEqual([
+      { left: '5C', right: '1 or 4' },
+      { left: '5D', right: '0 or 3' },
+    ])
+    expect(box.note).toBe('Note here')
+  })
+})
+
+describe('hands block', () => {
+  it('parses seat holdings and layout', () => {
+    const block = parseHandsBlock(['layout: NS', 'N: S:K T 6  H:J T 9 2  D:Q J  C:K 7 6 3', 'S: S:A Q  H:A 5  D:8 7 4 3  C:Q J T 9 5'].join('\n'))
+    expect(block.layout).toBe('NS')
+    expect(block.hands.N).toEqual({ spades: 'KT6', hearts: 'JT92', diamonds: 'QJ', clubs: 'K763' })
+    expect(block.hands.S).toEqual({ spades: 'AQ', hearts: 'A5', diamonds: '8743', clubs: 'QJT95' })
   })
 })
 

@@ -52,6 +52,16 @@ body {
   color: var(--ls-muted);
 }
 
+.studio__link {
+  margin-left: auto;
+  font-size: 0.85rem;
+  color: var(--ls-accent);
+  text-decoration: none;
+}
+.studio__link:hover {
+  text-decoration: underline;
+}
+
 .studio__body {
   overflow: auto;
   padding: 1.5rem;
