@@ -34,6 +34,7 @@ export default defineConfig({
       input: {
         main: fileURLToPath(new URL('./index.html', import.meta.url)),
         gallery: fileURLToPath(new URL('./gallery.html', import.meta.url)),
+        print: fileURLToPath(new URL('./print.html', import.meta.url)),
       },
     },
   },

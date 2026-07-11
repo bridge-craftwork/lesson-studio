@@ -67,21 +67,21 @@ body {
   padding: 1.5rem;
 }
 
-.lesson-editor {
+.lesson-document {
   max-width: 44rem;
   margin: 0 auto;
 }
 
 /* Milkdown's ProseMirror surface */
-.lesson-editor .milkdown {
+.lesson-document .milkdown {
   outline: none;
 }
 
-.lesson-editor .ProseMirror {
-  min-height: 60vh;
+.lesson-document .ProseMirror {
+  min-height: 40vh;
   line-height: 1.55;
 }
 
-.lesson-editor .ProseMirror:focus {
+.lesson-document .ProseMirror:focus {
   outline: none;
 }

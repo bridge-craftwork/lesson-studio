@@ -8,6 +8,7 @@ import { parseAuctionBlock, toAuctionProps } from './auction-block'
 import { parseResponseBox } from './response-box-block'
 import { parseHandsBlock } from './hands-block'
 import { formatCall, callSegments } from './call'
+import { splitFrontMatter, joinFrontMatter } from './front-matter'
 import { STARTER_LESSON } from '../editor/starter'
 
 describe('hand notation', () => {
@@ -139,6 +140,26 @@ describe('hands block', () => {
     expect(block.layout).toBe('NS')
     expect(block.hands.N).toEqual({ spades: 'KT6', hearts: 'JT92', diamonds: 'QJ', clubs: 'K763' })
     expect(block.hands.S).toEqual({ spades: 'AQ', hearts: 'A5', diamonds: '8743', clubs: 'QJT95' })
+  })
+})
+
+describe('front matter', () => {
+  it('splits and parses the starter lesson front matter', () => {
+    const { raw, data, body } = splitFrontMatter(STARTER_LESSON)
+    expect(data?.title).toBe('New Minor Forcing')
+    expect(data?.skill_paths).toEqual(['bidding_conventions/new_minor_forcing'])
+    expect(data?.level).toBe('intermediate')
+    expect(body.startsWith('\n# New Minor Forcing')).toBe(true)
+    // raw is verbatim and re-joins losslessly
+    expect(joinFrontMatter(raw, body)).toBe(STARTER_LESSON)
+  })
+
+  it('returns null data when there is no front matter', () => {
+    const md = '# Just a heading\n\nSome text.'
+    const { raw, data, body } = splitFrontMatter(md)
+    expect(raw).toBeNull()
+    expect(data).toBeNull()
+    expect(body).toBe(md)
   })
 })
 

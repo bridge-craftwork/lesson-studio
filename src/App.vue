@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import LessonEditor from './editor/LessonEditor.vue'
+import LessonDocument from './editor/LessonDocument.vue'
 import { STARTER_LESSON } from './editor/starter'
 </script>
 
@@ -10,10 +10,11 @@ import { STARTER_LESSON } from './editor/starter'
       <span class="studio__subtitle">
         Bridge Classroom lesson authoring — Phase 1 scaffold
       </span>
+      <a class="studio__link" href="/print.html">Print view →</a>
       <a class="studio__link" href="/gallery.html">Block gallery →</a>
     </header>
     <main class="studio__body">
-      <LessonEditor :initial-markdown="STARTER_LESSON" />
+      <LessonDocument :markdown="STARTER_LESSON" />
     </main>
   </div>
 </template>

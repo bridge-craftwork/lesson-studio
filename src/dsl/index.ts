@@ -11,6 +11,7 @@
  */
 export * from './types'
 export * from './call'
+export * from './front-matter'
 export * from './hand'
 export * from './hand-block'
 export * from './hands-block'

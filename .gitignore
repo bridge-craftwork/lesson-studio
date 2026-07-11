@@ -40,3 +40,5 @@ pnpm-debug.log*
 hand-node-view.png
 block-gallery.png
 editor-rendered.png
+print-view.png
+*.pdf

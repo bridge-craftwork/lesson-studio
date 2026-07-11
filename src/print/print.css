@@ -1,0 +1,51 @@
+/*
+ * Print stylesheet for the lesson print view. The same Contract 2 components
+ * render here as in the editor; this sheet adds page geometry and break rules.
+ * Playwright renders this page to PDF, which feeds the pdf-handouts pipeline
+ * for page chrome (headers, footers, page numbers, dates).
+ */
+
+@page {
+  size: letter;
+  margin: 0.75in;
+}
+
+.print-view {
+  max-width: 7in;
+  margin: 0 auto;
+  padding: 0.5in;
+  color: #111;
+  background: #fff;
+}
+
+/* Bridge blocks must never split across a column or page break (Contract 2). */
+.print-view .reserved-block,
+.print-view .block-view,
+.print-view .bc-hand-placeholder,
+.print-view .bc-compass-placeholder,
+.print-view .bc-auction-placeholder,
+.print-view .bc-responsebox-placeholder,
+.print-view .bc-quiz-placeholder {
+  break-inside: avoid;
+}
+
+/* Explicit page breaks map here (Contract 1 pagebreak block). */
+.print-view .pagebreak {
+  break-before: page;
+  border: none;
+  height: 0;
+  padding: 0;
+  margin: 0;
+  color: transparent;
+}
+
+@media print {
+  .print-view {
+    padding: 0;
+    max-width: none;
+  }
+  /* Editor affordances never print. */
+  .reserved-block.is-selected {
+    outline: none;
+  }
+}
