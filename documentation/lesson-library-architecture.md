@@ -197,7 +197,9 @@ other types reserved — is specified in
 
 ### Contract 4: Taxonomy JSON + front-matter schema
 
-Owned by Bridge-Classroom (taxonomy) and lesson-studio (front matter).
+Owned by Bridge-Classroom (taxonomy) and lesson-studio (front matter). Full
+schema in
+[contracts/taxonomy-and-front-matter.md](contracts/taxonomy-and-front-matter.md).
 
 Taxonomy: the slash-delimited skill paths (e.g.,
 `bidding_conventions/stayman`, `competitive_bidding/lebensohl`) published as

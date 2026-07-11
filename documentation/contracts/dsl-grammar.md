@@ -77,15 +77,16 @@ in `hand`/`hands` blocks and flagged only as a warning, not an error.
 
 ## Front matter
 
-A single YAML block at the top of the file. Fields (Contract 4 owns
-`skill_paths`/`primary` semantics and the taxonomy validation):
+A single YAML block at the top of the file. The **authoritative schema lives in
+Contract 4** ([taxonomy-and-front-matter.md](taxonomy-and-front-matter.md));
+restated here for convenience:
 
 | Field | Req | Type | Notes |
 |---|---|---|---|
 | `title` | ✓ | string | Lesson title. |
 | `skill_paths` | ✓ | string[] | Taxonomy paths (Contract 4); every entry lint-validated against the taxonomy JSON. |
 | `primary` | – | string | Best-single-doc path for remediation lookup; must be one of `skill_paths`. |
-| `level` | ✓ | enum | `beginner` \| `intermediate` \| `advanced`. |
+| `level` | ✓ | enum | `basic` \| `intermediate` \| `advanced` \| `expert` (aligned to the taxonomy `level` vocabulary). |
 | `author` | ✓ | string | |
 | `status` | ✓ | enum | `draft` \| `published`. |
 | `reviewed-by` | ✓ | string | Reviewer, or `self` for maintainer direct-push. |
