@@ -154,18 +154,20 @@ single spaces between ranks, two spaces between suit groups.
 
 ### `auction` — bidding table
 
-A grid of calls. **Columns are fixed W N E S (West leftmost).** Leading cells
-before the dealer's first call are `-`. `AP` terminates an auction as All Pass.
-Annotation markers are `^1`, `^2`, … appended to a call, with numbered notes
-after a `---` separator.
+A **flat, dealer-first** list of calls. The renderer (`AuctionTable`, Contract 2)
+lays them into the W-N-E-S grid from `dealer` — the source does not carry a
+grid, matching the component's `bids` prop and Contract 3's `{dealer, calls}`
+auction shape. Calls read left-to-right, top-to-bottom, starting with the
+dealer; line breaks are for readability only (conventionally one round of four
+per line). Annotation markers are `^1`, `^2`, … appended to a call, with
+numbered notes after a `---` separator. A trailing `AP` stands for All Pass.
 
 ````markdown
 ```auction
 dealer: N
-W    N    E    S
--    1C   P    1D
-P    1H   P    2C^1
-P    2H   AP
+1C   P    1D   P
+1H   P    2C^1 P
+2H   AP
 ---
 1. Fourth-suit forcing, game-forcing
 ```
@@ -173,16 +175,17 @@ P    2H   AP
 
 | Key | Req | Notes |
 |---|---|---|
-| `dealer` | ✓ | `N E S W`. The dealer's column holds the first non-`-` call; earlier columns in the first row are `-`. |
+| `dealer` | ✓ | `N E S W`. The dealer makes the first call; the renderer offsets it into the dealer's column. |
 
-Rules: the header row is literally `W    N    E    S`. Every row has four
-whitespace-separated cells except the final row, which may be shortened by
-`AP`. Calls use the shared Call notation; the renderer maps strains to glyphs
-and applies dealer alignment. Notes are `N. text`, numbered from 1, matching
-the `^N` markers.
+Rules: calls are whitespace-separated in bidding order (dealer first, clockwise);
+newlines are insignificant. Calls use the shared Call notation; the renderer
+maps strains to glyphs and applies dealer alignment. `AP` may replace a closing
+run of passes. Notes are `N. text`, numbered from 1, matching the `^N` markers.
 
-**Canonical form:** `dealer` line; the fixed header row; call rows with columns
-aligned to a 5-space grid; optional `---` then numbered notes in order.
+**Canonical form:** `dealer` line; then calls one round (up to four) per line,
+single-space-separated, markers attached; optional `---` then numbered notes in
+order. (Superseded the earlier W-N-E-S source grid; see Contract 2 — the
+component owns grid layout, so the source stays a flat call list.)
 
 ### `response-box` — convention response table
 
@@ -276,8 +279,8 @@ parts this contract owns:
 2. Every reserved block parses; unknown reserved-looking tags are an error.
 3. `hand`/`hands`: holdings use only legal ranks; no duplicate cards within a
    hand; a full hand has 13 cards (fragments warn, don't fail).
-4. `auction`: header row exact; four cells per row (modulo `AP`); every call is
-   legal Call notation; every `^N` marker has a matching note and vice-versa.
+4. `auction`: `dealer` present; every call is legal Call notation (or `AP`);
+   every `^N` marker has a matching note and vice-versa.
 5. `response-box`: `title` present; every row has exactly one ` | `.
 6. `deal`: structurally well-formed (v1 does **not** resolve the reference).
 7. `quiz`: body validates against Contract 3 `quiz/v1`.
@@ -306,11 +309,13 @@ summary, New Minor Forcing intro) need.
 ## Open items for review
 
 1. **Hand object alignment.** This freezes `{spades, hearts, diamonds, clubs}`
-   as the shared shape (closing Contract 3 open item #1). Confirm the Contract 2
-   components accept it directly rather than a PBN holding string.
-2. **Auction source form.** Fixed W-N-E-S grid with `-`/`AP`. Confirm this
-   reads/diffs better than a dealer-first ordered call list for real lessons;
-   revisit after the New Minor Forcing intro (which has multi-round auctions).
+   as the shared wire shape (closing Contract 3 open item #1). Contract 2
+   confirms the component keeps an array form and lesson-studio adapts via a
+   one-line spread — no PBN holding string, no wire change.
+2. **Auction source form — resolved to flat.** Reconciled from the earlier
+   W-N-E-S grid to a flat dealer-first call list, matching the `AuctionTable`
+   component (Contract 2) and Contract 3. Revisit readability after the New
+   Minor Forcing intro exposes real multi-round auctions.
 3. **Suit glyphs in source.** Source uses ASCII strain letters (`1C`), render
    maps to glyphs; but `title`/prose/`response-box` free text may contain
    literal `♣`. Confirm lint/formatter leave author-entered glyphs untouched.

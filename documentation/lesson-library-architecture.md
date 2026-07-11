@@ -177,7 +177,9 @@ Owned by Bridge-Classroom. `@bridge-craftwork/bridge-components` exports the
 hand, auction, quiz, and response-box rendering components with documented
 props matching the DSL block semantics, plus the print stylesheet tokens.
 Consumers: Bridge-Classroom app, lesson-studio editor node views,
-lesson-studio print view, future embeddable widgets.
+lesson-studio print view, future embeddable widgets. Full API — props, the
+wire→component adapters, and the extraction/build status — in
+[contracts/component-api.md](contracts/component-api.md).
 
 ### Contract 3: Quiz JSON schema
 
