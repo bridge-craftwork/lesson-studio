@@ -48,8 +48,8 @@ function formatTime(ts: number): string {
         {{ session.fileName.value }}
       </span>
 
-      <a class="studio__link" :href="`${base}print.html`">Print →</a>
-      <a class="studio__link" :href="`${base}gallery.html`">Gallery →</a>
+      <a class="studio__link" :href="`${base}print.html`" target="_blank" @click="session.stashForPrint()">Print →</a>
+      <a class="studio__link" :href="`${base}gallery.html`" target="_blank">Gallery →</a>
     </header>
 
     <main class="studio__body">

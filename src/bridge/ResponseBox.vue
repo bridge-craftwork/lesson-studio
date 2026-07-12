@@ -17,7 +17,7 @@ defineProps<{
 
 <template>
   <div class="bc-responsebox-placeholder">
-    <div class="title">{{ title }}</div>
+    <div class="title"><SuitText :text="title" /></div>
     <table>
       <tbody>
         <tr v-for="(row, i) in rows" :key="i">

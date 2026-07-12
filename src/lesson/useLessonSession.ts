@@ -17,6 +17,8 @@ import {
 } from './files'
 
 const AUTOSAVE_MS = 800
+/** Hand-off key: the editor stashes the current lesson here for the print tab. */
+export const PRINT_STASH_KEY = 'lesson-studio:print'
 
 /**
  * Owns the editing session: what lesson is loaded, its live markdown, the
@@ -112,6 +114,15 @@ export function useLessonSession() {
     refreshDrafts()
   }
 
+  // Stash the current lesson so the print tab renders it (not the starter).
+  function stashForPrint() {
+    try {
+      localStorage.setItem(PRINT_STASH_KEY, liveMarkdown.value)
+    } catch {
+      /* best-effort */
+    }
+  }
+
   // Warn before leaving with unsaved edits.
   watch(dirty, (isDirty) => {
     window.onbeforeunload = isDirty ? (e) => (e.preventDefault(), '') : null
@@ -133,5 +144,6 @@ export function useLessonSession() {
     saveAs,
     restoreDraft,
     deleteDraft,
+    stashForPrint,
   }
 }

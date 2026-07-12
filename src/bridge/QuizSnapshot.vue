@@ -42,7 +42,7 @@ const asComponent = (h: QuizItem['hand']) => ({
 <template>
   <div class="bc-quiz-placeholder">
     <div class="head">
-      <span class="title">{{ quiz.title }}</span>
+      <span class="title"><SuitText :text="quiz.title" /></span>
       <span class="prompt"><SuitText :text="quiz.prompt" /></span>
     </div>
     <ol class="items">

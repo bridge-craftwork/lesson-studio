@@ -32,9 +32,10 @@
 .print-view .ProseMirror {
   column-count: var(--print-columns, 2);
   column-gap: 0.35in;
-  /* Fill each column to the page before starting the next, so page one packs
-     fully instead of balancing content down onto a second page. */
-  column-fill: auto;
+  /* Balance keeps the columns even for one-page lessons (the format's target).
+     A lesson that overflows to a second page will leave the last page's
+     columns uneven — trim it, or the pagebreak block splits it deliberately. */
+  column-fill: balance;
   font-size: 0.92rem;
   line-height: 1.4;
 }
