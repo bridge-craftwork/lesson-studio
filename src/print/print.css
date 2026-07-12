@@ -1,32 +1,67 @@
 /*
  * Print stylesheet for the lesson print view. The same Contract 2 components
- * render here as in the editor; this sheet adds page geometry and break rules.
- * Playwright renders this page to PDF, which feeds the pdf-handouts pipeline
- * for page chrome (headers, footers, page numbers, dates).
+ * render here as in the editor; this sheet adds page geometry, a two-column
+ * newsletter body, and break rules. Playwright renders this page to PDF, which
+ * feeds the pdf-handouts pipeline for page chrome (headers, footers, dates).
+ *
+ * Authors edit single-column flow in the studio; columns happen only here, in
+ * the print preview (architecture Non-Goal + Open Question 4).
  */
 
 @page {
   size: letter;
-  margin: 0.75in;
+  margin: 0.5in;
 }
 
 .print-view {
-  max-width: 7in;
+  max-width: 7.5in;
   margin: 0 auto;
-  padding: 0.5in;
+  padding: 0;
   color: #111;
   background: #fff;
+}
+
+/* The lesson header (front-matter) spans the full width above the columns. */
+.print-view .lesson-header {
+  margin-bottom: 0.6rem;
+  padding-bottom: 0.5rem;
+}
+
+/* Two-column newsletter body. Blocks and headings never split across a column
+   or page break; a heading never dangles at the foot of a column. */
+.print-view .ProseMirror {
+  column-count: 2;
+  column-gap: 0.4in;
+  column-fill: balance;
+  font-size: 0.92rem;
+  line-height: 1.4;
+}
+
+.print-view .ProseMirror h2 {
+  font-size: 1.02rem;
+  margin: 0.6rem 0 0.3rem;
+  break-inside: avoid;
+  break-after: avoid;
+}
+.print-view .ProseMirror h2:first-child {
+  margin-top: 0;
+}
+.print-view .ProseMirror p {
+  margin: 0.35rem 0;
 }
 
 /* Bridge blocks must never split across a column or page break (Contract 2). */
 .print-view .reserved-block,
 .print-view .block-view,
-.print-view .bc-hand-placeholder,
+.print-view .holding,
 .print-view .bc-compass-placeholder,
-.print-view .bc-auction-placeholder,
+.print-view .auction-table,
 .print-view .bc-responsebox-placeholder,
 .print-view .bc-quiz-placeholder {
   break-inside: avoid;
+}
+.print-view .reserved-block {
+  margin: 0.3rem 0;
 }
 
 /* Explicit page breaks map here (Contract 1 pagebreak block). */
@@ -41,7 +76,6 @@
 
 @media print {
   .print-view {
-    padding: 0;
     max-width: none;
   }
   /* Editor affordances never print. */
