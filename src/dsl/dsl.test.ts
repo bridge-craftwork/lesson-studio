@@ -5,6 +5,7 @@ import { scanReservedBlocks } from './scan'
 import { isReservedBlock } from './types'
 import { parseHandBlock, serializeHandBlock } from './hand-block'
 import { parseRowBlock } from './row-block'
+import { validateLesson } from './validate'
 import { parseAuctionBlock, toAuctionProps } from './auction-block'
 import { parseResponseBox } from './response-box-block'
 import { parseHandsBlock } from './hands-block'
@@ -223,6 +224,47 @@ describe('front matter', () => {
     expect(splitFrontMatter(block).data).toMatchObject({ title: 'New Minor Forcing', level: 'intermediate' })
     expect(block.startsWith('---\ntitle: New Minor Forcing')).toBe(true)
     expect(serializeFrontMatter({ title: '' })).toBe('')
+  })
+})
+
+describe('lesson validation', () => {
+  it('passes a well-formed lesson', () => {
+    expect(validateLesson(STARTER_LESSON)).toEqual([])
+  })
+
+  it('flags missing/invalid front matter and an unknown skill path', () => {
+    const md = [
+      '---',
+      'title: X',
+      'skill_paths:',
+      '  - not_a/real_path',
+      'level: wizard',
+      'author: A',
+      'status: live',
+      'reviewed-by: self',
+      '---',
+      '',
+      'body',
+    ].join('\n')
+    const messages = validateLesson(md).map((i) => i.message)
+    expect(messages).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('`level`'),
+        expect.stringContaining('`status`'),
+        expect.stringContaining('not in the taxonomy'),
+      ]),
+    )
+  })
+
+  it('flags an illegal block body', () => {
+    const md = ['---', 'title: X', 'skill_paths:', '  - bidding_conventions/stayman', 'level: basic', 'author: A', 'status: draft', 'reviewed-by: self', '---', '', '```hand', 'S: A A', 'H: -', 'D: -', 'C: -', '```'].join('\n')
+    expect(validateLesson(md).some((i) => /duplicate card/.test(i.message))).toBe(true)
+  })
+
+  it('validates nested blocks inside a row', () => {
+    const md = ['---', 'title: X', 'skill_paths:', '  - bidding_conventions/stayman', 'level: basic', 'author: A', 'status: draft', 'reviewed-by: self', '---', '', '````row', '```auction', '1C P', '```', '````'].join('\n')
+    // auction inside the row is missing its dealer
+    expect(validateLesson(md).some((i) => /missing dealer/.test(i.message))).toBe(true)
   })
 })
 
