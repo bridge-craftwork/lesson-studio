@@ -48,6 +48,7 @@ export const RESERVED_BLOCKS = [
   'deal',
   'quiz',
   'pagebreak',
+  'row',
 ] as const
 
 export type ReservedBlock = (typeof RESERVED_BLOCKS)[number]
@@ -60,6 +61,7 @@ export const V1_ACTIVE_BLOCKS: ReservedBlock[] = [
   'response-box',
   'quiz',
   'pagebreak',
+  'row',
 ]
 
 export function isReservedBlock(tag: string): tag is ReservedBlock {

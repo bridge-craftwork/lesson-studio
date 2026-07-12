@@ -21,18 +21,24 @@ import {
   parseAuctionBlock,
   toAuctionProps,
   parseResponseBox,
+  parseRowBlock,
   toComponentHand,
   type ReservedBlock,
+  type RowItem,
 } from '@/dsl'
+// Self-import so a `row` block can recursively render its child blocks.
+import BlockView from './BlockView.vue'
 
 const props = defineProps<{ tag: ReservedBlock; body: string }>()
 
+type CardMarks = { cards: Record<string, { badge: string }> }
 type Rendered =
-  | { kind: 'hand'; hand: ReturnType<typeof toComponentHand>; label?: string }
+  | { kind: 'hand'; hand: ReturnType<typeof toComponentHand>; label?: string; marks?: CardMarks }
   | { kind: 'hands'; hands: Record<string, ReturnType<typeof toComponentHand>>; layout?: string }
   | { kind: 'auction'; auction: ReturnType<typeof toAuctionProps> }
   | { kind: 'response-box'; box: ReturnType<typeof parseResponseBox> }
   | { kind: 'quiz'; quiz: unknown }
+  | { kind: 'row'; items: RowItem[] }
   | { kind: 'pagebreak' }
   | { kind: 'error'; message: string }
 
@@ -41,7 +47,13 @@ const model = computed<Rendered>(() => {
     switch (props.tag) {
       case 'hand': {
         const b = parseHandBlock(props.body)
-        return { kind: 'hand', hand: toComponentHand(b.hand), label: b.label ?? b.seat }
+        let marks: CardMarks | undefined
+        if (b.marks) {
+          const cards: Record<string, { badge: string }> = {}
+          for (const [card, badge] of Object.entries(b.marks)) cards[card] = { badge }
+          marks = { cards }
+        }
+        return { kind: 'hand', hand: toComponentHand(b.hand), label: b.label ?? b.seat, marks }
       }
       case 'hands': {
         const b = parseHandsBlock(props.body)
@@ -55,6 +67,8 @@ const model = computed<Rendered>(() => {
         return { kind: 'response-box', box: parseResponseBox(props.body) }
       case 'quiz':
         return { kind: 'quiz', quiz: JSON.parse(props.body) }
+      case 'row':
+        return { kind: 'row', items: parseRowBlock(props.body) }
       case 'pagebreak':
         return { kind: 'pagebreak' }
       default:
@@ -69,7 +83,7 @@ const model = computed<Rendered>(() => {
 <template>
   <div class="block-view">
     <template v-if="model.kind === 'hand'">
-      <HandDisplay :hand="model.hand" :show-hcp="true" />
+      <HandDisplay :hand="model.hand" :show-hcp="true" :marks="model.marks" />
     </template>
     <template v-else-if="model.kind === 'hands'">
       <HandsCompass :hands="model.hands" :layout="model.layout as any" />
@@ -93,6 +107,14 @@ const model = computed<Rendered>(() => {
     <template v-else-if="model.kind === 'quiz'">
       <QuizSnapshot :quiz="model.quiz as any" variant="student" />
     </template>
+    <template v-else-if="model.kind === 'row'">
+      <div class="block-row">
+        <template v-for="(item, i) in model.items" :key="i">
+          <div v-if="item.kind === 'prose'" class="block-row__prose"><SuitText :text="item.text" /></div>
+          <BlockView v-else class="block-row__item" :tag="item.tag" :body="item.body" />
+        </template>
+      </div>
+    </template>
     <template v-else-if="model.kind === 'pagebreak'">
       <div class="pagebreak" title="page break">⎯⎯ page break ⎯⎯</div>
     </template>
@@ -105,6 +127,22 @@ const model = computed<Rendered>(() => {
 <style scoped>
 .block-view {
   display: inline-block;
+}
+.block-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.25rem;
+}
+.block-row__prose {
+  flex: 1 1 12rem;
+  min-width: 10rem;
+}
+.block-row__item {
+  flex: 0 0 auto;
+  /* Row figures read as the section's focus — render a touch larger so hand
+     badges (length points) have room and don't crowd adjacent cards. */
+  --table-scale: 1.2;
 }
 .auction__notes {
   list-style: none;

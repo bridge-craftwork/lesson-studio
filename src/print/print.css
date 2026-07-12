@@ -67,6 +67,16 @@
   margin: 0.3rem 0;
 }
 
+/* A `row` block spans all columns as a full-width band; its children lay out
+   side by side. The node-view wrapper (direct multicol child) must carry the
+   span, so target it by the block class it contains. */
+.print-view .ProseMirror > *:has(.reserved-block--row) {
+  column-span: all;
+}
+.print-view .reserved-block--row {
+  break-inside: avoid;
+}
+
 /* Explicit page breaks map here (Contract 1 pagebreak block). */
 .print-view .pagebreak {
   break-before: page;

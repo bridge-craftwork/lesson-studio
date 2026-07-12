@@ -13,7 +13,7 @@ const body = computed(() => (node.value.attrs.body as string) ?? '')
 </script>
 
 <template>
-  <div class="reserved-block" :class="{ 'is-selected': selected }" contenteditable="false">
+  <div class="reserved-block" :class="[`reserved-block--${tag}`, { 'is-selected': selected }]" contenteditable="false">
     <BlockView :tag="tag" :body="body" />
   </div>
 </template>

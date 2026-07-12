@@ -22,7 +22,7 @@ kinds of structured content layered on top of ordinary prose:
    Contract 2 components in both.
 
 ```
-hand   hands   auction   response-box   deal   quiz   pagebreak
+hand   hands   auction   response-box   deal   quiz   pagebreak   row
 ```
 
 Everything else is plain CommonMark and renders normally.
@@ -125,10 +125,12 @@ C: Q 8 5
 |---|---|---|
 | `seat` | – | `N E S W`; drives the seat label. Omit for an unlabeled fragment. |
 | `label` | – | Free-text caption (e.g. `Opener`). |
+| `marks` | – | Per-card badges: space-separated `<suit><rank>=<badge>` (e.g. `marks: S9=1 S8=2` badges the 9 and 8 of spades). Ten is `T` or `10`. Renders as the component's card badges — used to mark length points on the 5th/6th cards of a suit. |
 
-**Canonical form:** keys first (in the order `seat`, `label`), then the four
-suit lines in `S H D C` order, one space between ranks, `-` for a void. Every
-suit line is present even when void.
+**Canonical form:** keys first (order `seat`, `label`), then the four suit lines
+in `S H D C` order (one space between ranks, `-` for a void, every suit line
+present), then an optional `marks` line with cards in `S H D C` / high-to-low
+order.
 
 ### `hands` — two- or four-hand fragment (compass layout)
 
@@ -280,6 +282,44 @@ reordered or deleted. The same source yields render variants (student /
 teacher-inline / projection-omitted / interactive tap-to-reveal). The DSL
 source therefore contains no answer-placement markup.
 
+### `row` — horizontal layout group
+
+Lays a short lead-in and one or more blocks **side by side** as a full-width
+band (in the print view it spans all columns). The one composition primitive in
+an otherwise single-column-flow format — for a figure like "narrative + a table
++ an example hand" that reads as a unit.
+
+Because it contains other fenced blocks, the `row` fence uses **four** backticks
+so the inner three-backtick blocks are part of its body:
+
+`````markdown
+````row
+Count your points on pickup: high-card points plus length points.
+
+```response-box
+title: High-card points
+A | 4
+K | 3
+Q | 2
+J | 1
+```
+
+```hand
+S: A K Q J 9 8
+H: K 5 2
+D: Q 4 3
+C: 3
+marks: S9=1 S8=2
+```
+````
+`````
+
+The body is parsed into ordered items: prose paragraphs (plain text — no inline
+markdown) and nested reserved blocks (`row` cannot nest inside `row`). Items
+render in a flex row; block figures render a touch larger.
+
+**Canonical form:** the four-backtick fence; body items in source order.
+
 ### `pagebreak` — explicit page break
 
 A layout hint for general page control, distinct from the automatic
@@ -327,8 +367,9 @@ parts this contract owns:
 
 ## v1 scope (Phase 1)
 
-Active in Phase 1: `hand`, `hands`, `auction`, `response-box`, `pagebreak`,
-front matter. `quiz` is defined and hand-authorable but the picker that
+Active in Phase 1: `hand` (with `marks`), `hands`, `auction`, `response-box`,
+`pagebreak`, `row`, front matter. `quiz` is defined and hand-authorable but the
+picker that
 populates it is Phase 2. `deal` is reserved and structurally linted but not
 resolved until Phase 2. This is exactly the vocabulary the two seed lessons
 (Lessons 1–6 summary, New Minor Forcing intro) need.

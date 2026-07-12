@@ -4,6 +4,7 @@ import { isCall, stripAnnotationMarker, annotationIndex } from './call'
 import { scanReservedBlocks } from './scan'
 import { isReservedBlock } from './types'
 import { parseHandBlock, serializeHandBlock } from './hand-block'
+import { parseRowBlock } from './row-block'
 import { parseAuctionBlock, toAuctionProps } from './auction-block'
 import { parseResponseBox } from './response-box-block'
 import { parseHandsBlock } from './hands-block'
@@ -82,6 +83,36 @@ describe('hand block parse/serialize', () => {
 
   it('rejects an illegal seat', () => {
     expect(() => parseHandBlock('seat: Z\nS: A')).toThrow(/illegal seat/)
+  })
+
+  it('parses and round-trips card badges (marks)', () => {
+    const b = parseHandBlock('S: A K Q J 9 8\nmarks: S9=1 S8=2')
+    expect(b.marks).toEqual({ S9: '1', S8: '2' })
+    const canonical = ['S: A K Q J 9 8', 'H: -', 'D: -', 'C: -', 'marks: S9=1 S8=2'].join('\n')
+    expect(serializeHandBlock(parseHandBlock(canonical))).toBe(canonical)
+    expect(() => parseHandBlock('S: A\nmarks: bogus')).toThrow(/bad mark/)
+  })
+})
+
+describe('row block', () => {
+  it('splits prose and nested reserved blocks in order', () => {
+    const body = [
+      'Lead-in narrative.',
+      '',
+      '```response-box',
+      'title: T',
+      'A | 4',
+      '```',
+      '',
+      '```hand',
+      'S: A K',
+      '```',
+    ].join('\n')
+    const items = parseRowBlock(body)
+    expect(items.map((i) => i.kind)).toEqual(['prose', 'block', 'block'])
+    expect(items[0]).toEqual({ kind: 'prose', text: 'Lead-in narrative.' })
+    expect(items[1]).toMatchObject({ kind: 'block', tag: 'response-box' })
+    expect(items[2]).toMatchObject({ kind: 'block', tag: 'hand' })
   })
 })
 
