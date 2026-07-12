@@ -10,6 +10,7 @@
 import { computed } from 'vue'
 import HandDisplay from './vendor/components/HandDisplay.vue'
 import CallLabel from './CallLabel.vue'
+import SuitText from './SuitText.vue'
 
 interface QuizItem {
   hand: { spades: string; hearts: string; diamonds: string; clubs: string }
@@ -42,7 +43,7 @@ const asComponent = (h: QuizItem['hand']) => ({
   <div class="bc-quiz-placeholder">
     <div class="head">
       <span class="title">{{ quiz.title }}</span>
-      <span class="prompt">{{ quiz.prompt }}</span>
+      <span class="prompt"><SuitText :text="quiz.prompt" /></span>
     </div>
     <ol class="items">
       <li v-for="(item, i) in quiz.items" :key="i" class="item">
@@ -55,7 +56,7 @@ const asComponent = (h: QuizItem['hand']) => ({
       <div class="answers-head">Answers</div>
       <ol>
         <li v-for="(item, i) in quiz.items" :key="i">
-          <CallLabel :value="item.answer" /><template v-if="item.explanation"> — {{ item.explanation }}</template>
+          <CallLabel :value="item.answer" /><template v-if="item.explanation"> — <SuitText :text="item.explanation" /></template>
         </li>
       </ol>
     </div>

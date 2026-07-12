@@ -5,6 +5,7 @@ import { listener, listenerCtx } from '@milkdown/plugin-listener'
 import { Milkdown, useEditor } from '@milkdown/vue'
 import { useNodeViewFactory } from '@prosemirror-adapter/vue'
 import { bridgeBlocks } from '../blocks'
+import { suitColoring } from '../blocks/suitColoring'
 
 const props = withDefaults(
   defineProps<{ initialMarkdown?: string; editable?: boolean }>(),
@@ -34,7 +35,8 @@ useEditor((root) =>
     // matchers take precedence over the generic code_block.
     .use(bridgeBlocks(nodeViewFactory))
     .use(commonmark)
-    .use(listener),
+    .use(listener)
+    .use(suitColoring),
 )
 </script>
 

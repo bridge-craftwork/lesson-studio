@@ -5,6 +5,7 @@
  * parses as a call.
  */
 import CallLabel from './CallLabel.vue'
+import SuitText from './SuitText.vue'
 import { isCall } from '@/dsl'
 
 defineProps<{
@@ -20,8 +21,8 @@ defineProps<{
     <table>
       <tbody>
         <tr v-for="(row, i) in rows" :key="i">
-          <td class="bid"><CallLabel v-if="isCall(row.left)" :value="row.left" /><template v-else>{{ row.left }}</template></td>
-          <td class="meaning">{{ row.right }}</td>
+          <td class="bid"><CallLabel v-if="isCall(row.left)" :value="row.left" /><SuitText v-else :text="row.left" /></td>
+          <td class="meaning"><SuitText :text="row.right" /></td>
         </tr>
       </tbody>
     </table>

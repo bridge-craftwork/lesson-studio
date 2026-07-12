@@ -10,6 +10,7 @@
 import { computed } from 'vue'
 import LessonDocument from '../editor/LessonDocument.vue'
 import { STARTER_LESSON } from '../editor/starter'
+import { splitFrontMatter } from '@/dsl'
 
 const markdown = computed(() => {
   const param = new URLSearchParams(window.location.search).get('lesson')
@@ -20,10 +21,13 @@ const markdown = computed(() => {
     return STARTER_LESSON
   }
 })
+
+// Per-lesson column count (front-matter `columns`, default 2).
+const columns = computed(() => splitFrontMatter(markdown.value).data?.columns ?? 2)
 </script>
 
 <template>
-  <div class="print-view">
+  <div class="print-view" :style="{ '--print-columns': columns }">
     <LessonDocument :markdown="markdown" :editable="false" />
   </div>
 </template>

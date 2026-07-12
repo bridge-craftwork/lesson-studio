@@ -8,6 +8,7 @@ import { parseAuctionBlock, toAuctionProps } from './auction-block'
 import { parseResponseBox } from './response-box-block'
 import { parseHandsBlock } from './hands-block'
 import { formatCall, callSegments } from './call'
+import { splitRedSuits } from './suits'
 import { splitFrontMatter, joinFrontMatter, lessonTitle, serializeFrontMatter } from './front-matter'
 import { STARTER_LESSON } from '../editor/starter'
 
@@ -101,6 +102,15 @@ describe('call formatting', () => {
     // NT and non-bids are a single black segment
     expect(callSegments('3NT')).toEqual([{ text: '3NT' }])
     expect(callSegments('P')).toEqual([{ text: 'Pass' }])
+  })
+
+  it('splits red-suit glyphs out of free text for coloring', () => {
+    expect(splitRedSuits('open 1♦; with 3-3 open 1♣')).toEqual([
+      { text: 'open 1' },
+      { text: '♦', red: true },
+      { text: '; with 3-3 open 1♣' },
+    ])
+    expect(splitRedSuits('no suits here')).toEqual([{ text: 'no suits here' }])
   })
 })
 

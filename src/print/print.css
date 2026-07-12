@@ -30,9 +30,11 @@
 /* Two-column newsletter body. Blocks and headings never split across a column
    or page break; a heading never dangles at the foot of a column. */
 .print-view .ProseMirror {
-  column-count: 2;
-  column-gap: 0.4in;
-  column-fill: balance;
+  column-count: var(--print-columns, 2);
+  column-gap: 0.35in;
+  /* Fill each column to the page before starting the next, so page one packs
+     fully instead of balancing content down onto a second page. */
+  column-fill: auto;
   font-size: 0.92rem;
   line-height: 1.4;
 }

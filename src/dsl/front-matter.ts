@@ -53,6 +53,7 @@ export function serializeFrontMatter(fm: Partial<FrontMatter>): string {
   if (fm.author) ordered.author = fm.author
   if (fm.status) ordered.status = fm.status
   if (fm['reviewed-by']) ordered['reviewed-by'] = fm['reviewed-by']
+  if (fm.columns && fm.columns !== 2) ordered.columns = fm.columns
   return `---\n${stringifyYaml(ordered).trimEnd()}\n---\n`
 }
 

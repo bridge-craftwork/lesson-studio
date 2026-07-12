@@ -35,6 +35,8 @@ export interface FrontMatter {
   author: string
   status: 'draft' | 'published'
   'reviewed-by': string
+  /** Print-layout hint: number of newsletter columns in the print view (default 2). */
+  columns?: number
 }
 
 /** The reserved fenced-block language tags (Contract 1). */

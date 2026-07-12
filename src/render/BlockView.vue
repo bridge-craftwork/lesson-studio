@@ -14,6 +14,7 @@ import {
   QuizSnapshot,
 } from '@bridge-craftwork/bridge-components'
 import CallLabel from '../bridge/CallLabel.vue'
+import SuitText from '../bridge/SuitText.vue'
 import {
   parseHandBlock,
   parseHandsBlock,
@@ -81,7 +82,7 @@ const model = computed<Rendered>(() => {
         <ol v-if="model.auction.meanings.length" class="auction__notes">
           <li v-for="m in model.auction.meanings" :key="m.note">
             <span class="auction__note-num">{{ m.note }}.</span>
-            <CallLabel :value="m.bid" />: {{ m.meaning }}
+            <CallLabel :value="m.bid" />: <SuitText :text="m.meaning" />
           </li>
         </ol>
       </div>

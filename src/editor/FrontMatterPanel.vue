@@ -18,6 +18,7 @@ export type FrontMatterFields = {
   author: string
   status: 'draft' | 'published'
   'reviewed-by': string
+  columns: number
 }
 
 const props = defineProps<{ data: FrontMatterFields; editable?: boolean }>()
@@ -57,6 +58,13 @@ function removeTag(tag: string) {
         </label>
         <label>Author <input v-model="data.author" placeholder="Your name" /></label>
         <label>Reviewed by <input v-model="data['reviewed-by']" placeholder="self" /></label>
+        <label>Print columns
+          <select v-model.number="data.columns">
+            <option :value="1">1</option>
+            <option :value="2">2</option>
+            <option :value="3">3</option>
+          </select>
+        </label>
         <label class="fm-grid__wide">Skill paths
           <div class="fm-tags">
             <span v-for="tag in data.skill_paths" :key="tag" class="fm-tag">

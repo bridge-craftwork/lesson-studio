@@ -26,6 +26,7 @@ function defaults(): FrontMatterFields {
     author: '',
     status: 'draft',
     'reviewed-by': '',
+    columns: 2,
   }
 }
 
