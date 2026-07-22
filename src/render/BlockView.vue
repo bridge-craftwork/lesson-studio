@@ -81,7 +81,7 @@ const model = computed<Rendered>(() => {
 </script>
 
 <template>
-  <div class="block-view">
+  <div class="block-view" :class="`block-view--${model.kind}`">
     <template v-if="model.kind === 'hand'">
       <HandDisplay :hand="model.hand" :show-hcp="true" :marks="model.marks" />
     </template>
@@ -143,6 +143,20 @@ const model = computed<Rendered>(() => {
   /* Row figures read as the section's focus — a step up from the document
      baseline (:root --table-scale) so hand badges have room. */
   --table-scale: 0.78;
+}
+/* An auction spans the full column rather than shrink-wrapping. Otherwise the
+   figure's width is set by whichever is wider — the table or the FOOTNOTES —
+   so an auction with a long note renders wider than one with short notes. A
+   definite width also keeps the table above the component's "dense" threshold
+   (< 280 × scale), which would otherwise shrink the bids. */
+.block-view--auction {
+  display: block;
+}
+.auction {
+  display: block;
+  /* Auction bids are natively 18px against the hand's 24px cards, so they need
+     a higher scale than the document baseline to read at the same size. */
+  --table-scale: 0.86;
 }
 .auction__notes {
   list-style: none;
