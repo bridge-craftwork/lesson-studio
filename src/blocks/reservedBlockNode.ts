@@ -48,7 +48,16 @@ export function reservedBlockNode(tag: ReservedBlock) {
 
   const view = (factory: NodeViewFactory) =>
     $view(schema, () =>
-      factory({ component: BlockNodeView, as: 'div', stopEvent: () => false }),
+      factory({
+        component: BlockNodeView,
+        as: 'div',
+        // Let the source-edit textarea handle its own keys/selection; without
+        // this ProseMirror swallows typing inside the node view.
+        stopEvent: (event: Event) => {
+          const target = event.target as HTMLElement | null
+          return Boolean(target?.closest?.('[data-block-source]'))
+        },
+      }),
     )
 
   return { schema, view }
