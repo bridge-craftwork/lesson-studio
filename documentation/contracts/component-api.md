@@ -196,6 +196,34 @@ consumes so editor and print render identically:
   multicol flow are not. The `pagebreak` block maps to `break-before: page`;
   the answer-deferral break is inserted by the shell before the Answers section.
 
+## lesson-studio as a first-class consumer
+
+The components were built for the student and teacher apps, but **lesson-studio
+is a first-class client of the library, not a guest** (decision, 2026-07-22).
+Print/lesson needs may therefore be met by *adding to the component API* rather
+than by lesson-studio reaching into component internals.
+
+This matters for snapshot durability: any styling lesson-studio applies by
+targeting a component's internal class names or CSS variables breaks silently
+the next time the components are re-snapshotted. Coupling belongs at the props
+boundary, which is exactly what this contract is for.
+
+**Current leaks to retire** (lesson-studio reaches into internals today):
+
+| Leak | Where | Should become |
+|---|---|---|
+| `break-inside: avoid` applied by targeting `.holding` / `.auction-table` | lesson-studio `src/print/print.css` | A **`no-break`** prop (or always-on print behavior) on every block component's root |
+| `--table-scale: 1.2` set on row figures | lesson-studio `src/render/BlockView.vue` | A documented **size/scale prop** (e.g. `scale` or `density`) rather than an internal CSS variable |
+
+Both are already implied by the Print stylesheet tokens section above — the
+components own their print behavior; consumers pass props.
+
+**Rule for structured (per-block) editing.** When lesson-studio adds in-place
+editing for a block type, it edits the **DSL model** and re-renders through the
+component's props. It must never make the component's rendered DOM editable or
+reach into its markup — that would couple editing to render internals and break
+on every snapshot. Components stay pure, read-only renderers behind their props.
+
 ## Build status (extraction plan)
 
 | Component | DSL block | Status |
@@ -235,3 +263,11 @@ happens against the now-proven consumer (architecture doc Roadmap).
    `SeatPanel`'s interaction coupling.
 4. **Package export surface.** Confirm the print stylesheet tokens ship from the
    package (vs. a separate `@bridge-craftwork/bridge-print` sub-path export).
+5. **Additive props for lesson-studio** (see "first-class consumer" above).
+   Agree the names and shapes with Bridge-Classroom before the next snapshot:
+   - `no-break` — root gets `break-inside: avoid`. Needed by every block
+     component for column/page-safe print.
+   - a **size/scale** prop to replace lesson-studio setting `--table-scale`
+     directly; row figures currently render at 1.2×.
+   Both are additive (MINOR), so they can land without disturbing the student
+   and teacher apps.
