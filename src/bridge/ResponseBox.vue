@@ -4,9 +4,8 @@
  * A titled bid/meaning table; the left column renders with suit glyphs when it
  * parses as a call.
  */
-import CallLabel from './CallLabel.vue'
+import BidText from './BidText.vue'
 import SuitText from './SuitText.vue'
-import { isCall } from '@/dsl'
 
 defineProps<{
   title: string
@@ -21,7 +20,7 @@ defineProps<{
     <table>
       <tbody>
         <tr v-for="(row, i) in rows" :key="i">
-          <td class="bid"><CallLabel v-if="isCall(row.left)" :value="row.left" /><SuitText v-else :text="row.left" /></td>
+          <td class="bid"><BidText :text="row.left" /></td>
           <td class="meaning"><SuitText :text="row.right" /></td>
         </tr>
       </tbody>

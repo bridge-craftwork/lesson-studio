@@ -9,7 +9,7 @@ import { validateLesson } from './validate'
 import { parseAuctionBlock, toAuctionProps } from './auction-block'
 import { parseResponseBox } from './response-box-block'
 import { parseHandsBlock } from './hands-block'
-import { formatCall, callSegments } from './call'
+import { formatCall, callSegments, bidTextSegments } from './call'
 import { splitRedSuits } from './suits'
 import { splitFrontMatter, joinFrontMatter, lessonTitle, serializeFrontMatter } from './front-matter'
 import { STARTER_LESSON } from '../editor/starter'
@@ -136,6 +136,20 @@ describe('call formatting', () => {
     expect(callSegments('P')).toEqual([{ text: 'Pass' }])
   })
 
+  it('renders compound bid notation with glyphs (2/3H)', () => {
+    // levels stay black, only the strain becomes a (red) glyph
+    expect(bidTextSegments('2/3H')).toEqual([{ text: '2/3' }, { text: '♥', red: true }])
+    expect(bidTextSegments('2/3S')).toEqual([{ text: '2/3' }, { text: '♠', red: false }])
+    expect(bidTextSegments('2/3NT')).toEqual([{ text: '2/3' }, { text: 'NT' }])
+    expect(bidTextSegments('3D')).toEqual([{ text: '3' }, { text: '♦', red: true }])
+  })
+
+  it('leaves non-bid text alone', () => {
+    expect(bidTextSegments('Jump')).toEqual([{ text: 'Jump' }])
+    expect(bidTextSegments('5 Clubs')).toEqual([{ text: '5 Clubs' }])
+    expect(bidTextSegments('After 1st round')).toEqual([{ text: 'After 1st round' }])
+  })
+
   it('splits red-suit glyphs out of free text for coloring', () => {
     expect(splitRedSuits('open 1♦; with 3-3 open 1♣')).toEqual([
       { text: 'open 1' },
@@ -156,6 +170,17 @@ describe('auction block', () => {
     const props = toAuctionProps(block)
     expect(props.bids[6]).toBe('2D')
     expect(props.meanings).toEqual([{ position: 6, bid: '2D', meaning: 'NMF', note: 1 }])
+  })
+
+  it('accepts PBN =n= annotations (detached and attached) and legacy ^n', () => {
+    const pbn = parseAuctionBlock('dealer: N\n1C P 1S P\n1NT P 2D =1= P\n---\n1. NMF')
+    expect(toAuctionProps(pbn).meanings).toEqual([
+      { position: 6, bid: '2D', meaning: 'NMF', note: 1 },
+    ])
+    // attached form and the legacy caret resolve identically
+    expect(toAuctionProps(parseAuctionBlock('dealer: N\n1C=1=\n---\n1. x')).meanings[0].note).toBe(1)
+    expect(toAuctionProps(parseAuctionBlock('dealer: N\n1C^1\n---\n1. x')).meanings[0].note).toBe(1)
+    expect(() => parseAuctionBlock('dealer: N\n=1= 1C')).toThrow(/precedes any call/)
   })
 
   it('keeps AP and rejects an illegal call', () => {

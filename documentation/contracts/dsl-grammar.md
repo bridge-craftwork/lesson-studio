@@ -161,14 +161,15 @@ lays them into the W-N-E-S grid from `dealer` — the source does not carry a
 grid, matching the component's `bids` prop and Contract 3's `{dealer, calls}`
 auction shape. Calls read left-to-right, top-to-bottom, starting with the
 dealer; line breaks are for readability only (conventionally one round of four
-per line). Annotation markers are `^1`, `^2`, … appended to a call, with
-numbered notes after a `---` separator. A trailing `AP` stands for All Pass.
+per line). Annotations follow the **PBN convention**: a `=1=`, `=2=`, … marker
+after the call it annotates, with numbered notes after a `---` separator. A
+trailing `AP` stands for All Pass.
 
 ````markdown
 ```auction
 dealer: N
 1C   P    1D   P
-1H   P    2C^1 P
+1H   P    2C =1=  P
 2H   AP
 ---
 1. Fourth-suit forcing, game-forcing
@@ -182,10 +183,17 @@ dealer: N
 Rules: calls are whitespace-separated in bidding order (dealer first, clockwise);
 newlines are insignificant. Calls use the shared Call notation; the renderer
 maps strains to glyphs and applies dealer alignment. `AP` may replace a closing
-run of passes. Notes are `N. text`, numbered from 1, matching the `^N` markers.
+run of passes. Notes are `N. text`, numbered from 1, matching the `=N=` markers;
+the renderer shows each marker as a superscript on its call.
+
+**Annotation notation.** `=N=` matches the PBN standard (a note reference in a
+PBN auction section), so lesson auctions read the same way as the PBN files
+lessons are often derived from. The marker may be written detached (`2C =1=`,
+preferred) or attached (`2C=1=`). The earlier `^N` form is still parsed for
+back-compatibility but is no longer canonical.
 
 **Canonical form:** `dealer` line; then calls one round (up to four) per line,
-single-space-separated, markers attached; optional `---` then numbered notes in
+single-space-separated, `=N=` markers detached after their call; optional `---` then numbered notes in
 order. (Superseded the earlier W-N-E-S source grid; see Contract 2 — the
 component owns grid layout, so the source stays a flat call list.)
 
@@ -346,7 +354,7 @@ parts this contract owns:
 3. `hand`/`hands`: holdings use only legal ranks; no duplicate cards within a
    hand; a full hand has 13 cards (fragments warn, don't fail).
 4. `auction`: `dealer` present; every call is legal Call notation (or `AP`);
-   every `^N` marker has a matching note and vice-versa.
+   every `=N=` marker has a matching note and vice-versa.
 5. `response-box`: `title` present; every row has exactly one ` | `.
 6. `deal`: structurally well-formed (v1 does **not** resolve the reference).
 7. `quiz`: body validates against Contract 3 `quiz/v1`.

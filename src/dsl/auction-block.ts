@@ -23,8 +23,11 @@ const NOTE_LINE = /^(\d+)\.\s*(.*)$/
 
 /**
  * Parse an `auction` block body: a `dealer:` key, a flat whitespace-separated
- * list of calls (annotation markers `^n` attached), and optional numbered
- * notes after a `---` separator.
+ * list of calls, and optional numbered notes after a `---` separator.
+ *
+ * Annotations follow the PBN convention — a `=n=` marker after the call it
+ * annotates (`2D =1=`), as in PBN auction sections. The marker may also be
+ * written attached (`2D=1=`), and the legacy `2D^1` form is still accepted.
  */
 export function parseAuctionBlock(body: string): AuctionBlock {
   const [callPart, notePart = ''] = body.split(/^---\s*$/m)
@@ -42,6 +45,13 @@ export function parseAuctionBlock(body: string): AuctionBlock {
       continue
     }
     for (const token of line.split(/\s+/)) {
+      // A standalone PBN marker annotates the call before it: `2D =1=`.
+      const standalone = token.match(/^=(\d+)=$/)
+      if (standalone) {
+        if (calls.length === 0) throw new Error(`annotation "${token}" precedes any call`)
+        calls[calls.length - 1] = `${calls[calls.length - 1]}=${standalone[1]}=`
+        continue
+      }
       if (token === 'AP' || isCall(stripAnnotationMarker(token))) calls.push(token)
       else throw new Error(`illegal call "${token}" in auction`)
     }

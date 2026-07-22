@@ -39,7 +39,10 @@
               <span class="stacked-bid" v-html="formatBidHtml(divergedBids[getBidIndexFromPosition(roundIdx, bidIdx)][kind])"></span>
             </div>
           </template>
-          <span v-else-if="bid" v-html="formatBidHtml(bid)"></span>
+          <span v-else-if="bid" class="bid-with-note"><span v-html="formatBidHtml(bid)"></span><sup
+            v-if="noteFor(getBidIndexFromPosition(roundIdx, bidIdx)) != null"
+            class="bid-note"
+          >{{ noteFor(getBidIndexFromPosition(roundIdx, bidIdx)) }}</sup></span>
           <span v-else-if="showTurnIndicator && isCurrentTurn(roundIdx, bidIdx)" class="turn-indicator">?</span>
           <div
             v-if="bid && hoveredIdx === getBidIndexFromPosition(roundIdx, bidIdx) && tooltipFor(getBidIndexFromPosition(roundIdx, bidIdx))"
@@ -257,6 +260,14 @@ function formatBidHtml(bid) {
   return html
 }
 
+// LESSON-STUDIO DELTA (pending upstream): a `meanings` entry may carry a `note`
+// number, rendered as a superscript marker on the bid so printed lessons can
+// key their numbered footnotes to specific calls (hover tooltips don't print).
+function noteFor(bidIdx) {
+  const m = props.meanings?.find(x => x.position === bidIdx)
+  return m && m.note != null ? m.note : null
+}
+
 // Returns HTML-ready tooltip content, or '' to suppress the tooltip entirely.
 // Prefers the longer `meaningExtended` (richer context: point ranges, suit
 // lengths, etc.) when BBA returns it; falls back to the short `meaning`.
@@ -402,6 +413,19 @@ function tooltipFor(bidIdx) {
 
 .bid-cell :deep(.black) {
   color: #1a1a1a;
+}
+
+/* LESSON-STUDIO DELTA (pending upstream): footnote marker on an annotated bid. */
+.bid-with-note {
+  display: inline-flex;
+  align-items: flex-start;
+}
+.bid-note {
+  font-size: 0.6em;
+  line-height: 1;
+  margin-left: 0.1em;
+  color: #555;
+  font-weight: 600;
 }
 
 .bid-cell :deep(.bid-pass) {
