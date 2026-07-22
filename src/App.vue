@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref, onMounted, onBeforeUnmount } from 'vue'
 import LessonDocument from './editor/LessonDocument.vue'
 import { useLessonSession } from './lesson/useLessonSession'
 
@@ -11,6 +12,27 @@ const session = useLessonSession()
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
 }
+
+// The Drafts <details> behaves like a menu: picking a draft closes it, as does
+// clicking outside. (Deleting leaves it open — you may be pruning several.)
+const draftsMenu = ref<HTMLDetailsElement | null>(null)
+
+function closeDrafts() {
+  if (draftsMenu.value) draftsMenu.value.open = false
+}
+
+function restoreDraft(id: string) {
+  session.restoreDraft(id)
+  closeDrafts()
+}
+
+function onDocumentPointerDown(event: PointerEvent) {
+  const menu = draftsMenu.value
+  if (menu?.open && !menu.contains(event.target as Node)) closeDrafts()
+}
+
+onMounted(() => document.addEventListener('pointerdown', onDocumentPointerDown))
+onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPointerDown))
 </script>
 
 <template>
@@ -26,13 +48,13 @@ function formatTime(ts: number): string {
         </button>
         <button @click="session.saveAs()">Save As…</button>
 
-        <details class="drafts">
+        <details ref="draftsMenu" class="drafts">
           <summary>Drafts</summary>
           <div class="drafts__menu">
             <p v-if="!session.drafts.value.length" class="drafts__empty">No drafts yet.</p>
             <ul v-else>
               <li v-for="d in session.drafts.value" :key="d.id">
-                <button class="drafts__restore" @click="session.restoreDraft(d.id)">
+                <button class="drafts__restore" @click="restoreDraft(d.id)">
                   <span class="drafts__title">{{ d.title }}</span>
                   <span class="drafts__time">{{ formatTime(d.updatedAt) }}</span>
                 </button>
