@@ -140,9 +140,9 @@ const model = computed<Rendered>(() => {
 }
 .block-row__item {
   flex: 0 0 auto;
-  /* Row figures read as the section's focus — render a touch larger so hand
-     badges (length points) have room and don't crowd adjacent cards. */
-  --table-scale: 1.2;
+  /* Row figures read as the section's focus — a step up from the document
+     baseline (:root --table-scale) so hand badges have room. */
+  --table-scale: 0.78;
 }
 .auction__notes {
   list-style: none;

@@ -7,6 +7,14 @@
   --ls-panel: #f7f7f8;
   --ls-border: #e4e4e7;
   --ls-accent: #1d4ed8;
+
+  /* The bridge components size everything as calc(Npx * var(--table-scale)).
+     That var is provided by the Bridge-Classroom app; without it every such
+     calc() is INVALID, so widths/font-sizes silently fall back — which left
+     hand rows shrink-wrapping each suit glyph (ragged card alignment) and
+     rendering at inherited text size. Define it here as the host app.
+     Lessons want a denser figure than the app's table view, hence < 1. */
+  --table-scale: 0.62;
 }
 
 * {
