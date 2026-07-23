@@ -11,7 +11,7 @@ import { computed } from 'vue'
 import LessonDocument from '../editor/LessonDocument.vue'
 import { STARTER_LESSON } from '../editor/starter'
 import { PRINT_STASH_KEY } from '../lesson/useLessonSession'
-import { splitFrontMatter } from '@/dsl'
+import { splitFrontMatter, printTypography } from '@/dsl'
 
 // Resolution order: ?lesson= (base64, used by the print-pdf script) →
 // the editor's stashed current lesson (interactive Print) → the starter.
@@ -27,12 +27,19 @@ const markdown = computed(() => {
   return localStorage.getItem(PRINT_STASH_KEY) ?? STARTER_LESSON
 })
 
-// Per-lesson column count (front-matter `columns`, default 2).
-const columns = computed(() => splitFrontMatter(markdown.value).data?.columns ?? 2)
+// Per-lesson print layout and typography (Contract 4).
+const type = computed(() => printTypography(splitFrontMatter(markdown.value).data))
 </script>
 
 <template>
-  <div class="print-view" :style="{ '--print-columns': columns }">
+  <div
+    class="print-view"
+    :style="{
+      '--print-columns': type.columns,
+      '--print-font-pt': type.fontSizePt,
+      '--print-text-scale': type.textScale,
+    }"
+  >
     <LessonDocument :markdown="markdown" :editable="false" />
   </div>
 </template>

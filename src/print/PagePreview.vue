@@ -33,7 +33,7 @@
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import LessonDocument from '../editor/LessonDocument.vue'
-import { splitFrontMatter } from '@/dsl'
+import { splitFrontMatter, printTypography } from '@/dsl'
 
 const props = defineProps<{ markdown: string }>()
 
@@ -59,9 +59,10 @@ const flow = ref<HTMLElement | null>(null)
  */
 const SETTLE_MS = 300
 const shown = ref(props.markdown)
-// Read from the settled text, not the live prop, so the column count can't
-// change a beat before the content it applies to.
-const columns = computed(() => splitFrontMatter(shown.value).data?.columns ?? 2)
+// Read from the settled text, not the live prop, so the layout can't change a
+// beat before the content it applies to.
+const type = computed(() => printTypography(splitFrontMatter(shown.value).data))
+const columns = computed(() => type.value.columns)
 const renderKey = ref(0)
 let settleTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -147,7 +148,7 @@ onBeforeUnmount(() => {
   clearTimeout(measureTimer)
 })
 
-watch(columns, refresh)
+watch(type, refresh, { deep: true })
 </script>
 
 <template>
@@ -156,7 +157,7 @@ watch(columns, refresh)
       <span class="pp__count" :class="{ 'is-over': pages > 1 }">
         {{ pages }} page{{ pages === 1 ? '' : 's' }}
       </span>
-      <span class="pp__cols">{{ columns }}-column</span>
+      <span class="pp__cols">{{ columns }}-column · {{ type.effectivePt }}pt</span>
       <span v-if="pages > 1" class="pp__hint">
         showing page 1 — more columns won’t help, narrow columns wrap taller
       </span>
@@ -168,7 +169,11 @@ watch(columns, refresh)
           <div
             ref="flow"
             class="print-view pp__flow"
-            :style="{ '--print-columns': columns }"
+            :style="{
+              '--print-columns': type.columns,
+              '--print-font-pt': type.fontSizePt,
+              '--print-text-scale': type.textScale,
+            }"
           >
             <LessonDocument :key="renderKey" :markdown="shown" :editable="false" />
           </div>

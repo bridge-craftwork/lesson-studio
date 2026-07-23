@@ -54,7 +54,48 @@ export function serializeFrontMatter(fm: Partial<FrontMatter>): string {
   if (fm.status) ordered.status = fm.status
   if (fm['reviewed-by']) ordered['reviewed-by'] = fm['reviewed-by']
   if (fm.columns && fm.columns !== 2) ordered.columns = fm.columns
+  if (fm['font-size'] && fm['font-size'] !== 12) ordered['font-size'] = fm['font-size']
+  if (fm['text-scale'] && fm['text-scale'] !== 1) ordered['text-scale'] = fm['text-scale']
   return `---\n${stringifyYaml(ordered).trimEnd()}\n---\n`
+}
+
+/** Print typography defaults (Contract 4). Sized for senior legibility. */
+export const DEFAULT_FONT_SIZE_PT = 12
+export const DEFAULT_TEXT_SCALE = 1
+export const DEFAULT_COLUMNS = 2
+
+export interface PrintTypography {
+  columns: number
+  /** Authored base size, in points. */
+  fontSizePt: number
+  /** Nudge multiplier applied on top. */
+  textScale: number
+  /** What actually renders: `fontSizePt * textScale`, in points. */
+  effectivePt: number
+}
+
+/**
+ * Resolve the print typography from front matter, defaults applied. Shared by
+ * the print view and the live preview so the two can never disagree about what
+ * a lesson looks like — the preview's page count would be a lie if they did.
+ */
+export function printTypography(data: Partial<FrontMatter> | null | undefined): PrintTypography {
+  const columns = numberOr(data?.columns, DEFAULT_COLUMNS)
+  const fontSizePt = numberOr(data?.['font-size'], DEFAULT_FONT_SIZE_PT)
+  const textScale = numberOr(data?.['text-scale'], DEFAULT_TEXT_SCALE)
+  return {
+    columns,
+    fontSizePt,
+    textScale,
+    // Rounded to hundredths: a raw float here ends up in a CSS length, and
+    // sub-hundredth jitter would make measurements irreproducible.
+    effectivePt: Math.round(fontSizePt * textScale * 100) / 100,
+  }
+}
+
+function numberOr(value: unknown, fallback: number): number {
+  const n = typeof value === 'number' ? value : Number(value)
+  return Number.isFinite(n) && n > 0 ? n : fallback
 }
 
 /**

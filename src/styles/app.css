@@ -1,5 +1,17 @@
 :root {
-  --ls-font: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  /* Atkinson Hyperlegible — designed by the Braille Institute for low vision,
+     which is the right bias for an audience of senior learners. Bundled rather
+     than left to `system-ui` for two reasons: `system-ui` resolves to whatever
+     the *rendering* machine has, so PDFs built elsewhere wrap differently and
+     paginate differently; and macOS's system font is a variable font Chrome
+     cannot embed as TrueType, so it emitted 60+ Type 3 subsets per lesson.
+     A static bundled face embeds once, cleanly.
+
+     The suit glyphs (U+2660–2667) are NOT in Atkinson's latin/latin-ext
+     ranges, so they fall through this list — the named symbol faces come
+     before the generic so the fallback is at least predictable per platform. */
+  --ls-font: "Atkinson Hyperlegible", "Apple Symbols", "Segoe UI Symbol",
+    "Noto Sans Symbols 2", "DejaVu Sans", system-ui, sans-serif;
   --ls-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
   --ls-fg: #1a1a1a;
   --ls-muted: #6b7280;
@@ -15,6 +27,15 @@
      rendering at inherited text size. Define it here as the host app.
      Lessons want a denser figure than the app's table view, hence < 1. */
   --table-scale: 0.62;
+
+  /* HandDisplay hardcodes a card face; this hands it the document's instead,
+     so card ranks match the lesson and embed with the rest of the text.
+     NOT `inherit`: a CSS-wide keyword as a custom-property value means the
+     property inherits, not that the substituted value is the keyword — so
+     `--hand-font: inherit` reads as unset and the component's own fallback
+     wins. Name the stack. */
+  --hand-font: "Atkinson Hyperlegible", "Apple Symbols", "Segoe UI Symbol",
+    "Noto Sans Symbols 2", "DejaVu Sans", system-ui, sans-serif;
 }
 
 * {

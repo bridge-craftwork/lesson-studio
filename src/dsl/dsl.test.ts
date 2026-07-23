@@ -14,7 +14,7 @@ import { parseResponseBox } from './response-box-block'
 import { parseHandsBlock } from './hands-block'
 import { formatCall, callSegments, bidTextSegments } from './call'
 import { splitRedSuits } from './suits'
-import { splitFrontMatter, joinFrontMatter, lessonTitle, serializeFrontMatter } from './front-matter'
+import { splitFrontMatter, joinFrontMatter, lessonTitle, serializeFrontMatter, printTypography } from './front-matter'
 import { STARTER_LESSON } from '../editor/starter'
 
 describe('hand notation', () => {
@@ -230,6 +230,60 @@ describe('auction block', () => {
     expect(() => parseAuctionBlock('dealer: N\ncolumns: 3\n1C')).toThrow(/illegal columns/)
     expect(() => parseAuctionBlock('dealer: N\ngrid: maybe\n1C')).toThrow(/illegal grid/)
     expect(() => parseAuctionBlock('dealer: N\nlabels: Opener\n1C')).toThrow(/exactly two/)
+  })
+})
+
+describe('print typography', () => {
+  it('defaults to the house style when nothing is authored', () => {
+    // 12pt is deliberately larger than a typical handout: this material is
+    // read by seniors.
+    expect(printTypography(null)).toEqual({
+      columns: 2,
+      fontSizePt: 12,
+      textScale: 1,
+      effectivePt: 12,
+    })
+  })
+
+  it('multiplies the nudge into the authored base', () => {
+    expect(printTypography({ 'font-size': 14, 'text-scale': 0.95 })).toMatchObject({
+      fontSizePt: 14,
+      textScale: 0.95,
+      effectivePt: 13.3,
+    })
+  })
+
+  it('rounds the effective size, so a measurement is reproducible', () => {
+    // 11 * 0.93 = 10.229999… — raw, that lands in a CSS length and makes
+    // page measurements jitter.
+    expect(printTypography({ 'font-size': 11, 'text-scale': 0.93 }).effectivePt).toBe(10.23)
+  })
+
+  it('falls back on nonsense rather than rendering at zero', () => {
+    expect(printTypography({ 'font-size': 0, 'text-scale': -1 })).toMatchObject({
+      fontSizePt: 12,
+      textScale: 1,
+    })
+  })
+
+  it('omits defaults when serializing, and keeps what was set', () => {
+    const base = {
+      title: 'T',
+      skill_paths: ['bidding_conventions/stayman'],
+      level: 'basic' as const,
+      author: 'A',
+      status: 'draft' as const,
+      'reviewed-by': 'self',
+    }
+    const plain = serializeFrontMatter({ ...base, 'font-size': 12, 'text-scale': 1 })
+    expect(plain).not.toContain('font-size')
+    expect(plain).not.toContain('text-scale')
+
+    const sized = serializeFrontMatter({ ...base, 'font-size': 14, 'text-scale': 0.95 })
+    expect(sized).toContain('font-size: 14')
+    expect(sized).toContain('text-scale: 0.95')
+    // and it parses back to what was written
+    expect(splitFrontMatter(sized).data).toMatchObject({ 'font-size': 14, 'text-scale': 0.95 })
   })
 })
 

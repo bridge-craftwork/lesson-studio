@@ -293,6 +293,10 @@ happens against the now-proven consumer (architecture doc Roadmap).
      lessons can key numbered notes to calls (hover tooltips don't print).
    - `meanings[].isAlert` rendered as a `!` marker on the bid. The prop shape
      already documents `isAlert`; nothing renders it today.
+   - a **typeface hook** on `HandDisplay`: it hardcodes `'Segoe UI', system-ui`
+     for card ranks, which overrides whatever the host document uses and, in
+     print, embeds a second font family for those glyphs alone. A prop (or
+     simply inheriting) would let the consumer own its typography.
    - a **legibility floor** on small labels that scale with `--table-scale`.
      `HandDisplay`'s `.hcp` starts at 12px and lands near 7px at the 0.62 scale
      a printed lesson uses; the cards survive because they start at 24px. Small

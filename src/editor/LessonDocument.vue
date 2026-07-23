@@ -27,6 +27,8 @@ function defaults(): FrontMatterFields {
     status: 'draft',
     'reviewed-by': '',
     columns: 2,
+    'font-size': 12,
+    'text-scale': 1,
   }
 }
 

@@ -42,6 +42,12 @@ concurrent Bridge-Classroom refactor can't destabilize lesson-studio (see the
      0.62 scale a printed lesson uses. No effect at scale 1.0. **Pending
      upstream** — small text wants an absolute floor, not only a proportional
      one, which is a general concern rather than a lesson-studio one.
+  6. `HandDisplay.vue`'s `.suit-row` takes its family from
+     `var(--hand-font, …)` instead of hardcoding `'Segoe UI', system-ui`.
+     Hardcoding a family overrides the host document's typography: in
+     lesson-studio the card ranks alone fell back to the system font and
+     embedded as Type 3 subsets in every printed PDF. The default is unchanged,
+     so upstream renders identically. **Pending upstream** as a real prop.
 
   Everything else is byte-for-byte upstream.
 

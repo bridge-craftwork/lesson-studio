@@ -90,6 +90,9 @@ restated here for convenience:
 | `author` | ✓ | string | |
 | `status` | ✓ | enum | `draft` \| `published`. |
 | `reviewed-by` | ✓ | string | Reviewer, or `self` for maintainer direct-push. |
+| `columns` | – | number | Print columns (default 2). |
+| `font-size` | – | number | Print body size in points (default 12 — sized for senior legibility). |
+| `text-scale` | – | number | Multiplier on `font-size` for page fitting (default 1). |
 
 ```yaml
 ---

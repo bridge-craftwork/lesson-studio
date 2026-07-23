@@ -37,6 +37,18 @@ export interface FrontMatter {
   'reviewed-by': string
   /** Print-layout hint: number of newsletter columns in the print view (default 2). */
   columns?: number
+  /**
+   * Body text size in points for print (default 12). The house size is set for
+   * senior legibility rather than density — larger than a typical handout.
+   */
+  'font-size'?: number
+  /**
+   * Multiplier on `font-size`, for nudging a lesson that just misses a page
+   * (default 1). Separate from `font-size` so the base stays a readable,
+   * comparable number across the library and the fitting tweak is visible as
+   * a tweak.
+   */
+  'text-scale'?: number
 }
 
 /** The reserved fenced-block language tags (Contract 1). */

@@ -103,6 +103,22 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
 - **Skill paths must exist in the taxonomy.** Validated against a **STOPGAP**
   `src/dsl/taxonomy.json` (48 paths extracted from Bridge-Classroom's
   `bakerBridgeTaxonomy.js`) until Contract 4 publishes the canonical one.
+- **Typography is bundled, not the system font.** `Atkinson Hyperlegible`
+  (Braille Institute, low-vision) ships with the app. `system-ui` was wrong on
+  two counts: it resolves to whatever the *rendering* machine has, so PDFs built
+  elsewhere wrap and paginate differently; and macOS's system font is variable,
+  which Chrome cannot embed as TrueType — it emitted **60+ Type 3 subsets**
+  per lesson (179KB → 53KB after the switch). Suit glyphs (U+2660–2667) are
+  *not* in Atkinson's ranges and still fall back per platform; bundling a
+  symbol font for four glyphs (382KB) wasn't worth it.
+- **A CSS-wide keyword as a custom-property value doesn't do what it looks
+  like.** `--hand-font: inherit` means "this property inherits", not "substitute
+  the keyword `inherit`" — so `var(--hand-font, …)` read as unset and the
+  fallback won. Name the actual stack.
+- **Print text size is per-lesson** via `font-size:` (points, default **12** —
+  larger than a typical handout, for senior readers) times `text-scale:`
+  (default 1, the page-fitting nudge). Resolve both through
+  `printTypography()` so the preview and the print view can't disagree.
 - **Print columns are per-lesson** via front-matter `columns:` (default 2).
   More columns ≠ fewer pages: narrow columns wrap tables *taller*. Trim content
   instead. Columns are a **print** concern — the editing surface stays

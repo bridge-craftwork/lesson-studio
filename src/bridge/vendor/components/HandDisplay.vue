@@ -316,7 +316,11 @@ function onPopupSelect(rank) {
   display: flex;
   align-items: center;
   gap: calc(var(--hd-gap, 8px) * var(--table-scale));
-  font-family: 'Segoe UI', system-ui, sans-serif;
+  /* LESSON-STUDIO DELTA (pending upstream): let the host override the card
+     face. Hardcoding a family here overrides the document's own typography —
+     in lesson-studio that meant card ranks alone fell back to the system font
+     and embedded as Type 3 subsets in every printed PDF. Default unchanged. */
+  font-family: var(--hand-font, 'Segoe UI', system-ui, sans-serif);
   /* --suit-scale (per row, default 1) compresses long suits horizontally to
      fit; below the floor the row truncates + shows a +N chip (never wraps or
      clips). At 1 this is calc(...*1) = today. */

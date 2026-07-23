@@ -31,17 +31,21 @@
    or page break; a heading never dangles at the foot of a column. */
 .print-view .ProseMirror {
   column-count: var(--print-columns, 2);
+  /* Authored size (Contract 4 `font-size` × `text-scale`), in points because
+     that is how print sizes are talked about. The default is deliberately
+     larger than a typical handout — this material is read by seniors. */
+  font-size: calc(var(--print-font-pt, 12) * var(--print-text-scale, 1) * 1pt);
   column-gap: 0.35in;
   /* Balance keeps the columns even for one-page lessons (the format's target).
      A lesson that overflows to a second page will leave the last page's
      columns uneven — trim it, or the pagebreak block splits it deliberately. */
   column-fill: balance;
-  font-size: 0.92rem;
   line-height: 1.4;
 }
 
 .print-view .ProseMirror h2 {
-  font-size: 1.02rem;
+  /* `em`, not `rem`: headings must track the authored body size. */
+  font-size: 1.11em;
   margin: 0.6rem 0 0.3rem;
   break-inside: avoid;
   break-after: avoid;

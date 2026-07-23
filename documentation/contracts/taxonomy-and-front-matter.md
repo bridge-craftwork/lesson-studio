@@ -189,6 +189,27 @@ The YAML header of every lesson. Authoritative here; the DSL grammar
 | `author` | ✓ | string | |
 | `status` | ✓ | enum | `draft` \| `published`. Merge to `main` with `published` = live. |
 | `reviewed-by` | ✓ | string | Reviewer name, or `self` for maintainer direct-push under branch-protection bypass. |
+| `columns` | – | number | Newsletter columns in the print view. Default `2`. |
+| `font-size` | – | number | Body text size **in points** for print. Default `12`. |
+| `text-scale` | – | number | Multiplier on `font-size`. Default `1`. |
+
+**Print typography.** These three are *presentation* hints — they change how a
+lesson prints, never what it says, and a consumer that renders lessons its own
+way may ignore them.
+
+The default `font-size` of **12pt is deliberately larger than a typical
+handout**: this material is read at the table by senior learners, and
+legibility outranks density. The same reasoning picks the typeface — the
+renderer ships Atkinson Hyperlegible, designed by the Braille Institute for low
+vision.
+
+`font-size` and `text-scale` are separate on purpose, though only their product
+(`font-size × text-scale`) reaches the page. `font-size` is the house size,
+comparable across the library and meaningful on its own; `text-scale` is a
+per-lesson **fitting nudge**, for a lesson that overruns one page by a little.
+Folding the nudge into the base would hide that a lesson is being squeezed —
+`font-size: 12` with `text-scale: 0.95` says something `font-size: 11.4` does
+not.
 
 ```yaml
 ---
@@ -210,6 +231,9 @@ reviewed-by: self
    (typos cannot silently fragment the remediation linkage).
 3. `primary`, if present, is a member of `skill_paths`.
 4. A `published` lesson has a non-empty `reviewed-by`.
+5. `columns`, `font-size` and `text-scale`, if present, are positive numbers.
+   A non-positive or unparseable value falls back to the default rather than
+   failing the render — bad typography should not block a lesson.
 
 ### Reconciliation note
 

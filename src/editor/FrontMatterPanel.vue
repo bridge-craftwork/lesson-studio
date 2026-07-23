@@ -19,6 +19,8 @@ export type FrontMatterFields = {
   status: 'draft' | 'published'
   'reviewed-by': string
   columns: number
+  'font-size': number
+  'text-scale': number
 }
 
 const props = defineProps<{ data: FrontMatterFields; editable?: boolean }>()
@@ -63,6 +65,25 @@ function removeTag(tag: string) {
             <option :value="1">1</option>
             <option :value="2">2</option>
             <option :value="3">3</option>
+          </select>
+        </label>
+        <label>Font size
+          <select v-model.number="data['font-size']">
+            <option :value="10">10 pt</option>
+            <option :value="11">11 pt</option>
+            <option :value="12">12 pt — default</option>
+            <option :value="13">13 pt</option>
+            <option :value="14">14 pt — large print</option>
+            <option :value="16">16 pt</option>
+          </select>
+        </label>
+        <label>Text scale
+          <select v-model.number="data['text-scale']">
+            <option :value="0.9">0.90× — tighter</option>
+            <option :value="0.95">0.95×</option>
+            <option :value="1">1.00× — none</option>
+            <option :value="1.05">1.05×</option>
+            <option :value="1.1">1.10× — looser</option>
           </select>
         </label>
         <label class="fm-grid__wide">Skill paths
