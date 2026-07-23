@@ -16,7 +16,7 @@ import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import { createRequire } from 'node:module'
 import { inflateSync } from 'node:zlib'
-import { PDFDocument, PDFName, PDFDict, PDFArray } from 'pdf-lib'
+import { PDFDocument, PDFName, PDFDict, PDFArray, AFRelationship } from 'pdf-lib'
 
 const require = createRequire(import.meta.url)
 
@@ -58,15 +58,20 @@ export async function embedSource(pdfBytes, lessonPath, opts = {}) {
   // about which one wins. Drop ours first so re-embedding replaces.
   dropAttachments(pdf, [SOURCE_ATTACHMENT, PROVENANCE_ATTACHMENT])
 
+  // AFRelationship marks *what the file is to this document*, so a reader can
+  // find the source by relationship rather than by guessing our filename —
+  // `Source` is the standard tag for "the document was generated from this".
   await pdf.attach(markdown, SOURCE_ATTACHMENT, {
     mimeType: 'text/markdown',
     description: 'Lesson DSL source — reconstructs this document exactly.',
+    afRelationship: AFRelationship.Source,
   })
 
   const meta = provenance(lessonPath, opts)
   await pdf.attach(Buffer.from(JSON.stringify(meta, null, 2), 'utf8'), PROVENANCE_ATTACHMENT, {
     mimeType: 'application/json',
     description: 'What produced this PDF.',
+    afRelationship: AFRelationship.Supplement,
   })
 
   // Surface the same facts in document properties, where a viewer's "Get Info"
