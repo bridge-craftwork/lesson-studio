@@ -128,10 +128,12 @@ Phase 1 is essentially complete: 4 contracts, editor with live + **source-editab
 blocks, front-matter panel, file management (New/Open/Save + draft autosave),
 block gallery, print → PDF, hosted, CI lint.
 
-Open: **PR #1** on lesson-library (two seed lessons, `status: draft`, awaiting
-content review). Not yet done: pdf-handouts integration, branch protection, and
-all of Phase 2 (publish the component package + real taxonomy JSON, wire `deal`,
-the quiz-picker with David's PBS emitter, volunteer submit flow).
+PR #1 merged 2026-07-22: lesson-library `main` now carries its first content —
+New Minor Forcing (`published`) and the Lessons 1–6 summary (`draft`) — plus the
+CI lint, which passed its first live run. Not yet done: pdf-handouts
+integration, branch protection, and all of Phase 2 (publish the component
+package + real taxonomy JSON, wire `deal`, the quiz-picker with David's PBS
+emitter, volunteer submit flow).
 
 ## Working style that fits this project
 
