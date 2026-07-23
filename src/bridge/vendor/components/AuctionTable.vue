@@ -673,8 +673,25 @@ function tooltipFor(bidIdx) {
 .round.two-col {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
+/* Two columns of bids stretched across a full print column put the pair far
+   apart and hard to read as one auction. Shrink-wrap to the content and centre
+   instead. Safe here where it isn't at four columns: the min-width floor exists
+   to align with the BiddingBox, which this layout never sits above, and the
+   two-column form is exempt from the density sensor that a narrow table would
+   otherwise trip. */
 .auction-table.two-column {
-  min-width: calc(var(--at-min-w, 308px) * var(--table-scale) / 2);
+  min-width: 0;
+  width: fit-content;
+  margin-inline: auto;
+}
+.auction-table.two-column .header.two-col,
+.auction-table.two-column .round.two-col {
+  grid-template-columns: repeat(2, minmax(0, auto));
+}
+.auction-table.two-column .bid-cell,
+.auction-table.two-column .header-cell {
+  min-width: calc(56px * var(--table-scale));
+  padding-inline: calc(10px * var(--table-scale));
 }
 
 /* Unruled: the convention in printed teaching material is a bare table — no

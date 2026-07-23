@@ -179,11 +179,19 @@ const auctionNotes = computed(() =>
 .block-view--auction {
   display: block;
 }
+/* Figures centre in their column. The auction already did (it fills the
+   width); the hand shrink-wrapped and sat left, which read as inconsistent. */
+.block-view--hand {
+  display: flex;
+  justify-content: center;
+}
 .auction {
   display: block;
   /* Auction bids are natively 18px against the hand's 24px cards, so they need
-     a higher scale than the document baseline to read at the same size. */
-  --table-scale: calc(0.86 * var(--lesson-scale, 1));
+     a higher scale than the document baseline to read at the same size. 0.9
+     puts a bid at 16.2px against 16px body text at the 12pt default — a bid
+     should never read smaller than the prose around it. */
+  --table-scale: calc(0.9 * var(--lesson-scale, 1));
 }
 .auction__notes {
   list-style: none;

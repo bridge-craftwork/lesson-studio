@@ -33,8 +33,11 @@ concurrent Bridge-Classroom refactor can't destabilize lesson-studio (see the
      - the two-column form is **exempt from `dense`**. Dense answers "four
        columns won't fit a console tile"; a two-column table is legitimately
        half-width and would false-positive, shrinking its bids.
-     - its `min-width` floor is halved, since that floor exists to align a
-       four-column auction with the BiddingBox beneath it.
+     - it **shrink-wraps and centres** rather than filling its container. The
+       min-width floor exists to align a four-column auction with the
+       BiddingBox beneath it, which this layout never sits above; stretched
+       across a print column the two bids land far apart and stop reading as
+       one auction.
      All specified in Contract 2 and **pending upstream**.
   5. `HandDisplay.vue` gives the `.hcp` label a **legibility floor**,
      `max(0.68em, calc(12px * var(--table-scale)))`. The cards scale down

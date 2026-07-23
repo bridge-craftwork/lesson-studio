@@ -148,6 +148,10 @@ non-pass call, or no call is non-pass, there is no active pair and the component
 renders the normal four-column grid. Because the fallback is silent, `columns:
 2` is always safe for a consumer to pass.
 
+The two-column form **shrink-wraps to its content and centres**, rather than
+filling its container as the four-column grid does: stretched across a print
+column, two columns of bids land too far apart to read as one auction.
+
 Review-mode decorations (turn indicator, wrong/correct highlighting, diverged
 stacked bids) are **not** rendered in the two-column form — it is a
 lesson/print layout, and those are student-app affordances.

@@ -7,11 +7,12 @@
      cannot embed as TrueType, so it emitted 60+ Type 3 subsets per lesson.
      A static bundled face embeds once, cleanly.
 
-     The suit glyphs (U+2660–2667) are NOT in Atkinson's latin/latin-ext
-     ranges, so they fall through this list — the named symbol faces come
-     before the generic so the fallback is at least predictable per platform. */
-  --ls-font: "Atkinson Hyperlegible", "Apple Symbols", "Segoe UI Symbol",
-    "Noto Sans Symbols 2", "DejaVu Sans", system-ui, sans-serif;
+     The suit glyphs (U+2660–2667) are NOT in Atkinson's ranges, so they fall
+     through to the next family that has them. Do NOT name a symbol font here:
+     "Apple Symbols" draws ♠/♣ small and thin against the em box, so listing it
+     picked a *worse* face than the platform default. `system-ui` has properly
+     weighted suits on every platform we care about. */
+  --ls-font: "Atkinson Hyperlegible", system-ui, sans-serif;
   --ls-mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, monospace;
   --ls-fg: #1a1a1a;
   --ls-muted: #6b7280;
@@ -39,8 +40,7 @@
      property inherits, not that the substituted value is the keyword — so
      `--hand-font: inherit` reads as unset and the component's own fallback
      wins. Name the stack. */
-  --hand-font: "Atkinson Hyperlegible", "Apple Symbols", "Segoe UI Symbol",
-    "Noto Sans Symbols 2", "DejaVu Sans", system-ui, sans-serif;
+  --hand-font: "Atkinson Hyperlegible", system-ui, sans-serif;
 }
 
 * {

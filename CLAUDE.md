@@ -65,8 +65,10 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   `calc(Npx * var(--table-scale))`. If that var is undefined the calc is
   *invalid* and width/font silently fall back — hands lose their fixed suit
   column and render ragged. It's set in `src/styles/app.css` (`:root`, 0.62);
-  auctions override to 0.86 because their native bid size (18px) differs from
-  the hand's card size (24px). **One global scale can't serve both.**
+  auctions override to 0.9 because their native bid size (18px) differs from
+  the hand's card size (24px) — 0.9 puts a bid a hair *above* body text, which
+  is the floor a bid should never fall below. **One global scale can't serve
+  both.**
 - **AuctionTable has a "dense" mode** below `280 × scale` container width that
   shrinks bids. Give auction figures a definite width or they trip it. The
   sensor watches the *parent*, so any shrink-wrapping ancestor makes it measure
@@ -108,9 +110,13 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   two counts: it resolves to whatever the *rendering* machine has, so PDFs built
   elsewhere wrap and paginate differently; and macOS's system font is variable,
   which Chrome cannot embed as TrueType — it emitted **60+ Type 3 subsets**
-  per lesson (179KB → 53KB after the switch). Suit glyphs (U+2660–2667) are
-  *not* in Atkinson's ranges and still fall back per platform; bundling a
-  symbol font for four glyphs (382KB) wasn't worth it.
+  per lesson (179KB → ~56KB after the switch). Suit glyphs (U+2660–2667) are
+  *not* in Atkinson's ranges and fall through to `system-ui`. **Don't name a
+  symbol font in the stack** — "Apple Symbols" draws ♠/♣ small and thin against
+  the em box, so listing it picked a *worse* face than the platform default and
+  made the suits hard to tell apart. The cost is that suits stay
+  platform-dependent and bring back a few Type 3 subsets; worth it, and far
+  short of the original 60+.
 - **Figures scale with the text.** `--lesson-scale` (1 = the 12pt house size)
   multiplies every `--table-scale`, and lesson-studio's own components size in
   `em`. Without it, `font-size: 14` grew the prose and left the hands, auctions
