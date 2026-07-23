@@ -21,6 +21,21 @@ concurrent Bridge-Classroom refactor can't destabilize lesson-studio (see the
      to specific calls, and the upstream component surfaces meanings only as
      hover tooltips — which don't print. **Pending upstream** as an additive
      prop (see Contract 2, "lesson-studio as a first-class consumer").
+  3. `AuctionTable.vue` renders a **`!` alert marker** on a bid whose `meanings`
+     entry sets `isAlert`. The prop shape already documents `isAlert` upstream;
+     nothing rendered it. Shares the superscript slot with the footnote number.
+  4. `AuctionTable.vue` gains the **`columns` / `labels` / `grid`** display
+     props — the two-column uncontested form used by nearly all printed
+     teaching material, explicit header labels, and an unruled variant. The
+     component derives the active pair from `bids` + `dealer` and silently
+     falls back to the four-column grid when the auction is competitive.
+     Two consequences worth knowing when re-applying:
+     - the two-column form is **exempt from `dense`**. Dense answers "four
+       columns won't fit a console tile"; a two-column table is legitimately
+       half-width and would false-positive, shrinking its bids.
+     - its `min-width` floor is halved, since that floor exists to align a
+       four-column auction with the BiddingBox beneath it.
+     All specified in Contract 2 and **pending upstream**.
 
   Everything else is byte-for-byte upstream.
 

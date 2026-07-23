@@ -187,6 +187,47 @@ describe('auction block', () => {
     expect(parseAuctionBlock('dealer: E\n1H 1S X 2S\n3H AP').calls).toContain('AP')
     expect(() => parseAuctionBlock('dealer: N\n1Z')).toThrow(/illegal call/)
   })
+
+  it('accepts a bare `!` alert, with or without a note', () => {
+    // A bare alert earns a meanings entry with no text — the component needs
+    // one to mark the cell, but it contributes no footnote line.
+    const bare = toAuctionProps(parseAuctionBlock('dealer: N\n1C P 1S P\n1NT P 2D! P'))
+    expect(bare.bids[6]).toBe('2D')
+    expect(bare.meanings).toEqual([{ position: 6, bid: '2D', isAlert: true }])
+
+    // `!` combines with a note and precedes it.
+    const both = toAuctionProps(parseAuctionBlock('dealer: N\n2D! =1=\n---\n1. NMF'))
+    expect(both.bids).toEqual(['2D'])
+    expect(both.meanings).toEqual([
+      { position: 0, bid: '2D', meaning: 'NMF', note: 1, isAlert: true },
+    ])
+  })
+
+  it('parses the display keys and defaults them', () => {
+    const plain = parseAuctionBlock('dealer: N\n1C P')
+    expect(plain).toMatchObject({ columns: 4, labels: undefined, grid: true })
+
+    const styled = parseAuctionBlock(
+      ['dealer: N', 'columns: 2', 'labels: Opener, Responder', 'grid: off', '1C P'].join('\n')
+    )
+    expect(styled).toMatchObject({
+      columns: 2,
+      labels: ['Opener', 'Responder'],
+      grid: false,
+    })
+    // and they reach the component props
+    expect(toAuctionProps(styled)).toMatchObject({
+      columns: 2,
+      labels: ['Opener', 'Responder'],
+      grid: false,
+    })
+  })
+
+  it('rejects malformed display keys', () => {
+    expect(() => parseAuctionBlock('dealer: N\ncolumns: 3\n1C')).toThrow(/illegal columns/)
+    expect(() => parseAuctionBlock('dealer: N\ngrid: maybe\n1C')).toThrow(/illegal grid/)
+    expect(() => parseAuctionBlock('dealer: N\nlabels: Opener\n1C')).toThrow(/exactly two/)
+  })
 })
 
 describe('response-box block', () => {

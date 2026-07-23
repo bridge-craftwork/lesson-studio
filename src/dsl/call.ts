@@ -8,18 +8,30 @@ export function isCall(token: string): token is Call {
 }
 
 // Annotation marker on a call. PBN style `=1=` is canonical; `^1` is the
-// legacy form and is still accepted.
-const ANNOTATION_MARKER = /(?:=(\d+)=|\^(\d+))$/
+// legacy form and is still accepted. An alert `!` sits between the call and the
+// marker (`2D! =1=`), so strip it too when recovering the bare call.
+const ANNOTATION_MARKER = /!?(?:=(\d+)=|\^(\d+))$|!$/
 
-/** Strip a trailing annotation marker: `"2C =1="`/`"2C^1"` -> `"2C"`. */
+/** Strip a trailing alert and/or annotation marker: `"2C! =1="` -> `"2C"`. */
 export function stripAnnotationMarker(call: string): string {
   return call.replace(ANNOTATION_MARKER, '')
 }
 
-/** The annotation index on a call, or null: `"2C=1="` -> `1`. */
+/** The annotation index on a call, or null: `"2C=1="` -> `1`, `"2C!"` -> null. */
 export function annotationIndex(call: string): number | null {
-  const m = call.match(ANNOTATION_MARKER)
-  return m ? Number(m[1] ?? m[2]) : null
+  const digits = call.match(ANNOTATION_MARKER)?.slice(1).find((g) => g != null)
+  return digits == null ? null : Number(digits)
+}
+
+// An alert marks a call as conventional. Teaching material (BridgeBum,
+// BridgeComposer) and BBO write it `2D!`, with no note text required. PBN
+// accepts the same suffix syntactically but reads it as a move-quality glyph
+// ("a good call") — we take the teaching meaning; see Contract 1.
+const ALERT_MARKER = /!(?:=\d+=|\^\d+)?$/
+
+/** Whether a call carries an alert marker: `"2D!"`, `"2D! =1="` -> true. */
+export function hasAlert(call: string): boolean {
+  return ALERT_MARKER.test(call)
 }
 
 const STRAIN_GLYPH: Record<string, string> = { C: '♣', D: '♦', H: '♥', S: '♠' }

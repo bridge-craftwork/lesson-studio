@@ -78,6 +78,17 @@ const model = computed<Rendered>(() => {
     return { kind: 'error', message: err instanceof Error ? err.message : String(err) }
   }
 })
+
+// Only annotated calls earn a footnote line; a bare `!` alert marks the cell
+// but has no text to list.
+const auctionNotes = computed(() =>
+  model.value.kind === 'auction'
+    ? model.value.auction.meanings.filter(
+        (m): m is typeof m & { note: number; meaning: string } =>
+          m.note != null && m.meaning != null
+      )
+    : []
+)
 </script>
 
 <template>
@@ -90,11 +101,19 @@ const model = computed<Rendered>(() => {
     </template>
     <template v-else-if="model.kind === 'auction'">
       <div class="auction">
-        <AuctionTable :bids="model.auction.bids" :dealer="model.auction.dealer" :meanings="model.auction.meanings" />
+        <AuctionTable
+          :bids="model.auction.bids"
+          :dealer="model.auction.dealer"
+          :meanings="model.auction.meanings"
+          :columns="model.auction.columns"
+          :labels="model.auction.labels"
+          :grid="model.auction.grid"
+        />
         <!-- The real AuctionTable surfaces meanings only on hover; lessons and
-             print need the numbered footnotes visible, so render them here. -->
-        <ol v-if="model.auction.meanings.length" class="auction__notes">
-          <li v-for="m in model.auction.meanings" :key="m.note">
+             print need the numbered footnotes visible, so render them here.
+             A bare `!` alert has no note text and contributes no list entry. -->
+        <ol v-if="auctionNotes.length" class="auction__notes">
+          <li v-for="m in auctionNotes" :key="m.note">
             <span class="auction__note-num">{{ m.note }}.</span>
             <CallLabel :value="m.bid" />: <SuitText :text="m.meaning" />
           </li>

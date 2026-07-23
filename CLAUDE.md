@@ -62,7 +62,9 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   auctions override to 0.86 because their native bid size (18px) differs from
   the hand's card size (24px). **One global scale can't serve both.**
 - **AuctionTable has a "dense" mode** below `280 × scale` container width that
-  shrinks bids. Give auction figures a definite width or they trip it.
+  shrinks bids. Give auction figures a definite width or they trip it. The
+  sensor watches the *parent*, so any shrink-wrapping ancestor makes it measure
+  itself and latch (the gallery does this). `columns: 2` auctions are exempt.
 - **Milkdown's parser matches node specs in REGISTRATION ORDER**, and `priority`
   does *not* apply to markdown parsing. Bridge blocks must be `.use()`d
   **before** `commonmark` or the generic code_block wins.
@@ -80,7 +82,13 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
 - **Lessons have no body `# H1`** — the front-matter `title` is the page
   heading; a body H1 duplicates it.
 - **Auction annotations use PBN `=1=`** (`2D =1=`), matching PBN note
-  references. Legacy `^1` still parses but isn't canonical.
+  references. Legacy `^1` still parses but isn't canonical. A bare `2D!` marks
+  an alert with no note text — teaching-material meaning, *not* PBN's
+  move-quality one, which the same syntax carries there.
+- **Uncontested auctions can print two-column** (`columns: 2`, plus `labels:`
+  and `grid: off`), the convention in most teaching material. The source keeps
+  every call including the opponents' passes; eliding them is display-only, and
+  a competitive auction silently falls back to four columns.
 - **Skill paths must exist in the taxonomy.** Validated against a **STOPGAP**
   `src/dsl/taxonomy.json` (48 paths extracted from Bridge-Classroom's
   `bakerBridgeTaxonomy.js`) until Contract 4 publishes the canonical one.

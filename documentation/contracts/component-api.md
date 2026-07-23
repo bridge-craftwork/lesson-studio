@@ -125,12 +125,32 @@ Read-only; no events.
 |---|---|---|
 | `bids` | `Call[]` | Flat, dealer-first. Internally laid into W-N-E-S rounds by `dealer`. |
 | `dealer` | Seat | |
-| `meanings` | `[{ position, bid, meaning, isAlert }]` | `position` = index into `bids`; drives per-cell annotation/hover. |
+| `meanings` | `[{ position, bid, meaning, isAlert, note }]` | `position` = index into `bids`; drives per-cell annotation/hover. `note` = footnote number (superscript); `isAlert` = render the `!` marker. |
+| `columns` | `2 \| 4` | Default `4`. `2` selects the two-column print form; silently falls back to `4` when the auction is competitive (see below). |
+| `labels` | `[string, string]` | Header labels for the two-column form, left then right. Default: the compass letters of the two seats shown. Ignored at `columns: 4`. |
+| `grid` | boolean | Default `true`. `false` drops the gridlines and dark header bar for an unruled table. |
 
 The review-mode props (`currentBidIndex`, `wrongBidIndex`, `divergedBids`,
 `allowDivergenceToggle`, …) are out of the lesson-rendering contract — lessons
-pass only `bids`, `dealer`, `meanings`. All-Pass renders from trailing `P`
-calls; a lesson may also pass an explicit terminal marker (see Contract 1).
+pass only `bids`, `dealer`, `meanings`, and the three display props. All-Pass
+renders from trailing `P` calls; a lesson may also pass an explicit terminal
+marker (see Contract 1).
+
+**Two-column layout (normative).** The component owns this, as it owns the
+four-column grid — the source stays a flat call list either way. Given `bids`
+and `dealer` it derives the seat of each call, finds the **active pair** (the
+partnership making every non-pass call), and renders that pair's calls only:
+left column = the seat that made the first non-pass call, right = its partner.
+The other pair's calls (all passes, by that precondition) are dropped, as is a
+trailing run of passes or `AP`. The active pair's *own* passes are kept, so a
+passed hand renders as an empty left cell beside a `Pass`. If both pairs make a
+non-pass call, or no call is non-pass, there is no active pair and the component
+renders the normal four-column grid. Because the fallback is silent, `columns:
+2` is always safe for a consumer to pass.
+
+Review-mode decorations (turn indicator, wrong/correct highlighting, diverged
+stacked bids) are **not** rendered in the two-column form — it is a
+lesson/print layout, and those are student-app affordances.
 
 ### `ResponseBox` (new — build for package)
 
@@ -269,5 +289,13 @@ happens against the now-proven consumer (architecture doc Roadmap).
      component for column/page-safe print.
    - a **size/scale** prop to replace lesson-studio setting `--table-scale`
      directly; row figures currently render at 1.2×.
-   Both are additive (MINOR), so they can land without disturbing the student
+   - `meanings[].note` — footnote superscript on an annotated bid, so printed
+     lessons can key numbered notes to calls (hover tooltips don't print).
+   - `meanings[].isAlert` rendered as a `!` marker on the bid. The prop shape
+     already documents `isAlert`; nothing renders it today.
+   - **`columns` / `labels` / `grid`** on `AuctionTable` (specified above) — the
+     two-column uncontested form, explicit header labels, and an unruled
+     variant. Print/teaching material overwhelmingly uses these; the student app
+     keeps the four-column ruled grid by default.
+   All are additive (MINOR), so they can land without disturbing the student
    and teacher apps.

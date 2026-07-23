@@ -68,6 +68,31 @@ export const GALLERY: BlockSpecimens[] = [
         label: 'competitive, All Pass',
         body: lines('dealer: E', '1H   1S   X^1  2S', '3H   AP', '---', '1. Negative double, promises 4 spades'),
       },
+      {
+        label: 'two-column, unruled (print form)',
+        body: lines(
+          'dealer: N',
+          'columns: 2',
+          'labels: Opener, Responder',
+          'grid: off',
+          '1C   P    1S   P',
+          '1NT  P    2D! =1= P',
+          '---',
+          '1. New Minor Forcing — artificial and invitational',
+        ),
+      },
+      {
+        label: 'two-column, E/W are the bidding pair',
+        body: lines('dealer: S', 'columns: 2', 'P    1D   P    1S', 'P    1NT  P    2C!'),
+      },
+      {
+        label: 'two-column, passed hand (responder opens with a pass)',
+        body: lines('dealer: N', 'columns: 2', 'labels: Opener, Responder', 'P    P    1D   P', '1S   P    1NT  P', '2C'),
+      },
+      {
+        label: 'two-column requested, but competitive → falls back to 4',
+        body: lines('dealer: E', 'columns: 2', 'labels: Opener, Responder', '1H   1S   X    2S', '3H   AP'),
+      },
     ],
   },
   {

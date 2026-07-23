@@ -179,6 +179,9 @@ dealer: N
 | Key | Req | Notes |
 |---|---|---|
 | `dealer` | ✓ | `N E S W`. The dealer makes the first call; the renderer offsets it into the dealer's column. |
+| `columns` | – | `4` (default) or `2`. `2` selects the two-column print form; see below. |
+| `labels` | – | Two comma-separated header labels for the two-column form, left then right (`labels: Opener, Responder`). Default: the compass letters of the two seats shown. |
+| `grid` | – | `on` (default) or `off`. `off` drops the gridlines and the dark header bar, leaving an unruled table. |
 
 Rules: calls are whitespace-separated in bidding order (dealer first, clockwise);
 newlines are insignificant. Calls use the shared Call notation; the renderer
@@ -192,8 +195,56 @@ lessons are often derived from. The marker may be written detached (`2C =1=`,
 preferred) or attached (`2C=1=`). The earlier `^N` form is still parsed for
 back-compatibility but is no longer canonical.
 
-**Canonical form:** `dealer` line; then calls one round (up to four) per line,
-single-space-separated, `=N=` markers detached after their call; optional `---` then numbered notes in
+**Alert marker.** A call may carry a trailing `!` — `2D!` — marking it as
+alertable/conventional with no note text required. This is the notation used by
+teaching material (BridgeBum, BridgeComposer) and by BBO's alert flag. It is
+*syntactically* PBN-compatible (PBN allows `!`/`?` suffixes on a call), but note
+that PBN reads those as move-quality glyphs — "a good call" — not as alerts. We
+take the teaching meaning deliberately; a lesson never wants to editorialize on
+whether a call was *well chosen*. `!` combines with a note and precedes it:
+`2D! =1=`. It is a display marker only and never affects auction legality.
+
+**Two-column display (`columns: 2`).** The print convention used by most
+teaching material for **uncontested** auctions: show only the bidding
+partnership's two columns and drop the opponents' passes, which carry no
+information. Rules:
+
+- The **active pair** is the partnership making every non-pass call. The left
+  column is the seat that made the first non-pass call (the opener); the right
+  is its partner. This is derived, not declared — it may be N/S or E/W.
+- **Silent fallback.** If both partnerships make a non-pass call the auction is
+  competitive, two columns cannot represent it, and the renderer falls back to
+  the four-column grid. An all-pass auction likewise has no active pair and
+  falls back. `columns: 2` is therefore always *safe* to write; it is a
+  preference, not an assertion, and is not a lint error.
+- **Only the other pair's calls are elided.** The active pair's own passes are
+  kept — a passed hand is real information, and renders as an empty left cell
+  with a `Pass` beside it.
+- A trailing run of passes (or `AP`) is dropped: in the two-column form the end
+  of the auction is implied.
+
+The **source is unchanged** by any of this. The block still stores the complete
+auction, every call including the opponents' passes, so it stays legal, lintable
+and round-trippable; `columns` only selects a rendering. The same block can
+print two-column in a lesson and render four-column in the app.
+
+````markdown
+```auction
+dealer: N
+columns: 2
+labels: Opener, Responder
+grid: off
+1C   P    1S   P
+1NT  P    2D! =1=  P
+---
+1. New Minor Forcing — artificial and invitational.
+```
+````
+
+**Canonical form:** `dealer` line; then `columns`, `labels`, `grid` if present,
+in that order; then calls one round (up to four) per line,
+single-space-separated, `!` attached to its call and `=N=` markers detached
+after it; optional `---` then numbered notes in
 order. (Superseded the earlier W-N-E-S source grid; see Contract 2 — the
 component owns grid layout, so the source stays a flat call list.)
 
@@ -353,8 +404,12 @@ parts this contract owns:
 2. Every reserved block parses; unknown reserved-looking tags are an error.
 3. `hand`/`hands`: holdings use only legal ranks; no duplicate cards within a
    hand; a full hand has 13 cards (fragments warn, don't fail).
-4. `auction`: `dealer` present; every call is legal Call notation (or `AP`);
-   every `=N=` marker has a matching note and vice-versa.
+4. `auction`: `dealer` present; every call is legal Call notation (or `AP`),
+   optionally carrying `!` and/or a `=N=` marker; every `=N=` marker has a
+   matching note and vice-versa; `columns` ∈ {2, 4}; `grid` ∈ {on, off};
+   `labels` (if present) has exactly two comma-separated entries. A `columns: 2`
+   auction that is competitive is **not** an error — it falls back to four
+   columns at render time.
 5. `response-box`: `title` present; every row has exactly one ` | `.
 6. `deal`: structurally well-formed (v1 does **not** resolve the reference).
 7. `quiz`: body validates against Contract 3 `quiz/v1`.
@@ -391,7 +446,15 @@ resolved until Phase 2. This is exactly the vocabulary the two seed lessons
 2. **Auction source form — resolved to flat.** Reconciled from the earlier
    W-N-E-S grid to a flat dealer-first call list, matching the `AuctionTable`
    component (Contract 2) and Contract 3. Revisit readability after the New
-   Minor Forcing intro exposes real multi-round auctions.
+   Minor Forcing intro exposes real multi-round auctions. **Revisited
+   2026-07-22:** the flat form reads fine; what the NMF lesson actually exposed
+   was a *display* gap, closed by `columns`/`labels`/`grid` above rather than by
+   changing the source form.
+5. **Two-column header labels are explicit.** `labels` is authored, defaulting
+   to the compass letters. Deriving "Opener/Responder" is mechanical (the active
+   pair's first caller is the opener) and worth adding as a smarter default
+   later; "You/Partner" is *not* derivable, since the source has no notion of
+   which seat the reader occupies. Revisit once more lessons use the form.
 3. **Suit glyphs in source.** Source uses ASCII strain letters (`1C`), render
    maps to glyphs; but `title`/prose/`response-box` free text may contain
    literal `♣`. Confirm lint/formatter leave author-entered glyphs untouched.

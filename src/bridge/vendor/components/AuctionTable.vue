@@ -1,5 +1,29 @@
 <template>
-  <div ref="root" class="auction-table" :class="{ dense }" :style="{ '--at-min-w': AUCTION_UNIT.minWidthPx + 'px' }">
+  <div
+    ref="root"
+    class="auction-table"
+    :class="{ dense, 'no-grid': !grid, 'two-column': twoColumn }"
+    :style="{ '--at-min-w': AUCTION_UNIT.minWidthPx + 'px' }"
+  >
+    <!-- LESSON-STUDIO DELTA (pending upstream): two-column uncontested form.
+         Review-mode decorations (turn indicator, wrong/correct, divergence)
+         are deliberately absent — this is a lesson/print layout. -->
+    <template v-if="twoColumn">
+      <div class="header two-col">
+        <div v-for="(label, i) in twoColumnHeaders" :key="i" class="header-cell">{{ label }}</div>
+      </div>
+      <div class="rounds">
+        <div v-for="(round, roundIdx) in twoColumnRounds" :key="roundIdx" class="round two-col">
+          <div v-for="(cell, colIdx) in round" :key="colIdx" class="bid-cell">
+            <span v-if="cell" class="bid-with-note"><span v-html="formatBidHtml(cell.bid)"></span><sup
+              v-if="alertFor(cell.idx) || noteFor(cell.idx) != null"
+              class="bid-note"
+            ><span v-if="alertFor(cell.idx)" class="bid-alert">!</span>{{ noteFor(cell.idx) }}</sup></span>
+          </div>
+        </div>
+      </div>
+    </template>
+    <template v-else>
     <div class="header">
       <div class="header-cell">W</div>
       <div class="header-cell">N</div>
@@ -40,9 +64,9 @@
             </div>
           </template>
           <span v-else-if="bid" class="bid-with-note"><span v-html="formatBidHtml(bid)"></span><sup
-            v-if="noteFor(getBidIndexFromPosition(roundIdx, bidIdx)) != null"
+            v-if="alertFor(getBidIndexFromPosition(roundIdx, bidIdx)) || noteFor(getBidIndexFromPosition(roundIdx, bidIdx)) != null"
             class="bid-note"
-          >{{ noteFor(getBidIndexFromPosition(roundIdx, bidIdx)) }}</sup></span>
+          ><span v-if="alertFor(getBidIndexFromPosition(roundIdx, bidIdx))" class="bid-alert">!</span>{{ noteFor(getBidIndexFromPosition(roundIdx, bidIdx)) }}</sup></span>
           <span v-else-if="showTurnIndicator && isCurrentTurn(roundIdx, bidIdx)" class="turn-indicator">?</span>
           <div
             v-if="bid && hoveredIdx === getBidIndexFromPosition(roundIdx, bidIdx) && tooltipFor(getBidIndexFromPosition(roundIdx, bidIdx))"
@@ -52,6 +76,7 @@
         </div>
       </div>
     </div>
+    </template>
   </div>
 </template>
 
@@ -93,7 +118,12 @@ onMounted(() => {
   ro.observe(el)
 })
 onBeforeUnmount(() => ro?.disconnect())
-const dense = computed(() => tableWidth.value < 280 * uiScale.value)
+// LESSON-STUDIO DELTA (pending upstream): the two-column form is never dense.
+// Dense answers "four columns won't fit a console tile"; the two-column layout
+// is a lesson/print form that is *legitimately* half-width, and it excludes the
+// review decorations a console tile is for. Left alone it would false-positive
+// — its narrower footprint reads as a cramped container and shrinks the bids.
+const dense = computed(() => !twoColumn.value && tableWidth.value < 280 * uiScale.value)
 
 // Render BBOalert suit codes (!C !D !H !S) as colored unicode symbols.
 function formatMeaningHtml(text) {
@@ -164,6 +194,25 @@ const props = defineProps({
     // swap which is live. Off by default — toggling is only safe in review.
     type: Boolean,
     default: false
+  },
+  // LESSON-STUDIO DELTA (pending upstream): print/teaching display options.
+  columns: {
+    // 4 (default, the student-app grid) or 2 — the two-column uncontested form
+    // used by teaching material. Falls back to 4 when the auction is
+    // competitive, so passing 2 is always safe.
+    type: Number,
+    default: 4
+  },
+  labels: {
+    // [left, right] header labels for the two-column form. Defaults to the
+    // compass letters of the two seats shown.
+    type: Array,
+    default: null
+  },
+  grid: {
+    // false drops the gridlines and dark header bar for an unruled table.
+    type: Boolean,
+    default: true
   }
 })
 
@@ -223,6 +272,80 @@ const rounds = computed(() => {
 
   return result
 })
+
+// ---------------------------------------------------------------------------
+// LESSON-STUDIO DELTA (pending upstream): two-column uncontested layout.
+// Print/teaching material shows only the bidding pair's columns and drops the
+// opponents' passes, which carry no information. Everything here is derived
+// from `bids` + `dealer` — the source stays a flat call list either way.
+// ---------------------------------------------------------------------------
+const PARTNER = { N: 'S', S: 'N', E: 'W', W: 'E' }
+const isPassLike = (bid) => bid === 'P' || bid === 'Pass' || bid === 'AP'
+
+/** The seat that made each call, by position in `bids`. */
+const seatOfBid = computed(() => props.bids.map((_, i) => seatOrder.value[i % 4]))
+
+/**
+ * The partnership making every non-pass call, as [opener, partner] — or null
+ * when the auction is competitive (both pairs bid) or nobody bid at all. Null
+ * is the signal to fall back to the four-column grid.
+ */
+const activePair = computed(() => {
+  const seats = seatOfBid.value
+  const bidding = props.bids
+    .map((bid, i) => i)
+    .filter((i) => !isPassLike(props.bids[i]))
+  if (!bidding.length) return null
+  const opener = seats[bidding[0]]
+  const pair = [opener, PARTNER[opener]]
+  if (bidding.some((i) => !pair.includes(seats[i]))) return null
+  return pair
+})
+
+const twoColumn = computed(() => props.columns === 2 && activePair.value !== null)
+
+const twoColumnHeaders = computed(() =>
+  props.labels && props.labels.length === 2 ? props.labels : (activePair.value || [])
+)
+
+/**
+ * Rows of [leftCell, rightCell], each cell `{ bid, idx }` or null. Keeps the
+ * active pair's own passes (a passed hand is information) but drops the other
+ * pair's calls and any trailing run of passes, whose omission is the whole
+ * point of the form.
+ */
+const twoColumnRounds = computed(() => {
+  const pair = activePair.value
+  if (!pair) return []
+  const seats = seatOfBid.value
+
+  let end = props.bids.length
+  while (end > 0 && isPassLike(props.bids[end - 1])) end--
+
+  const rows = []
+  let row = [null, null]
+  let lastCol = null
+  for (let i = 0; i < end; i++) {
+    const col = pair.indexOf(seats[i])
+    if (col === -1) continue
+    // A column that doesn't advance means the round wrapped — start a new row.
+    // This also places a passed hand's opening pass correctly, in the right
+    // column of its own row with the left cell empty.
+    if (lastCol !== null && col <= lastCol) {
+      rows.push(row)
+      row = [null, null]
+    }
+    row[col] = { bid: props.bids[i], idx: i }
+    lastCol = col
+  }
+  if (row.some((c) => c !== null)) rows.push(row)
+  return rows
+})
+
+function alertFor(bidIdx) {
+  const m = props.meanings?.find(x => x.position === bidIdx)
+  return !!(m && m.isAlert)
+}
 
 function getBidIndexFromPosition(roundIdx, colIdx) {
   if (roundIdx === 0) {
@@ -538,5 +661,46 @@ function tooltipFor(bidIdx) {
 
 .correct-bid {
   background: #c8e6c9;
+}
+
+/* LESSON-STUDIO DELTA (pending upstream): two-column form and unruled variant. */
+
+/* Two columns of tracks instead of four. The min-width floor exists to align a
+   four-column auction with the BiddingBox below it; with half the columns it
+   halves too, so a two-column auction stays narrow enough to sit beside prose
+   in a print column. */
+.header.two-col,
+.round.two-col {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.auction-table.two-column {
+  min-width: calc(var(--at-min-w, 308px) * var(--table-scale) / 2);
+}
+
+/* Unruled: the convention in printed teaching material is a bare table — no
+   gridlines, no dark header bar, just the calls under their headings. */
+.auction-table.no-grid {
+  border: none;
+  border-radius: 0;
+  background: transparent;
+}
+.auction-table.no-grid .header {
+  background: transparent;
+  color: inherit;
+}
+.auction-table.no-grid .header-cell {
+  border-bottom: 1px solid currentColor;
+}
+.auction-table.no-grid .round {
+  border-bottom: none;
+}
+.auction-table.no-grid .bid-cell {
+  border-right: none;
+}
+
+/* The alert marker rides in the same superscript slot as the footnote number,
+   ahead of it when a call carries both (`2♦!¹`). */
+.bid-alert {
+  font-weight: 700;
 }
 </style>
