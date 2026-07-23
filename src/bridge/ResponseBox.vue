@@ -35,7 +35,12 @@ defineProps<{
   border: 1px solid var(--ls-border, #e4e4e7);
   border-radius: 8px;
   overflow: hidden;
-  min-width: 15rem;
+  /* 15rem keeps the box from shrink-wrapping to a cramped width when there's
+     room — but it must never exceed the column, or it spills into the gutter
+     and crowds the next column. At 3 print columns the column is ~212px
+     against this 240px floor, which is exactly what that looked like. */
+  min-width: min(15rem, 100%);
+  max-width: 100%;
 }
 .title {
   padding: 0.4rem 0.75rem;
