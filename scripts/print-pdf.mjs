@@ -11,16 +11,23 @@
  *
  * The emitted PDF has no page chrome — headers/footers/page numbers/dates are
  * added downstream by the pdf-handouts pipeline.
+ *
+ * The lesson's markdown is embedded as a PDF file attachment, so the source can
+ * be recovered from the PDF alone (`npm run pdf:extract`). Pass --no-embed to
+ * skip it. Note that a downstream tool which rewrites the PDF may drop
+ * attachments — verify with pdf:extract if the handouts pipeline is involved.
  */
-import { readFileSync } from 'node:fs'
+import { readFileSync, writeFileSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 import { chromium } from 'playwright'
+import { embedSource } from './embed-source.mjs'
 
 const { values } = parseArgs({
   options: {
     lesson: { type: 'string' },
     out: { type: 'string', default: 'lesson.pdf' },
     url: { type: 'string', default: 'http://localhost:4173' },
+    'no-embed': { type: 'boolean', default: false },
   },
 })
 
@@ -45,6 +52,14 @@ if (errors.length) {
   process.exit(1)
 }
 
-await page.pdf({ path: values.out, format: 'Letter', printBackground: true })
+const rendered = await page.pdf({ format: 'Letter', printBackground: true })
 await browser.close()
-console.log(`wrote ${values.out}`)
+
+// Embed the source so the lesson can be reconstructed from the PDF alone.
+const bytes = values['no-embed'] ? rendered : await embedSource(rendered, values.lesson)
+writeFileSync(values.out, bytes)
+console.log(
+  values['no-embed']
+    ? `wrote ${values.out}`
+    : `wrote ${values.out} (lesson source embedded)`
+)

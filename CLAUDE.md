@@ -33,6 +33,8 @@ npm run build          # vue-tsc typecheck + Vite build (3 entries)
 npm test               # vitest — DSL parsers + Milkdown round-trip
 npm run lint:lessons -- ../lesson-library/lessons     # the CI lint, locally
 npm run print:pdf -- --lesson <file.md> --out out.pdf # needs a server running
+npm run pdf:attach  -- --pdf out.pdf --lesson <file.md>  # embed source after the fact
+npm run pdf:extract -- --pdf out.pdf --out recovered.md  # pull it back out
 ```
 
 `print:pdf` needs a dev/preview server up and a one-time
@@ -96,6 +98,15 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
 - **Print columns are per-lesson** via front-matter `columns:` (default 2).
   More columns ≠ fewer pages: narrow columns wrap tables *taller*. Trim content
   instead.
+- **PDFs carry their own source.** `print:pdf` embeds the lesson `.md` as a PDF
+  file attachment (`/EmbeddedFiles`, as ZUGFeRD invoices carry their XML), so a
+  lesson reconstructs byte-exactly from the PDF alone. It is *not* in the text
+  layer — extraction there loses newlines and leading whitespace, which the DSL
+  needs. The browser's own print dialog cannot attach files; use `pdf:attach`
+  afterwards. Note pdf-lib appends rather than replaces, and never collects
+  unreferenced objects, so re-embedding must unlink from **both** the name tree
+  and the catalog `/AF` array *and* delete the old streams — otherwise the file
+  grows on every render while looking correct.
 - **A new block key means editing `src/dsl/schema.ts` too.** It's what the
   editor's key reference and autocomplete read; a key that isn't there exists
   but is undiscoverable while authoring. It documents, it does *not* parse —

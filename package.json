@@ -12,6 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "print:pdf": "node scripts/print-pdf.mjs",
+    "pdf:attach": "node scripts/pdf-attach.mjs",
+    "pdf:extract": "node scripts/pdf-extract.mjs",
     "lint:lessons": "tsx scripts/lint-lessons.ts"
   },
   "dependencies": {
@@ -30,6 +32,7 @@
     "@types/node": "^26.1.1",
     "@vitejs/plugin-vue": "^5.2.1",
     "happy-dom": "^20.10.6",
+    "pdf-lib": "^1.17.1",
     "playwright": "^1.61.1",
     "tsx": "^4.23.0",
     "typescript": "~5.7.2",
