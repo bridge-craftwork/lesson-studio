@@ -42,12 +42,39 @@ const props = defineProps<{ markdown: string }>()
 const PAGE_W = 720
 const PAGE_H = 960
 
-const columns = computed(() => splitFrontMatter(props.markdown).data?.columns ?? 2)
-
 const pages = ref(1)
 const scale = ref(0.5)
 const root = ref<HTMLElement | null>(null)
 const flow = ref<HTMLElement | null>(null)
+
+/**
+ * Milkdown takes its content from `defaultValueCtx` **once, at creation**, and
+ * never watches the prop — deliberately, since feeding the editor's own edits
+ * back would remount it mid-keystroke. So handing the preview new markdown does
+ * nothing; it has to be remounted to re-render.
+ *
+ * Remounting an editor per keystroke would be wasteful, so the text is settled
+ * first and the key bumped after a pause. The preview trails typing by that
+ * pause, which is the right trade for a page-fit check.
+ */
+const SETTLE_MS = 300
+const shown = ref(props.markdown)
+// Read from the settled text, not the live prop, so the column count can't
+// change a beat before the content it applies to.
+const columns = computed(() => splitFrontMatter(shown.value).data?.columns ?? 2)
+const renderKey = ref(0)
+let settleTimer: ReturnType<typeof setTimeout> | undefined
+
+watch(
+  () => props.markdown,
+  (md) => {
+    clearTimeout(settleTimer)
+    settleTimer = setTimeout(() => {
+      shown.value = md
+      renderKey.value += 1
+    }, SETTLE_MS)
+  },
+)
 
 /** Fit the page width to the pane, never enlarging past 1:1. */
 function fitScale() {
@@ -86,6 +113,15 @@ async function refresh() {
 }
 
 let ro: ResizeObserver | null = null
+let mo: MutationObserver | null = null
+let measureTimer: ReturnType<typeof setTimeout> | undefined
+
+/** Milkdown renders asynchronously after mount, so measure once it settles. */
+function scheduleMeasure() {
+  clearTimeout(measureTimer)
+  measureTimer = setTimeout(measure, 60)
+}
+
 onMounted(() => {
   refresh()
   // Fonts land after first paint and change wrapping, so re-measure once they do.
@@ -93,14 +129,24 @@ onMounted(() => {
   if (typeof ResizeObserver !== 'undefined' && root.value) {
     ro = new ResizeObserver(() => {
       fitScale()
-      measure()
+      scheduleMeasure()
     })
     ro.observe(root.value)
   }
+  // The remount below replaces the whole subtree; watching it is more reliable
+  // than guessing how long Milkdown takes to draw.
+  if (typeof MutationObserver !== 'undefined' && flow.value) {
+    mo = new MutationObserver(scheduleMeasure)
+    mo.observe(flow.value, { childList: true, subtree: true, characterData: true })
+  }
 })
-onBeforeUnmount(() => ro?.disconnect())
+onBeforeUnmount(() => {
+  ro?.disconnect()
+  mo?.disconnect()
+  clearTimeout(settleTimer)
+  clearTimeout(measureTimer)
+})
 
-watch(() => props.markdown, refresh)
 watch(columns, refresh)
 </script>
 
@@ -124,7 +170,7 @@ watch(columns, refresh)
             class="print-view pp__flow"
             :style="{ '--print-columns': columns }"
           >
-            <LessonDocument :markdown="markdown" :editable="false" />
+            <LessonDocument :key="renderKey" :markdown="shown" :editable="false" />
           </div>
         </div>
         <div v-if="pages > 1" class="pp__more">+{{ pages - 1 }} more</div>

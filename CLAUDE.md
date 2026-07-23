@@ -76,6 +76,11 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   **before** `commonmark` or the generic code_block wins.
 - **Milkdown's listener never fires on initial mount** — only on real edits. Do
   not treat the first emission as a "clean baseline"; it's the user's first edit.
+- **Milkdown reads its content once, at creation** (`defaultValueCtx`), and
+  never watches the prop — so handing a `LessonDocument` new markdown does
+  nothing. That's right for the editor (feeding edits back would remount it
+  mid-keystroke) but means any *read-only* second view must be remounted via
+  `:key` to refresh. Debounce it; remounting per keystroke is wasteful.
 - Vue **watchers flush asynchronously**, so a sync guard flag won't cover a
   reset that triggers a deep watcher — clear such guards on `nextTick`.
 - The `row` block uses a **four-backtick fence** so it can contain
