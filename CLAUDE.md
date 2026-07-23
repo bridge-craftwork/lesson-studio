@@ -98,6 +98,10 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   references. Legacy `^1` still parses but isn't canonical. A bare `2D!` marks
   an alert with no note text — teaching-material meaning, *not* PBN's
   move-quality one, which the same syntax carries there.
+- **The two-column auction is print-tuned, not just narrower.** It shrink-wraps
+  and centres, and its rows are trimmed to ~1.4x the type size; the four-column
+  grid's generous rows are touch targets for the student app and waste column
+  in print. Row geometry is scoped to `.two-column` so the app is untouched.
 - **Uncontested auctions can print two-column** (`columns: 2`, plus `labels:`
   and `grid: off`), the convention in most teaching material. The source keeps
   every call including the opponents' passes; eliding them is display-only, and

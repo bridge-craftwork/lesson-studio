@@ -38,6 +38,11 @@ concurrent Bridge-Classroom refactor can't destabilize lesson-studio (see the
        BiddingBox beneath it, which this layout never sits above; stretched
        across a print column the two bids land far apart and stop reading as
        one auction.
+     - its rows are **tightened**: the four-column grid's 10px padding and 36px
+       min-height are touch-target sizing for the student app and land a row at
+       ~2.5x the type size. Printed auction tables sit near 1.5x, so the
+       two-column form trims padding, drops the floor and overrides the
+       inherited body line-height.
      All specified in Contract 2 and **pending upstream**.
   5. `HandDisplay.vue` gives the `.hcp` label a **legibility floor**,
      `max(0.68em, calc(12px * var(--table-scale)))`. The cards scale down

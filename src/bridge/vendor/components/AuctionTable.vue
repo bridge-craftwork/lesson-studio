@@ -694,6 +694,21 @@ function tooltipFor(bidIdx) {
   padding-inline: calc(10px * var(--table-scale));
 }
 
+/* Vertical air. The four-column grid is a touch target in the student app, so
+   its rows are generous — 10px of padding plus a 36px floor, which lands a row
+   at ~2.5x the type size. In print that is wasted column, and printed auction
+   tables (BridgeBum, the ACBL Bulletin) sit near 1.5x. Trim the padding, drop
+   the touch-target floor, and tighten the inherited body line-height. */
+.auction-table.two-column .bid-cell {
+  padding-block: calc(2px * var(--table-scale));
+  min-height: 0;
+  line-height: 1.15;
+}
+.auction-table.two-column .header-cell {
+  padding-block: calc(2px * var(--table-scale));
+  line-height: 1.15;
+}
+
 /* Unruled: the convention in printed teaching material is a bare table — no
    gridlines, no dark header bar, just the calls under their headings. */
 .auction-table.no-grid {
