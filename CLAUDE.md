@@ -100,7 +100,16 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   `bakerBridgeTaxonomy.js`) until Contract 4 publishes the canonical one.
 - **Print columns are per-lesson** via front-matter `columns:` (default 2).
   More columns ≠ fewer pages: narrow columns wrap tables *taller*. Trim content
-  instead.
+  instead. Columns are a **print** concern — the editing surface stays
+  single-column (architecture Non-Goal); the **Preview** pane shows the real
+  layout and page count.
+- **Page count in the preview is computed, not observed.** CSS exposes no
+  `@page` breaks, and faking them via overflow columns does *not* work — with
+  `column-fill: balance` Chrome overflows downward and `scrollWidth` saturates
+  at about one extra column however much spills. Instead the balanced column
+  height `H` is measured on a detached auto-height clone and divided by the page
+  text height (first page short by the header). Verified against real PDFs at 1,
+  2, 2 and 4 pages. Don't "simplify" it back to `scrollWidth`.
 - **PDFs carry their own source.** `print:pdf` attaches four things: the lesson
   `.md` (byte-exact, so the lesson reconstructs from the PDF alone), a
   provenance sidecar, a **block click-map**, and the hands as **PBN**. All via

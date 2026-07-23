@@ -181,16 +181,52 @@ body {
   color: var(--ls-accent);
   text-decoration: none;
 }
-.studio__link:first-of-type {
-  margin-left: auto;
-}
 .studio__link:hover {
   text-decoration: underline;
+}
+
+/* Sits with the Print/Gallery links, and carries the push-right so the trio
+   stays grouped at the far end of the header. */
+.studio__toggle {
+  margin-left: auto;
+  font: inherit;
+  font-size: 0.85rem;
+  padding: 0.15rem 0.6rem;
+  border: 1px solid var(--ls-border, #e4e4e7);
+  border-radius: 6px;
+  background: var(--ls-bg, #fff);
+  color: var(--ls-accent);
+  cursor: pointer;
+}
+.studio__toggle.is-on {
+  background: var(--ls-accent);
+  border-color: var(--ls-accent);
+  color: #fff;
 }
 
 .studio__body {
   overflow: auto;
   padding: 1.5rem;
+}
+
+/* Split view: the editor keeps its own scroll, the preview keeps its own, so
+   neither drags the other around while you type. */
+.studio__body--split {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  min-height: 0;
+}
+.studio__body--split .studio__edit {
+  flex: 1 1 55%;
+  min-width: 0;
+  overflow: auto;
+  padding: 1.5rem;
+}
+.studio__body--split .studio__preview {
+  flex: 0 0 clamp(18rem, 42%, 34rem);
 }
 
 .lesson-document {

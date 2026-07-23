@@ -130,6 +130,10 @@ export function useLessonSession() {
 
   return {
     loadedMarkdown,
+    // The latest text from the editor, for read-only consumers like the live
+    // page preview. `loadedMarkdown` is deliberately NOT this — feeding it back
+    // into the editor on every keystroke would remount it mid-edit.
+    liveMarkdown,
     loadId,
     fileName,
     dirty,

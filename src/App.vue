@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import LessonDocument from './editor/LessonDocument.vue'
+import PagePreview from './print/PagePreview.vue'
 import { useLessonSession } from './lesson/useLessonSession'
 
 // Resolve sibling pages against the deploy base ('/' locally,
@@ -8,6 +9,12 @@ import { useLessonSession } from './lesson/useLessonSession'
 const base = import.meta.env.BASE_URL
 
 const session = useLessonSession()
+
+// Column layout is a print concern (architecture Non-Goal: authors edit
+// single-column flow), so the preview is where you see it — and where you find
+// out whether the lesson still fits on one page. Off by default; the editor
+// stays full width until you ask.
+const showPreview = ref(false)
 
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
@@ -70,16 +77,28 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPoin
         {{ session.fileName.value }}
       </span>
 
+      <button
+        class="studio__toggle"
+        :class="{ 'is-on': showPreview }"
+        :aria-pressed="showPreview"
+        title="Show the print layout, with real columns and page count"
+        @click="showPreview = !showPreview"
+      >
+        Preview
+      </button>
       <a class="studio__link" :href="`${base}print.html`" target="_blank" @click="session.stashForPrint()">Print →</a>
       <a class="studio__link" :href="`${base}gallery.html`" target="_blank">Gallery →</a>
     </header>
 
-    <main class="studio__body">
-      <LessonDocument
-        :key="session.loadId.value"
-        :markdown="session.loadedMarkdown.value"
-        @update:markdown="session.onEdit"
-      />
+    <main class="studio__body" :class="{ 'studio__body--split': showPreview }">
+      <div class="studio__edit">
+        <LessonDocument
+          :key="session.loadId.value"
+          :markdown="session.loadedMarkdown.value"
+          @update:markdown="session.onEdit"
+        />
+      </div>
+      <PagePreview v-if="showPreview" class="studio__preview" :markdown="session.liveMarkdown.value" />
     </main>
   </div>
 </template>
