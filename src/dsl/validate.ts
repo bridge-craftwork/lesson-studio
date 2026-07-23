@@ -5,6 +5,7 @@ import { parseHandsBlock } from './hands-block'
 import { parseAuctionBlock } from './auction-block'
 import { parseResponseBox } from './response-box-block'
 import { parseRowBlock } from './row-block'
+import { resolveDealLinks } from './deal-link'
 import type { ReservedBlock } from './types'
 import taxonomy from './taxonomy.json'
 
@@ -34,8 +35,30 @@ export function validateLesson(markdown: string, opts: ValidateOptions = {}): Li
   const { data, body } = splitFrontMatter(markdown)
   validateFrontMatter(data, validPaths, issues)
 
-  for (const block of scanReservedBlocks(body)) {
+  const blocks = scanReservedBlocks(body)
+  for (const block of blocks) {
     validateBlock(block.tag, block.body, issues)
+  }
+
+  // Cross-block: an auction's `deal:` must name a hand that exists. A single
+  // block parser can't see this, so it's checked once over the whole lesson.
+  // `row` blocks are flattened first — a hand inside a row is still referable.
+  const flat: { index: number; kind: string; body: string }[] = []
+  for (const block of blocks) {
+    if (block.tag === 'row') {
+      try {
+        for (const item of parseRowBlock(block.body)) {
+          if (item.kind === 'block') flat.push({ index: flat.length, kind: item.tag, body: item.body })
+        }
+        continue
+      } catch {
+        // The block validation above already reported the parse failure.
+      }
+    }
+    flat.push({ index: flat.length, kind: block.tag, body: block.body })
+  }
+  for (const message of resolveDealLinks(flat).errors) {
+    issues.push({ severity: 'error', message: `\`auction\` block: ${message}` })
   }
 
   return issues

@@ -105,6 +105,7 @@ whether it can parse what it found rather than guessing.
 | `blocks[].rect` | `[x1, y1, x2, y2]` in PDF points, origin bottom-left. **Absent** if unlocated. |
 | `blocks[].body` | The block's DSL body verbatim — parse with Contract 1. |
 | `blocks[].board` | The `[Board]` number in `lesson-hands.pbn`. Present only on blocks that produced a deal. |
+| `blocks[].deal` | On an `auction`: the `index` of the hand it's bid on, or `null` if unpaired. Absent on other kinds. |
 | `blocks[].fragments` | `[{page, rect}]` for a block split across columns/pages. Absent when it wasn't. |
 | `unlocated` | Indices with no position. Empty in the normal case. |
 | `fragmented` | Indices that split. Empty in the normal case. |
@@ -155,9 +156,14 @@ One PBN game record per `hand`/`hands` block, in document order.
   usually a single seat, and **no cards are ever invented** to complete a deal.
 - The mandatory PBN tag set is emitted with `?` placeholders where a lesson has
   nothing to say, which is conventional for PBN exporters.
-- An `[Auction]` section is included **only** when the lesson contains exactly
-  one auction. With several, the pairing of auction to hand is not determinable
-  from the source, and a guessed pairing would be worse than none.
+- An `[Auction]` section is included when the deal has an auction paired with
+  it — Contract 1's `deal:` key, defaulting to the nearest preceding hand. A
+  deal with several auctions on it takes the first; the others still render on
+  the page, they just don't go into that record. A deal with none gets no
+  `[Auction]` section and `[Dealer "?"]`.
+- `blocks[].deal` in the click map gives the same pairing from the other
+  direction, so a consumer can go from a tapped auction to its hand without
+  reading the PBN.
 
 ## Positions come from the print engine (normative rationale)
 
@@ -284,18 +290,21 @@ generated where the print engine runs, which is here.
   `blocks[].board`, so gap-intolerant PBN readers are unaffected.
 - **Attach-last adopted** as the pipeline architecture, so preservation is
   defense-in-depth rather than load-bearing.
+- **Auction-to-hand pairing is implemented** (Contract 1 `deal:`, defaulting to
+  the nearest preceding hand), so "step through this auction on this deal" is
+  now expressible. Existing lessons needed no edits: New Minor Forcing pairs its
+  closing auction with its hand by proximity, and leaves the opening convention
+  illustration unpaired, which is correct.
 
 ## Open items for review
 
 1. **pdf-handouts preservation — unverified.** Lower risk now that attach-last
    is the intended order, but still worth confirming what its PDF library does,
    since anything reconstructing the catalog drops attachments.
-2. **Auction-to-hand association.** Currently all-or-nothing (one auction, or
-   none), which blocks "step through this auction on this deal" — the classroom
-   case this whole payload exists to serve. The DSL change looks small: an
-   optional `deal:` key on `auction` blocks referencing a hand, defaulting to
-   the nearest preceding `hand`/`hands` block, would cover the common case with
-   no authoring burden. That is a **Contract 1** change and belongs there.
+2. **Several auctions on one deal.** The PBN record takes the first, since a PBN
+   game has one `[Auction]`. If lessons routinely bid one hand several ways
+   (an auction and its alternative), the deal may deserve one PBN record per
+   auction rather than per hand. The click map already carries all the pairings.
 3. **Partial-hand PBN.** `-` for unknown hands is valid PBN, but confirm the
    card-play tool accepts a one-hand deal rather than requiring all four.
 4. **Stable identity across revisions.** `index` and `board` are positional, so

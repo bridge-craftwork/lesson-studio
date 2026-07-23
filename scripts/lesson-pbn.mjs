@@ -13,6 +13,7 @@ import { parseHandsBlock } from '../src/dsl/hands-block'
 import { parseAuctionBlock } from '../src/dsl/auction-block'
 import { stripAnnotationMarker } from '../src/dsl/call'
 import { pbnGame, pbnFile } from '../src/dsl/pbn'
+import { resolveDealLinks, auctionsByDeal } from '../src/dsl/deal-link'
 
 export const PBN_ATTACHMENT = 'lesson-hands.pbn'
 
@@ -25,11 +26,12 @@ export const PBN_ATTACHMENT = 'lesson-hands.pbn'
  * so a tool that hit-tests a hand can find its PBN record.
  */
 export function lessonPbn(blocks, { event } = {}) {
-  // A lesson's auction, if it has exactly one, applies to its hands: teaching
-  // material shows a hand and the bidding it produces. With several auctions
-  // the pairing is ambiguous, so no auction is attached rather than a wrong one.
-  const auctions = blocks.filter((b) => b.kind === 'auction')
-  const single = auctions.length === 1 ? safeAuction(auctions[0].body) : null
+  // Which auction belongs to which hand — an explicit `deal:` where the lesson
+  // says so, otherwise the nearest preceding hand (see deal-link.ts). A deal
+  // with several auctions on it takes the first; the rest still render on the
+  // page, they just don't go into that PBN record.
+  const { links, errors } = resolveDealLinks(blocks)
+  const byDeal = auctionsByDeal(links)
 
   const games = []
   const boards = []
@@ -49,19 +51,22 @@ export function lessonPbn(blocks, { event } = {}) {
     }
     if (!hands) continue
 
+    const paired = byDeal.get(block.index)?.[0]
+    const bidding = paired == null ? null : safeAuction(blocks.find((b) => b.index === paired)?.body)
+
     const board = games.length + 1
     const game = pbnGame(hands, {
       event,
       board,
-      dealer: single?.dealer,
-      auction: single?.calls,
+      dealer: bidding?.dealer,
+      auction: bidding?.calls,
     })
     if (!game) continue
     games.push(game)
-    boards.push({ index: block.index, board })
+    boards.push({ index: block.index, board, auction: paired ?? null })
   }
 
-  return games.length ? { text: pbnFile(games), boards } : null
+  return games.length ? { text: pbnFile(games), boards, links, errors } : null
 }
 
 function safeAuction(body) {

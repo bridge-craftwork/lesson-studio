@@ -5,6 +5,7 @@ import { scanReservedBlocks } from './scan'
 import { isReservedBlock, RESERVED_BLOCKS } from './types'
 import { blockSchema, completions } from './schema'
 import { pbnHolding, pbnDeal, pbnGame } from './pbn'
+import { resolveDealLinks, auctionsByDeal } from './deal-link'
 import { parseHandBlock, serializeHandBlock } from './hand-block'
 import { parseRowBlock } from './row-block'
 import { validateLesson } from './validate'
@@ -232,6 +233,89 @@ describe('auction block', () => {
   })
 })
 
+describe('auction-to-hand pairing', () => {
+  const HAND = (id?: string) =>
+    [id ? `id: ${id}` : 'seat: S', 'S: A Q 9 5 4', 'H: K 7 3', 'D: A 5', 'C: J 8 4']
+      .filter(Boolean)
+      .join('\n')
+  const AUCTION = (deal?: string) => ['dealer: N', deal ? `deal: ${deal}` : '', '1C P'].filter(Boolean).join('\n')
+
+  const doc = (...specs: [string, string][]) =>
+    specs.map(([kind, body], index) => ({ index, kind, body }))
+
+  it('pairs an auction with the nearest preceding hand, with no annotation', () => {
+    const { links, errors } = resolveDealLinks(
+      doc(['hand', HAND()], ['auction', AUCTION()], ['hand', HAND()], ['auction', AUCTION()])
+    )
+    expect(errors).toEqual([])
+    expect(links).toEqual([
+      { auction: 1, deal: 0, explicit: false },
+      { auction: 3, deal: 2, explicit: false },
+    ])
+  })
+
+  it('leaves an auction with no preceding hand unpaired, not in error', () => {
+    // The opening illustration in New Minor Forcing is exactly this shape.
+    const { links, errors } = resolveDealLinks(doc(['auction', AUCTION()], ['hand', HAND()]))
+    expect(errors).toEqual([])
+    expect(links).toEqual([{ auction: 0, deal: null, explicit: false }])
+  })
+
+  it('follows an explicit id, including one declared later in the lesson', () => {
+    const { links, errors } = resolveDealLinks(
+      doc(['hand', HAND()], ['auction', AUCTION('slam')], ['hand', HAND('slam')])
+    )
+    expect(errors).toEqual([])
+    // Not the nearest preceding hand (0) — the named one.
+    expect(links).toEqual([{ auction: 1, deal: 2, explicit: true }])
+  })
+
+  it('lets `deal: none` opt out of the default pairing', () => {
+    const { links } = resolveDealLinks(doc(['hand', HAND()], ['auction', AUCTION('none')]))
+    expect(links).toEqual([{ auction: 1, deal: null, explicit: true }])
+  })
+
+  it('reports an unknown id and a duplicate id, without throwing', () => {
+    expect(resolveDealLinks(doc(['auction', AUCTION('nope')])).errors).toEqual([
+      'auction references unknown hand id "nope"',
+    ])
+    expect(
+      resolveDealLinks(doc(['hand', HAND('x')], ['hands', 'id: x\nN: S:A\nS: S:K'])).errors
+    ).toEqual(['duplicate hand id "x"'])
+  })
+
+  it('groups auctions by the deal they are bid on', () => {
+    const { links } = resolveDealLinks(
+      doc(['hand', HAND()], ['auction', AUCTION()], ['auction', AUCTION()])
+    )
+    expect(auctionsByDeal(links)).toEqual(new Map([[0, [1, 2]]]))
+  })
+
+  it('is caught by the lint when an id does not resolve', () => {
+    const md = [
+      '---',
+      'title: X',
+      'skill_paths:',
+      '  - bidding_conventions/stayman',
+      'primary: bidding_conventions/stayman',
+      'level: basic',
+      'author: A',
+      'status: draft',
+      'reviewed-by: self',
+      '---',
+      '',
+      '```auction',
+      'dealer: N',
+      'deal: missing',
+      '1C P',
+      '```',
+    ].join('\n')
+    expect(validateLesson(md).map((i) => i.message)).toContain(
+      '`auction` block: auction references unknown hand id "missing"'
+    )
+  })
+})
+
 describe('PBN emission', () => {
   const SOUTH = parseHandBlock('seat: S\nS: A Q 9 5 4\nH: K 7 3\nD: A 5\nC: J 8 4')
 
@@ -286,7 +370,7 @@ describe('PBN emission', () => {
 describe('block key schema', () => {
   it('describes every key the auction parser accepts', () => {
     const names = blockSchema('auction')!.keys.map((k) => k.name)
-    expect(names).toEqual(['dealer', 'columns', 'labels', 'grid'])
+    expect(names).toEqual(['dealer', 'columns', 'labels', 'grid', 'deal'])
   })
 
   it('covers every reserved block, and each example parses', () => {
@@ -305,16 +389,19 @@ describe('block key schema', () => {
       'columns',
       'labels',
       'grid',
+      'deal',
     ])
     // prefix, not substring — `l` must not drag in `dealer`/`columns`
     expect(completions('auction', 'l').map((k) => k.name)).toEqual(['labels'])
+    // `deal` is a prefix of `dealer`, so both are offered and neither is hidden
+    expect(completions('auction', 'deal').map((k) => k.name)).toEqual(['dealer', 'deal'])
     expect(completions('auction', 'zz')).toEqual([])
     expect(completions('not-a-block', '')).toEqual([])
   })
 
   it('excludes body-line patterns, which are not completable keys', () => {
     // `hand` describes `S / H / D / C` as a body pattern, not a literal key.
-    expect(completions('hand', '').map((k) => k.name)).toEqual(['seat', 'label', 'marks'])
+    expect(completions('hand', '').map((k) => k.name)).toEqual(['seat', 'label', 'id', 'marks'])
   })
 })
 

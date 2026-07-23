@@ -24,6 +24,7 @@ import { AFRelationship } from 'pdf-lib'
 import { embedSource } from './embed-source.mjs'
 import { markBlocks, readBlockPositions, BLOCK_MAP_ATTACHMENT } from './block-map.mjs'
 import { lessonPbn, PBN_ATTACHMENT } from './lesson-pbn.mjs'
+import { resolveDealLinks } from '../src/dsl/deal-link'
 
 const { values } = parseArgs({
   options: {
@@ -66,7 +67,16 @@ if (values['no-embed']) {
   writeFileSync(values.out, rendered)
   console.log(`wrote ${values.out}`)
 } else {
-  // PBN first: it assigns board numbers, which the click map carries so a
+  // Which auction is bid on which hand. Recorded on the map so a consumer can
+  // go straight from a tapped auction to its deal, without re-deriving the rule.
+  const { links, errors: linkErrors } = resolveDealLinks(blocks)
+  for (const link of links) {
+    const block = blocks.find((b) => b.index === link.auction)
+    if (block) block.deal = link.deal
+  }
+  for (const err of linkErrors) console.warn(`warning: ${err}`)
+
+  // PBN next: it assigns board numbers, which the click map carries so a
   // consumer can join a tapped block to its deal.
   const pbn = lessonPbn(blocks, { event: values.lesson.split('/').pop() })
   for (const { index, board } of pbn?.boards ?? []) {

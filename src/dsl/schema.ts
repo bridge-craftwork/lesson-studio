@@ -47,6 +47,11 @@ export const BLOCK_SCHEMAS: Record<string, BlockSchema> = {
       { name: 'seat', values: 'N E S W', doc: 'Which seat holds it; adds the seat label.' },
       { name: 'label', values: '<text>', doc: 'Caption instead of the seat letter.' },
       {
+        name: 'id',
+        values: '<name>',
+        doc: 'Stable name so an `auction` block can say it is bid on this hand.',
+      },
+      {
         name: 'marks',
         values: '<suit><rank>=<badge>',
         doc: 'Badge specific cards, e.g. `S9=1` — a "1" on the ♠9.',
@@ -64,6 +69,11 @@ export const BLOCK_SCHEMAS: Record<string, BlockSchema> = {
         values: 'NS | EW | all',
         default: 'inferred from the seats present',
         doc: 'Which seats to show.',
+      },
+      {
+        name: 'id',
+        values: '<name>',
+        doc: 'Stable name so an `auction` block can say it is bid on this deal.',
       },
       {
         name: 'N / E / S / W',
@@ -96,6 +106,12 @@ export const BLOCK_SCHEMAS: Record<string, BlockSchema> = {
         values: 'on | off',
         default: 'on',
         doc: 'off = no gridlines and no header bar, as printed teaching material does.',
+      },
+      {
+        name: 'deal',
+        values: '<hand id> | none',
+        default: 'the nearest preceding hand',
+        doc: 'Which hand this auction is bid on. Pairs them for PBN export and the PDF click map.',
       },
     ],
     bodyDoc:

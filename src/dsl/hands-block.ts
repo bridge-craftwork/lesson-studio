@@ -5,6 +5,8 @@ import { normalizeHolding } from './hand'
 export interface HandsBlock {
   layout?: 'NS' | 'EW' | 'all'
   hands: Partial<Record<Seat, Hand>>
+  /** Optional stable name, so an `auction` block can say it's bid on this deal. */
+  id?: string
 }
 
 const SEATS: Seat[] = ['N', 'E', 'S', 'W']
@@ -17,6 +19,7 @@ const SUIT_GROUP = /([SHDC]):\s*([AKQJT2-9\s-]*?)(?=\s+[SHDC]:|$)/g
  */
 export function parseHandsBlock(body: string): HandsBlock {
   let layout: HandsBlock['layout'] | undefined
+  let id: string | undefined
   const hands: Partial<Record<Seat, Hand>> = {}
 
   for (const rawLine of body.split('\n')) {
@@ -26,6 +29,12 @@ export function parseHandsBlock(body: string): HandsBlock {
     const layoutMatch = line.match(/^layout:\s*(NS|EW|all)\s*$/)
     if (layoutMatch) {
       layout = layoutMatch[1] as HandsBlock['layout']
+      continue
+    }
+
+    const idMatch = line.match(/^id:\s*(.*)$/)
+    if (idMatch) {
+      id = idMatch[1].trim() || undefined
       continue
     }
 
@@ -46,5 +55,5 @@ export function parseHandsBlock(body: string): HandsBlock {
   }
 
   if (Object.keys(hands).length < 2) throw new Error('hands block needs at least two seats')
-  return { layout, hands }
+  return { layout, hands, id }
 }

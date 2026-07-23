@@ -12,6 +12,8 @@ export type HandMarks = Record<string, string>
 export interface HandBlock {
   seat?: Seat
   label?: string
+  /** Optional stable name, so an `auction` block can say it's bid on this hand. */
+  id?: string
   hand: Hand
   marks?: HandMarks
 }
@@ -19,7 +21,7 @@ export interface HandBlock {
 const SEATS: Seat[] = ['N', 'E', 'S', 'W']
 const SUITS = ['S', 'H', 'D', 'C'] as const
 const SUIT_LINE = /^([SHDC]):\s*(.*)$/
-const KEY_LINE = /^(seat|label):\s*(.*)$/
+const KEY_LINE = /^(seat|label|id):\s*(.*)$/
 const MARKS_LINE = /^marks:\s*(.*)$/
 // One mark token: <suit><rank>=<badge>, e.g. S9=1 or ST=2 (ten as T or 10).
 const MARK_TOKEN = /^([SHDC])(10|[AKQJT2-9])=(\S+)$/
@@ -36,6 +38,7 @@ export function parseHandBlock(body: string): HandBlock {
   const holdings: Record<'S' | 'H' | 'D' | 'C', string> = { S: '', H: '', D: '', C: '' }
   let seat: Seat | undefined
   let label: string | undefined
+  let id: string | undefined
   let marks: HandMarks | undefined
 
   for (const rawLine of body.split('\n')) {
@@ -48,6 +51,8 @@ export function parseHandBlock(body: string): HandBlock {
         const s = key[2].trim().toUpperCase()
         if (!SEATS.includes(s as Seat)) throw new Error(`illegal seat "${key[2]}" in hand block`)
         seat = s as Seat
+      } else if (key[1] === 'id') {
+        id = key[2].trim() || undefined
       } else {
         label = key[2].trim() || undefined
       }
@@ -72,6 +77,7 @@ export function parseHandBlock(body: string): HandBlock {
   return {
     seat,
     label,
+    id,
     marks,
     hand: {
       spades: holdings.S,
@@ -109,7 +115,7 @@ function marksLine(marks: HandMarks): string {
 }
 
 /**
- * Serialize a HandBlock to its canonical body (Contract 1): `seat`/`label`
+ * Serialize a HandBlock to its canonical body (Contract 1): `seat`/`label`/`id`
  * keys, then the four suit lines in S H D C order, then an optional `marks`
  * line. `parseHandBlock ∘ serializeHandBlock` is the identity on normalized
  * input, and `serializeHandBlock` is idempotent — the `--fix` formatter.
@@ -118,6 +124,7 @@ export function serializeHandBlock(block: HandBlock): string {
   const lines: string[] = []
   if (block.seat) lines.push(`seat: ${block.seat}`)
   if (block.label) lines.push(`label: ${block.label}`)
+  if (block.id) lines.push(`id: ${block.id}`)
   lines.push(`S: ${holdingLine(block.hand.spades)}`)
   lines.push(`H: ${holdingLine(block.hand.hearts)}`)
   lines.push(`D: ${holdingLine(block.hand.diamonds)}`)

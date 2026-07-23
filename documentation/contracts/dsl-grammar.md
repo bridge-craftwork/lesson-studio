@@ -125,9 +125,10 @@ C: Q 8 5
 |---|---|---|
 | `seat` | – | `N E S W`; drives the seat label. Omit for an unlabeled fragment. |
 | `label` | – | Free-text caption (e.g. `Opener`). |
+| `id` | – | Stable name, so an `auction` block can say it's bid on this hand (`deal:`). Must be unique within the lesson. |
 | `marks` | – | Per-card badges: space-separated `<suit><rank>=<badge>` (e.g. `marks: S9=1 S8=2` badges the 9 and 8 of spades). Ten is `T` or `10`. Renders as the component's card badges — used to mark length points on the 5th/6th cards of a suit. |
 
-**Canonical form:** keys first (order `seat`, `label`), then the four suit lines
+**Canonical form:** keys first (order `seat`, `label`, `id`), then the four suit lines
 in `S H D C` order (one space between ranks, `-` for a void, every suit line
 present), then an optional `marks` line with cards in `S H D C` / high-to-low
 order.
@@ -148,9 +149,10 @@ S: S:A Q    H:A 5      D:8 7 4 3  C:Q J T 9 5
 | Key | Req | Notes |
 |---|---|---|
 | `layout` | – | Which seats to show: `NS`, `EW`, or `all`. Default inferred from the seat lines present. |
+| `id` | – | Stable name, so an `auction` block can say it's bid on this deal (`deal:`). Must be unique within the lesson. |
 | `<seat>` | ✓ (≥2) | `N`/`E`/`S`/`W` → the seat's holding, given as `S:… H:… D:… C:…` on one line. |
 
-**Canonical form:** `layout` first, then seat lines in `N E S W` order for the
+**Canonical form:** `layout` then `id`, then seat lines in `N E S W` order for the
 seats present; within a seat line, suits in `S H D C` order, `-` for a void,
 single spaces between ranks, two spaces between suit groups.
 
@@ -182,6 +184,7 @@ dealer: N
 | `columns` | – | `4` (default) or `2`. `2` selects the two-column print form; see below. |
 | `labels` | – | Two comma-separated header labels for the two-column form, left then right (`labels: Opener, Responder`). Default: the compass letters of the two seats shown. |
 | `grid` | – | `on` (default) or `off`. `off` drops the gridlines and the dark header bar, leaving an unruled table. |
+| `deal` | – | Which hand this auction is bid on: the `id` of a `hand`/`hands` block, or `none`. Default: the nearest preceding hand. See below. |
 
 Rules: calls are whitespace-separated in bidding order (dealer first, clockwise);
 newlines are insignificant. Calls use the shared Call notation; the renderer
@@ -228,6 +231,27 @@ auction, every call including the opponents' passes, so it stays legal, lintable
 and round-trippable; `columns` only selects a rendering. The same block can
 print two-column in a lesson and render four-column in the app.
 
+**Which hand an auction is bid on (`deal`).** A lesson that shows a hand and
+then bids it is expressing a relationship the source didn't previously record —
+and a tool that wants to *play* the deal (Contract 5) needs it. The pairing is
+resolved across the document, since no single block can see it:
+
+- `deal: <id>` names a `hand`/`hands` block carrying that `id`. The target may
+  appear **anywhere** in the lesson, before or after.
+- `deal: none` opts out — the auction is deliberately unpaired.
+- **Omitted** — the default — pairs with the **nearest preceding** hand block,
+  which is how teaching material already reads. Existing lessons therefore get
+  correct pairings with no edits.
+- An auction with no preceding hand is simply **unpaired**, not an error: an
+  opening illustration of a convention has no hand yet, which is normal.
+
+Only an unresolvable `deal:` id, or a duplicate `id:`, is a lint error.
+
+> **Naming.** `deal` is also a reserved *block tag* (below). The key and the tag
+> share a name deliberately: both denote "the cards". When the `deal` block is
+> wired in Phase 2 it becomes another legal `deal:` target, alongside
+> `hand`/`hands`, rather than a competing meaning.
+
 ````markdown
 ```auction
 dealer: N
@@ -241,8 +265,8 @@ grid: off
 ```
 ````
 
-**Canonical form:** `dealer` line; then `columns`, `labels`, `grid` if present,
-in that order; then calls one round (up to four) per line,
+**Canonical form:** `dealer` line; then `columns`, `labels`, `grid`, `deal` if
+present, in that order; then calls one round (up to four) per line,
 single-space-separated, `!` attached to its call and `=N=` markers detached
 after it; optional `---` then numbered notes in
 order. (Superseded the earlier W-N-E-S source grid; see Contract 2 — the
@@ -410,11 +434,14 @@ parts this contract owns:
    `labels` (if present) has exactly two comma-separated entries. A `columns: 2`
    auction that is competitive is **not** an error — it falls back to four
    columns at render time.
-5. `response-box`: `title` present; every row has exactly one ` | `.
-6. `deal`: structurally well-formed (v1 does **not** resolve the reference).
-7. `quiz`: body validates against Contract 3 `quiz/v1`.
-8. `pagebreak`: body is empty.
-9. Every block is already in canonical form (else `--fix` it).
+5. Cross-block: every `auction` `deal:` id resolves to a `hand`/`hands` block,
+   and no `id:` is declared twice. An auction with **no** pairing is not an
+   error — the default rule leaves opening illustrations unpaired by design.
+6. `response-box`: `title` present; every row has exactly one ` | `.
+7. `deal`: structurally well-formed (v1 does **not** resolve the reference).
+8. `quiz`: body validates against Contract 3 `quiz/v1`.
+9. `pagebreak`: body is empty.
+10. Every block is already in canonical form (else `--fix` it).
 
 ## Versioning and evolution
 

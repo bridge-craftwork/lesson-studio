@@ -14,6 +14,13 @@ export interface AuctionBlock {
   labels?: [string, string]
   /** Display: false drops gridlines and the header bar. Default true. */
   grid: boolean
+  /**
+   * Which hand this auction is bid on: the `id` of a `hand`/`hands` block, or
+   * `none` to opt out of the default pairing. Absent means "nearest preceding
+   * hand" — resolved across the document by `resolveDealLinks`, not here, since
+   * a block parser only ever sees its own body.
+   */
+  deal?: string
 }
 
 /** One `meanings` entry (Contract 2). `meaning`/`note` absent on a bare alert. */
@@ -54,6 +61,7 @@ export function parseAuctionBlock(body: string): AuctionBlock {
   let columns: 2 | 4 = 4
   let labels: [string, string] | undefined
   let grid = true
+  let deal: string | undefined
   const calls: string[] = []
   for (const rawLine of callPart.split('\n')) {
     const line = rawLine.trim()
@@ -78,6 +86,13 @@ export function parseAuctionBlock(body: string): AuctionBlock {
       if (parts.length !== 2 || parts.some((s) => s === ''))
         throw new Error(`labels needs exactly two comma-separated entries`)
       labels = [parts[0], parts[1]]
+      continue
+    }
+    const dealMatch = line.match(/^deal:\s*(.*)$/)
+    if (dealMatch) {
+      const d = dealMatch[1].trim()
+      if (!d) throw new Error('deal: needs a hand id, or "none"')
+      deal = d
       continue
     }
     const gridMatch = line.match(/^grid:\s*(.*)$/)
@@ -107,7 +122,7 @@ export function parseAuctionBlock(body: string): AuctionBlock {
     if (m) notes[Number(m[1])] = m[2]
   }
 
-  return { dealer, calls, notes, columns, labels, grid }
+  return { dealer, calls, notes, columns, labels, grid, deal }
 }
 
 /** Adapt a parsed auction to `AuctionTable` props (Contract 2). */
