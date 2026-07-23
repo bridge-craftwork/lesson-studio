@@ -116,6 +116,8 @@ function onKeydown(e: KeyboardEvent) {
     class="reserved-block"
     :class="[`reserved-block--${tag}`, { 'is-selected': selected, 'is-editing': editing }]"
     contenteditable="false"
+    :data-block-tag="tag"
+    :data-block-body="body"
   >
     <div v-if="editing" class="block-edit" data-block-source>
       <div class="block-edit__bar">

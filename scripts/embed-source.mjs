@@ -53,10 +53,15 @@ export async function embedSource(pdfBytes, lessonPath, opts = {}) {
   const markdown = readFileSync(lessonPath)
   const pdf = await PDFDocument.load(pdfBytes)
 
+  // `extras` is `{ name: { bytes, mimeType, description } }` — the block map
+  // and PBN ride along the same way, and are replaced on re-embed the same way.
+  const extras = opts.extras ?? {}
+
   // pdf-lib appends unconditionally, so embedding twice would leave two copies
   // under the same name — the PDF grows on every re-render and readers disagree
-  // about which one wins. Drop ours first so re-embedding replaces.
-  dropAttachments(pdf, [SOURCE_ATTACHMENT, PROVENANCE_ATTACHMENT])
+  // about which one wins. Drop ours first so re-embedding replaces. Attachments
+  // we didn't put there (e.g. a PBN already in the file) are left alone.
+  dropAttachments(pdf, [SOURCE_ATTACHMENT, PROVENANCE_ATTACHMENT, ...Object.keys(extras)])
 
   // AFRelationship marks *what the file is to this document*, so a reader can
   // find the source by relationship rather than by guessing our filename —
@@ -73,6 +78,14 @@ export async function embedSource(pdfBytes, lessonPath, opts = {}) {
     description: 'What produced this PDF.',
     afRelationship: AFRelationship.Supplement,
   })
+
+  for (const [name, spec] of Object.entries(extras)) {
+    await pdf.attach(spec.bytes, name, {
+      mimeType: spec.mimeType ?? 'application/octet-stream',
+      description: spec.description ?? '',
+      afRelationship: spec.afRelationship ?? AFRelationship.Supplement,
+    })
+  }
 
   // Surface the same facts in document properties, where a viewer's "Get Info"
   // panel shows them without anyone knowing to look for attachments at all.

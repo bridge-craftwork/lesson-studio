@@ -4,6 +4,7 @@ import { isCall, stripAnnotationMarker, annotationIndex } from './call'
 import { scanReservedBlocks } from './scan'
 import { isReservedBlock, RESERVED_BLOCKS } from './types'
 import { blockSchema, completions } from './schema'
+import { pbnHolding, pbnDeal, pbnGame } from './pbn'
 import { parseHandBlock, serializeHandBlock } from './hand-block'
 import { parseRowBlock } from './row-block'
 import { validateLesson } from './validate'
@@ -228,6 +229,57 @@ describe('auction block', () => {
     expect(() => parseAuctionBlock('dealer: N\ncolumns: 3\n1C')).toThrow(/illegal columns/)
     expect(() => parseAuctionBlock('dealer: N\ngrid: maybe\n1C')).toThrow(/illegal grid/)
     expect(() => parseAuctionBlock('dealer: N\nlabels: Opener\n1C')).toThrow(/exactly two/)
+  })
+})
+
+describe('PBN emission', () => {
+  const SOUTH = parseHandBlock('seat: S\nS: A Q 9 5 4\nH: K 7 3\nD: A 5\nC: J 8 4')
+
+  it('writes a holding with dots, and a void as empty', () => {
+    expect(pbnHolding(SOUTH.hand)).toBe('AQ954.K73.A5.J84')
+    expect(pbnHolding(parseHandBlock('S: A K\nH: -\nD: 2\nC: 3').hand)).toBe('AK..2.3')
+  })
+
+  it('marks the hands a lesson does not give as unknown, never invented', () => {
+    // Lesson hands are usually one seat; PBN writes the rest as `-`.
+    expect(pbnDeal({ S: SOUTH.hand })).toBe('S:AQ954.K73.A5.J84 - - -')
+  })
+
+  it('lists hands clockwise from the tagged seat', () => {
+    const { hands } = parseHandsBlock(
+      ['N: S:K T 6  H:J T 9 2  D:Q J  C:K 7 6 3', 'S: S:A Q  H:A 5  D:8 7 4 3  C:Q J T 9 5'].join('\n')
+    )
+    // Tagged N, so the order is N E S W — the given S lands third, not second.
+    expect(pbnDeal(hands)).toBe('N:KT6.JT92.QJ.K763 - AQ.A5.8743.QJT95 -')
+  })
+
+  it('returns null when there are no hands at all', () => {
+    expect(pbnDeal({})).toBeNull()
+    expect(pbnGame({})).toBeNull()
+  })
+
+  it('emits the mandatory tag set, and the auction when a dealer is known', () => {
+    const game = pbnGame({ S: SOUTH.hand }, {
+      event: 'New Minor Forcing',
+      board: 3,
+      dealer: 'N',
+      auction: ['1C', 'P', '1S', 'P', '1NT'],
+    })!
+    expect(game).toContain('[Event "New Minor Forcing"]')
+    expect(game).toContain('[Board "3"]')
+    expect(game).toContain('[Dealer "N"]')
+    expect(game).toContain('[Deal "S:AQ954.K73.A5.J84 - - -"]')
+    for (const tag of ['Site', 'Date', 'West', 'Vulnerable', 'Scoring', 'Contract', 'Result']) {
+      expect(game, tag).toContain(`[${tag} "`)
+    }
+    // The auction section is written in rounds of four from the dealer.
+    expect(game).toContain('[Auction "N"]\n1C P 1S P\n1NT')
+  })
+
+  it('escapes quotes in a tag value rather than breaking the record', () => {
+    expect(pbnGame({ S: SOUTH.hand }, { event: 'The "Big" Club' })).toContain(
+      '[Event "The \\"Big\\" Club"]'
+    )
   })
 })
 

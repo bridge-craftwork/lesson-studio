@@ -20,7 +20,10 @@
 import { readFileSync, writeFileSync } from 'node:fs'
 import { parseArgs } from 'node:util'
 import { chromium } from 'playwright'
+import { AFRelationship } from 'pdf-lib'
 import { embedSource } from './embed-source.mjs'
+import { markBlocks, readBlockPositions, BLOCK_MAP_ATTACHMENT } from './block-map.mjs'
+import { lessonPbn, PBN_ATTACHMENT } from './lesson-pbn.mjs'
 
 const { values } = parseArgs({
   options: {
@@ -52,14 +55,44 @@ if (errors.length) {
   process.exit(1)
 }
 
+// Wrap each block in a link before printing: the print engine then reports
+// where it actually laid each one out (see block-map.mjs).
+const blocks = values['no-embed'] ? [] : await markBlocks(page)
+
 const rendered = await page.pdf({ format: 'Letter', printBackground: true })
 await browser.close()
 
-// Embed the source so the lesson can be reconstructed from the PDF alone.
-const bytes = values['no-embed'] ? rendered : await embedSource(rendered, values.lesson)
-writeFileSync(values.out, bytes)
-console.log(
-  values['no-embed']
-    ? `wrote ${values.out}`
-    : `wrote ${values.out} (lesson source embedded)`
-)
+if (values['no-embed']) {
+  writeFileSync(values.out, rendered)
+  console.log(`wrote ${values.out}`)
+} else {
+  const map = await readBlockPositions(rendered, blocks)
+  const extras = {
+    [BLOCK_MAP_ATTACHMENT]: {
+      bytes: Buffer.from(JSON.stringify(map, null, 2), 'utf8'),
+      mimeType: 'application/json',
+      description: 'Page and position of each bridge block, with its DSL source.',
+      afRelationship: AFRelationship.Data,
+    },
+  }
+
+  const pbn = lessonPbn(blocks, { event: values.lesson.split('/').pop() })
+  if (pbn) {
+    extras[PBN_ATTACHMENT] = {
+      bytes: Buffer.from(pbn, 'utf8'),
+      mimeType: 'application/x-pbn',
+      description: 'Lesson hands as PBN deals.',
+      afRelationship: AFRelationship.Data,
+    }
+  }
+
+  writeFileSync(values.out, await embedSource(rendered, values.lesson, { extras }))
+
+  const note = [`source`, `${blocks.length} block(s) mapped`, pbn ? 'PBN' : null]
+    .filter(Boolean)
+    .join(', ')
+  console.log(`wrote ${values.out} (embedded: ${note})`)
+  if (map.unlocated.length) {
+    console.warn(`warning: ${map.unlocated.length} block(s) had no position in the PDF`)
+  }
+}

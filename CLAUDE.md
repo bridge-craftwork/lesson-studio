@@ -98,15 +98,27 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
 - **Print columns are per-lesson** via front-matter `columns:` (default 2).
   More columns ≠ fewer pages: narrow columns wrap tables *taller*. Trim content
   instead.
-- **PDFs carry their own source.** `print:pdf` embeds the lesson `.md` as a PDF
-  file attachment (`/EmbeddedFiles`, as ZUGFeRD invoices carry their XML), so a
-  lesson reconstructs byte-exactly from the PDF alone. It is *not* in the text
-  layer — extraction there loses newlines and leading whitespace, which the DSL
-  needs. The browser's own print dialog cannot attach files; use `pdf:attach`
-  afterwards. Note pdf-lib appends rather than replaces, and never collects
+- **PDFs carry their own source.** `print:pdf` attaches four things: the lesson
+  `.md` (byte-exact, so the lesson reconstructs from the PDF alone), a
+  provenance sidecar, a **block click-map**, and the hands as **PBN**. All via
+  `/EmbeddedFiles` (as ZUGFeRD invoices carry their XML), tagged with
+  `AFRelationship` so a reader finds them by role, not by filename. Attachments
+  already in the PDF (your own PBNs) are left untouched.
+- **Not in the text layer** — extraction there loses newlines and leading
+  whitespace, which the DSL needs. The browser's own print dialog cannot attach
+  files at all; use `pdf:attach` afterwards.
+- **Block positions come from link annotations, not from measuring the DOM.**
+  The print view is CSS multicol under `@page`, so the print engine paginates
+  and `break-inside: avoid` moves blocks — JS can't see any of it. Each block is
+  wrapped in a `lesson-block:<n>` anchor before printing and Chrome emits a link
+  annotation per page with an exact PDF-space rect. Only **leaf** blocks are
+  wrapped (nested anchors are invalid HTML, and the hand inside a `row` is what
+  you'd tap); the anchor *replaces* the element rather than wrapping it, or the
+  `.ProseMirror > *:has(...)` column-span rule stops matching.
+- pdf-lib **appends** attachments rather than replacing, and never collects
   unreferenced objects, so re-embedding must unlink from **both** the name tree
   and the catalog `/AF` array *and* delete the old streams — otherwise the file
-  grows on every render while looking correct.
+  grows on every render while the entry counts still look right.
 - **A new block key means editing `src/dsl/schema.ts` too.** It's what the
   editor's key reference and autocomplete read; a key that isn't there exists
   but is undiscoverable while authoring. It documents, it does *not* parse —

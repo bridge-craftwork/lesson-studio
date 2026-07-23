@@ -11,7 +11,7 @@
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "print:pdf": "node scripts/print-pdf.mjs",
+    "print:pdf": "tsx scripts/print-pdf.mjs",
     "pdf:attach": "node scripts/pdf-attach.mjs",
     "pdf:extract": "node scripts/pdf-extract.mjs",
     "lint:lessons": "tsx scripts/lint-lessons.ts"

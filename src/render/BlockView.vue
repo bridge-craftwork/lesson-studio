@@ -92,7 +92,15 @@ const auctionNotes = computed(() =>
 </script>
 
 <template>
-  <div class="block-view" :class="`block-view--${model.kind}`">
+  <!-- The tag/body are exposed on the shared render path, not just on the
+       editor's node view, so blocks nested inside a `row` are visible to the
+       print pass that maps click targets (scripts/block-map.mjs). -->
+  <div
+    class="block-view"
+    :class="`block-view--${model.kind}`"
+    :data-block-tag="tag"
+    :data-block-body="body"
+  >
     <template v-if="model.kind === 'hand'">
       <HandDisplay :hand="model.hand" :show-hcp="true" :marks="model.marks" />
     </template>
