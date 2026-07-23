@@ -14,13 +14,16 @@ components, and prints them to one-page PDF lessons.
 | **lesson-studio** (this) | The app + the DSL grammar + the print pipeline + the lint tool. All application code lives here. |
 | **lesson-library** (`../lesson-library`) | **Content only.** CC0 lessons at `lessons/<slug>/<slug>.md`, plus a CI lint workflow. No app code. |
 
-They're joined by four versioned contracts in `documentation/contracts/` —
+They're joined by five versioned contracts in `documentation/contracts/` —
 **read those first**; they're the durable design, more than the code is:
 
 1. **`dsl-grammar.md`** (Contract 1) — the lesson DSL. Owned here.
 2. **`component-api.md`** (Contract 2) — the Bridge-Classroom component props.
 3. **`quiz-json-schema.md`** (Contract 3) — quiz JSON (PBS emits, we embed).
 4. **`taxonomy-and-front-matter.md`** (Contract 4) — skill paths + front matter.
+5. **`pdf-attachments.md`** (Contract 5) — what a printed lesson PDF carries
+   inside itself (source, provenance, click map, PBN). Owned here **for now**;
+   moves to the presentation tool when that's built.
 
 Broader design: `documentation/lesson-library-architecture.md` (phased roadmap).
 Planned UX direction: `documentation/lobby-and-session.md` (captured, not built).

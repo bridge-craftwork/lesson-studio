@@ -83,6 +83,9 @@ export async function readBlockPositions(pdfBytes, blocks) {
 
   const located = blocks.map((b) => ({ ...b, ...(byIndex.get(b.index) ?? {}) }))
   return {
+    // Contract 5 payload version. Consumers dispatch on this before trusting
+    // any field below it.
+    version: 1,
     pageSize: pdf.getPages().map((p) => [
       Math.round(p.getWidth() * 100) / 100,
       Math.round(p.getHeight() * 100) / 100,
