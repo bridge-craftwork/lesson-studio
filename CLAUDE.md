@@ -64,8 +64,9 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
 - **`--table-scale` must be defined.** The bridge components size everything as
   `calc(Npx * var(--table-scale))`. If that var is undefined the calc is
   *invalid* and width/font silently fall back — hands lose their fixed suit
-  column and render ragged. It's set in `src/styles/app.css` (`:root`, 0.62);
-  auctions override to 0.9 because their native bid size (18px) differs from
+  column and render ragged. It's set in `src/styles/app.css` (`:root`, 0.68 —
+  cards are natively 24px, so that puts a rank a hair above body text, the
+  floor a figure should never fall below); auctions override to 0.9 because their native bid size (18px) differs from
   the hand's card size (24px) — 0.9 puts a bid a hair *above* body text, which
   is the floor a bid should never fall below. **One global scale can't serve
   both.**
