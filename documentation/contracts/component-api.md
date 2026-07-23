@@ -293,6 +293,10 @@ happens against the now-proven consumer (architecture doc Roadmap).
      lessons can key numbered notes to calls (hover tooltips don't print).
    - `meanings[].isAlert` rendered as a `!` marker on the bid. The prop shape
      already documents `isAlert`; nothing renders it today.
+   - a **legibility floor** on small labels that scale with `--table-scale`.
+     `HandDisplay`'s `.hcp` starts at 12px and lands near 7px at the 0.62 scale
+     a printed lesson uses; the cards survive because they start at 24px. Small
+     text needs `max(<floor>, calc(<base> * var(--table-scale)))`.
    - **`columns` / `labels` / `grid`** on `AuctionTable` (specified above) — the
      two-column uncontested form, explicit header labels, and an unruled
      variant. Print/teaching material overwhelmingly uses these; the student app

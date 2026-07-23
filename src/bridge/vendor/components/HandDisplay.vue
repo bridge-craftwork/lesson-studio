@@ -435,10 +435,16 @@ function onPopupSelect(rank) {
   padding-right: calc(7px * var(--table-scale));
 }
 
+/* LESSON-STUDIO DELTA (pending upstream): legibility floor on the HCP label.
+   The cards scale down gracefully because they start at 24px, but this label
+   starts at 12px — at the 0.62 scale a printed lesson uses it lands near 7px,
+   well under readable, and the hand looks like it has a typo under it. Small
+   text needs an absolute floor, not just a proportional one. No effect at
+   scale 1.0 (the student/teacher apps), where 12px already clears the floor. */
 .hcp {
   margin-top: calc(8px * var(--table-scale));
   text-align: center;
-  font-size: calc(12px * var(--table-scale));
+  font-size: max(11px, calc(12px * var(--table-scale)));
   color: #666;
 }
 

@@ -36,6 +36,12 @@ concurrent Bridge-Classroom refactor can't destabilize lesson-studio (see the
      - its `min-width` floor is halved, since that floor exists to align a
        four-column auction with the BiddingBox beneath it.
      All specified in Contract 2 and **pending upstream**.
+  5. `HandDisplay.vue` gives the `.hcp` label a **legibility floor**,
+     `max(11px, calc(12px * var(--table-scale)))`. The cards scale down
+     gracefully from 24px; this label starts at 12px and lands near 7px at the
+     0.62 scale a printed lesson uses. No effect at scale 1.0. **Pending
+     upstream** — small text wants an absolute floor, not only a proportional
+     one, which is a general concern rather than a lesson-studio one.
 
   Everything else is byte-for-byte upstream.
 

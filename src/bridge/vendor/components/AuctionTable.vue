@@ -688,9 +688,9 @@ function tooltipFor(bidIdx) {
   background: transparent;
   color: inherit;
 }
-.auction-table.no-grid .header-cell {
-  border-bottom: 1px solid currentColor;
-}
+/* No rule under the headers either: a full-width underline reads as a single
+   spanning header and re-links the two columns the layout just separated. The
+   labels are bold and the calls are not, which is enough to tell them apart. */
 .auction-table.no-grid .round {
   border-bottom: none;
 }
