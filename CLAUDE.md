@@ -98,10 +98,15 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   references. Legacy `^1` still parses but isn't canonical. A bare `2D!` marks
   an alert with no note text — teaching-material meaning, *not* PBN's
   move-quality one, which the same syntax carries there.
-- **The two-column auction is print-tuned, not just narrower.** It shrink-wraps
-  and centres, and its rows are trimmed to ~1.4x the type size; the four-column
-  grid's generous rows are touch targets for the student app and waste column
-  in print. Row geometry is scoped to `.two-column` so the app is untouched.
+- **Row density is `touch`, not `columns`.** `AuctionTable`'s default rows are
+  touch targets (~2.5x the type size); `:touch="false"` condenses them to the
+  ~1.5x printed auction tables use. BlockView asserts it on every auction, so a
+  **four-column** auction in a lesson condenses too — that's why it isn't
+  folded into `columns: 2`. Not exposed to authors; lesson-studio is never a
+  touch surface.
+- **The two-column auction is also print-tuned**: it shrink-wraps and centres
+  rather than filling its column, which is a width concern and stays keyed to
+  `columns: 2`.
 - **Uncontested auctions can print two-column** (`columns: 2`, plus `labels:`
   and `grid: off`), the convention in most teaching material. The source keeps
   every call including the opponents' passes; eliding them is display-only, and

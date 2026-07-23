@@ -2,7 +2,7 @@
   <div
     ref="root"
     class="auction-table"
-    :class="{ dense, 'no-grid': !grid, 'two-column': twoColumn }"
+    :class="{ dense, 'no-grid': !grid, 'two-column': twoColumn, condensed: !touch }"
     :style="{ '--at-min-w': AUCTION_UNIT.minWidthPx + 'px' }"
   >
     <!-- LESSON-STUDIO DELTA (pending upstream): two-column uncontested form.
@@ -211,6 +211,15 @@ const props = defineProps({
   },
   grid: {
     // false drops the gridlines and dark header bar for an unruled table.
+    type: Boolean,
+    default: true
+  },
+  touch: {
+    // Row sizing. true (default) keeps the generous rows the student and
+    // teacher apps need as touch targets. false condenses them for reading
+    // rather than tapping — printed and on-screen lesson material, at any
+    // column count. Orthogonal to `columns`: a four-column auction in a lesson
+    // wants condensed rows just as much as a two-column one.
     type: Boolean,
     default: true
   }
@@ -694,17 +703,19 @@ function tooltipFor(bidIdx) {
   padding-inline: calc(10px * var(--table-scale));
 }
 
-/* Vertical air. The four-column grid is a touch target in the student app, so
-   its rows are generous — 10px of padding plus a 36px floor, which lands a row
-   at ~2.5x the type size. In print that is wasted column, and printed auction
-   tables (BridgeBum, the ACBL Bulletin) sit near 1.5x. Trim the padding, drop
-   the touch-target floor, and tighten the inherited body line-height. */
-.auction-table.two-column .bid-cell {
+/* Vertical air, driven by `touch` rather than by the column count. The default
+   rows are touch targets — 10px of padding plus a 36px floor, landing a row at
+   ~2.5x the type size. Reading material wants ~1.5x, which is where printed
+   auction tables (BridgeBum, the ACBL Bulletin) sit, so `touch: false` trims
+   the padding, drops the target floor and tightens the line-height the host
+   document supplies. Applies at any column count: a four-column auction in a
+   lesson is just as much reading material as a two-column one. */
+.auction-table.condensed .bid-cell {
   padding-block: calc(2px * var(--table-scale));
   min-height: 0;
   line-height: 1.15;
 }
-.auction-table.two-column .header-cell {
+.auction-table.condensed .header-cell {
   padding-block: calc(2px * var(--table-scale));
   line-height: 1.15;
 }

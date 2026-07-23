@@ -116,6 +116,7 @@ const auctionNotes = computed(() =>
           :columns="model.auction.columns"
           :labels="model.auction.labels"
           :grid="model.auction.grid"
+          :touch="false"
         />
         <!-- The real AuctionTable surfaces meanings only on hover; lessons and
              print need the numbered footnotes visible, so render them here.

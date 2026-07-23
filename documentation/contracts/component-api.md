@@ -129,6 +129,7 @@ Read-only; no events.
 | `columns` | `2 \| 4` | Default `4`. `2` selects the two-column print form; silently falls back to `4` when the auction is competitive (see below). |
 | `labels` | `[string, string]` | Header labels for the two-column form, left then right. Default: the compass letters of the two seats shown. Ignored at `columns: 4`. |
 | `grid` | boolean | Default `true`. `false` drops the gridlines and dark header bar for an unruled table. |
+| `touch` | boolean | Default `true` — rows sized as touch targets. `false` condenses them for reading. Independent of `columns`. |
 
 The review-mode props (`currentBidIndex`, `wrongBidIndex`, `divergedBids`,
 `allowDivergenceToggle`, …) are out of the lesson-rendering contract — lessons
@@ -147,6 +148,14 @@ passed hand renders as an empty left cell beside a `Pass`. If both pairs make a
 non-pass call, or no call is non-pass, there is no active pair and the component
 renders the normal four-column grid. Because the fallback is silent, `columns:
 2` is always safe for a consumer to pass.
+
+**`touch` is a separate axis from `columns`.** The default rows are sized to be
+tapped — ~2.5x the type size — which is right for the student and teacher apps
+and wasteful anywhere the auction is being *read*. `touch: false` condenses
+them to the ~1.5x printed auction tables use. It is deliberately not implied by
+`columns: 2`: a four-column auction in a lesson is reading material too. A
+consumer that renders lessons should pass `touch: false` regardless of column
+count.
 
 The two-column form **shrink-wraps to its content and centres**, rather than
 filling its container as the four-column grid does: stretched across a print
