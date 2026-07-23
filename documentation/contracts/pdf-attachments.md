@@ -99,12 +99,15 @@ whether it can parse what it found rather than guessing.
 | `pageCount` | Pages in the PDF. |
 | `pageSize` | `[width, height]` in points, **per page** — pages need not match. |
 | `coordinateSpace` | Always `pdf-points, origin bottom-left` in version 1. |
-| `blocks[].index` | Document order of leaf blocks, 0-based. Also the PBN board number − 1. |
+| `blocks[].index` | Document order of leaf blocks, 0-based. |
 | `blocks[].kind` | The Contract 1 block tag (`hand`, `auction`, `response-box`, …). |
 | `blocks[].page` | 1-based page number. **Absent** if unlocated. |
 | `blocks[].rect` | `[x1, y1, x2, y2]` in PDF points, origin bottom-left. **Absent** if unlocated. |
 | `blocks[].body` | The block's DSL body verbatim — parse with Contract 1. |
+| `blocks[].board` | The `[Board]` number in `lesson-hands.pbn`. Present only on blocks that produced a deal. |
+| `blocks[].fragments` | `[{page, rect}]` for a block split across columns/pages. Absent when it wasn't. |
 | `unlocated` | Indices with no position. Empty in the normal case. |
+| `fragmented` | Indices that split. Empty in the normal case. |
 
 **`unlocated` is normative, not diagnostic.** A block whose position could not
 be determined appears in `blocks` with its `body` but no `page`/`rect`, and its
@@ -112,9 +115,26 @@ index is listed here. A consumer MUST NOT infer a position for such a block; it
 should fall back to non-positional use of the body. This exists so the map can
 never quietly imply full coverage it does not have.
 
+**A block may occupy more than one rect.** `break-inside: avoid` is a request,
+not a guarantee: a block taller than its column fragments anyway, and the print
+engine emits one annotation per piece. When that happens, `rect` is the
+**largest** piece — so a consumer that understands only one rect gets the most
+useful one rather than an arbitrary one — and `fragments` carries every piece in
+reading order. Producers MUST NOT union the pieces: a union across two columns
+covers the text between them. A consumer wanting exact hit-testing SHOULD use
+`fragments` when present.
+
 **Coordinates are PDF-space, not DOM-space.** Origin bottom-left, y increasing
-upward. A consumer working in top-left screen coordinates converts with
-`y_screen = pageHeight − y_pdf`.
+upward.
+
+This is **PDFKit-native**: it is exactly `PDFPage` coordinate space, so an iOS
+consumer does no conversion at all and maps to view space with
+`PDFView.convert(_:to:)`. The conversion below is for web/DOM consumers only —
+applying it on iOS would flip the rects twice:
+
+```
+y_screen = pageHeight − y_pdf     // web/canvas consumers only
+```
 
 **Leaf blocks only.** A `row` block is a layout container; the map records the
 blocks *inside* it, since those are what a reader would tap. No entry in
@@ -124,9 +144,13 @@ blocks *inside* it, since those are what a reader would tap. No entry in
 
 One PBN game record per `hand`/`hands` block, in document order.
 
-- `[Board "n"]` is the block's **1-based document position**, so board `n`
-  corresponds to `blocks[].index === n − 1`. This is the join between the two
-  files.
+- `[Board "n"]` numbers the emitted deals **sequentially from 1**, with no gaps.
+  It is deliberately *not* the block's document position: only hand blocks
+  produce records, so position-numbering would emit boards 3, 7, 12 — legal PBN,
+  but many readers assume boards run sequentially from 1.
+- **The join lives in the click map**, not in the PBN: `blocks[].board` gives the
+  board number for the block that produced it. A non-standard PBN tag would have
+  been the alternative, and a map field is the better place for it.
 - Hands the lesson does not specify are written `-`, per PBN. Lesson hands are
   usually a single seat, and **no cards are ever invented** to complete a deal.
 - The mandatory PBN tag set is emitted with `?` placeholders where a lesson has
@@ -153,27 +177,47 @@ layout reports the layout.
 
 ### Link annotations are part of the artifact
 
-Those `lesson-block:<index>` links are **left in the PDF**. A viewer that
-surfaces the URI makes the printed handout tappable with no companion file at
-all, and the annotation rects are a redundant in-band copy of the click map.
+Those `lesson-block:<index>` links are **left in the PDF**. Consumers MAY use
+either the annotations or `lesson-blocks.json`; they carry the same rects and
+are generated together. The JSON additionally carries the DSL body, which
+annotations cannot.
 
-Consumers MAY use either the annotations or `lesson-blocks.json`; they carry the
-same rects and are generated together. The JSON additionally carries the DSL
-body, which annotations cannot.
+The redundancy is deliberate, and it is worth more than the
+standalone-handout argument alone:
 
-## Preservation obligation (pdf-handouts and other rewriters)
+- **Link annotations are cheap to read.** In PDFKit they are first-class —
+  `page.annotations`, filter for links, read the URI and bounds.
+- **Attachments are not.** PDFKit exposes no attachments API; extracting the
+  four files on iOS means dropping to `CGPDFDocument` via
+  `PDFDocument.documentRef` and walking the `/Names` tree and `/AF` array by
+  hand.
 
-Any pipeline stage that rewrites a lesson PDF — adding headers, footers, page
-numbers, or merging handouts — **MUST preserve the `/EmbeddedFiles` name tree
-and the `/AF` array**, or the artifact stops being reconstructable and the
-projection tool loses its input.
+So a consumer can hit-test taps entirely from annotations — the hot path, run on
+every touch — and parse attachments once per document load to get the bodies and
+PBN. Producers SHOULD keep the links for that reason.
 
-This is the one obligation this contract places on a party other than the
-producer. It is **unverified as of this writing**: pdf-handouts is not yet
-wired up, and many PDF tools drop attachments on rewrite. Verify with
-`npm run pdf:extract -- --pdf <output>` on any stage's output before relying on
-it. If a stage cannot preserve them, the correct fix is to re-attach downstream
-of that stage rather than to move the payload into the text layer.
+## Pipeline placement (pdf-handouts and other rewriters)
+
+**Attach last.** A pipeline that rewrites lesson PDFs — adding headers, footers,
+page numbers, merging handouts — SHOULD run `pdf:attach` as its **final stage**,
+after every rewrite.
+
+This is architectural, not stylistic. Whether a rewriter preserves attachments
+depends entirely on its PDF library: document-level manipulation generally keeps
+the `/Names` tree intact, while anything that re-renders or reconstructs the
+catalog drops it. Making attachment the last step means the pipeline never has
+to care, and stays order-independent.
+
+Stated as an obligation for stages that *do* rewrite after attachment: they MUST
+preserve the `/EmbeddedFiles` name tree and the `/AF` array, or the artifact
+stops being reconstructable and the projection tool loses its input. That
+remains in the contract as defense-in-depth, but **the architecture should not
+depend on it holding**.
+
+**Unverified as of this writing.** pdf-handouts is not yet wired up. Check any
+stage's output with `npm run pdf:extract -- --pdf <output>` before relying on
+it. If a stage cannot preserve attachments, re-attach downstream — never move
+the payload into the text layer.
 
 ## Producing and consuming
 
@@ -190,16 +234,30 @@ files**. Nothing in HTML, CSS, or JavaScript can add an attachment to a PDF the
 browser generates; a lesson printed with Cmd+P must have its payload added
 afterwards.
 
-Re-attaching is idempotent: a producer MUST replace its own attachments rather
-than appending, and MUST delete the superseded streams, or the file grows on
-every render.
+**Re-attaching MUST be idempotent in file size.** A producer replaces its own
+attachments rather than appending, and MUST emit output from which the
+superseded streams have been **reclaimed** — not merely unlinked.
+
+Unlinking alone is not enough, and the distinction is easy to miss. Removing an
+object from the `/Names` tree makes it logically gone, but an incremental-update
+writer leaves the old bytes in the file: it grows on every render even though
+the entry counts look right, and a superseded copy of the lesson source stays
+recoverable in the dead bytes. **Producers SHOULD write full-rewrite output**,
+which reclaims unreferenced objects. The reference implementation does (pdf-lib
+`save()` serializes the whole document), and its test asserts file size across
+repeated embeds rather than only entry counts — the counts alone would not catch
+this.
+
+Attachments a producer did not itself write MUST be left alone.
 
 ## Versioning and evolution
 
 - Adding an attachment, or an optional field to an existing one, is **MINOR**.
   Consumers MUST ignore fields they do not recognize.
 - Renaming or removing an attachment, changing `coordinateSpace`, or changing
-  the `index` ↔ `[Board]` correspondence is **MAJOR** and reviewed here.
+  the meaning of `rect`, `index`, or `board` is **MAJOR** and reviewed here.
+  (Adding `fragments` alongside `rect` was MINOR; redefining `rect` to mean a
+  union of fragments would not have been.)
 - The block `kind` values and `body` grammar are Contract 1's; this contract
   does not restate them and changing them is a Contract 1 change.
 
@@ -213,21 +271,39 @@ the same way Contract 3 is owned jointly by the emitter and the embedder.
 What should **not** move is the production side: the click map can only be
 generated where the print engine runs, which is here.
 
+## Resolved (2026-07-23 review)
+
+- **Link annotations are kept.** Beyond the standalone-handout argument, the
+  consumer cost is asymmetric: annotations are first-class in PDFKit while
+  attachments require dropping to `CGPDFDocument`. Keeping them gives the hot
+  path (hit-testing every touch) the cheap route. A `--no-links` producer flag
+  remains the escape hatch if stray URIs confuse ordinary viewers.
+- **Fragmented blocks are specified** rather than left silent: largest piece as
+  `rect`, all pieces in `fragments`, never unioned.
+- **PBN boards renumbered sequentially**, with the join moved to
+  `blocks[].board`, so gap-intolerant PBN readers are unaffected.
+- **Attach-last adopted** as the pipeline architecture, so preservation is
+  defense-in-depth rather than load-bearing.
+
 ## Open items for review
 
-1. **pdf-handouts preservation — unverified.** The central risk. Confirm the
-   handouts pipeline preserves attachments, and if not, decide whether it
-   re-attaches or whether lesson-studio runs after it.
-2. **Link annotations: keep or strip?** Kept, on the argument that a tappable
-   handout needs no companion file. If stray `lesson-block:` URIs prove
-   confusing in ordinary PDF viewers, a `--no-links` producer flag is the
-   escape hatch.
-3. **Auction-to-hand association.** Currently all-or-nothing (one auction, or
-   none). If lessons routinely pair a specific hand with a specific auction, the
-   DSL would need to express that link — a Contract 1 change, not one this
-   contract can solve.
-4. **Partial-hand PBN.** `-` for unknown hands is valid PBN, but confirm the
+1. **pdf-handouts preservation — unverified.** Lower risk now that attach-last
+   is the intended order, but still worth confirming what its PDF library does,
+   since anything reconstructing the catalog drops attachments.
+2. **Auction-to-hand association.** Currently all-or-nothing (one auction, or
+   none), which blocks "step through this auction on this deal" — the classroom
+   case this whole payload exists to serve. The DSL change looks small: an
+   optional `deal:` key on `auction` blocks referencing a hand, defaulting to
+   the nearest preceding `hand`/`hands` block, would cover the common case with
+   no authoring burden. That is a **Contract 1** change and belongs there.
+3. **Partial-hand PBN.** `-` for unknown hands is valid PBN, but confirm the
    card-play tool accepts a one-hand deal rather than requiring all four.
-5. **Board numbering.** `[Board "n"]` is document position, so it changes when a
-   lesson is edited. If the card-play tool wants stable identity across
-   revisions, that needs a durable per-block id in Contract 1.
+4. **Stable identity across revisions.** `index` and `board` are positional, so
+   they shift when a lesson is edited. That is fine while the join only has to
+   hold *within one PDF*, which it does by construction. It stops being fine
+   once something outside the PDF references a block across revisions —
+   annotations drawn on a board, notes keyed to a deal, records of which deals
+   were taught. The cheap answer then is a **content hash of the block body**,
+   which is derivable rather than authored and so needs no Contract 1 grammar
+   change; pair it with an occurrence index, since a lesson may legitimately
+   contain two identical blocks.

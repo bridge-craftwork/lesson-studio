@@ -66,6 +66,14 @@ if (values['no-embed']) {
   writeFileSync(values.out, rendered)
   console.log(`wrote ${values.out}`)
 } else {
+  // PBN first: it assigns board numbers, which the click map carries so a
+  // consumer can join a tapped block to its deal.
+  const pbn = lessonPbn(blocks, { event: values.lesson.split('/').pop() })
+  for (const { index, board } of pbn?.boards ?? []) {
+    const block = blocks.find((b) => b.index === index)
+    if (block) block.board = board
+  }
+
   const map = await readBlockPositions(rendered, blocks)
   const extras = {
     [BLOCK_MAP_ATTACHMENT]: {
@@ -76,10 +84,9 @@ if (values['no-embed']) {
     },
   }
 
-  const pbn = lessonPbn(blocks, { event: values.lesson.split('/').pop() })
   if (pbn) {
     extras[PBN_ATTACHMENT] = {
-      bytes: Buffer.from(pbn, 'utf8'),
+      bytes: Buffer.from(pbn.text, 'utf8'),
       mimeType: 'application/x-pbn',
       description: 'Lesson hands as PBN deals.',
       afRelationship: AFRelationship.Data,
@@ -88,11 +95,17 @@ if (values['no-embed']) {
 
   writeFileSync(values.out, await embedSource(rendered, values.lesson, { extras }))
 
-  const note = [`source`, `${blocks.length} block(s) mapped`, pbn ? 'PBN' : null]
+  const note = [`source`, `${blocks.length} block(s) mapped`, pbn ? `${pbn.boards.length} PBN deal(s)` : null]
     .filter(Boolean)
     .join(', ')
   console.log(`wrote ${values.out} (embedded: ${note})`)
   if (map.unlocated.length) {
     console.warn(`warning: ${map.unlocated.length} block(s) had no position in the PDF`)
+  }
+  if (map.fragmented.length) {
+    console.warn(
+      `note: ${map.fragmented.length} block(s) split across a column or page; ` +
+        `\`rect\` is the largest piece, \`fragments\` has them all`
+    )
   }
 }

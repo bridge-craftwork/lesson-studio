@@ -77,11 +77,16 @@ export async function readBlockPositions(pdfBytes, blocks) {
         .lookup(PDFName.of('Rect'), PDFArray)
         .asArray()
         .map((n) => Math.round(n.asNumber() * 100) / 100)
-      byIndex.set(index, { page: pageIdx + 1, rect })
+      // A block can produce MORE than one annotation: `break-inside: avoid` is
+      // a request, and a block taller than its column fragments anyway, one
+      // annotation per piece. Collect them all — keeping only the last would
+      // silently record the wrong half.
+      if (!byIndex.has(index)) byIndex.set(index, [])
+      byIndex.get(index).push({ page: pageIdx + 1, rect })
     }
   })
 
-  const located = blocks.map((b) => ({ ...b, ...(byIndex.get(b.index) ?? {}) }))
+  const located = blocks.map((b) => ({ ...b, ...placement(byIndex.get(b.index)) }))
   return {
     // Contract 5 payload version. Consumers dispatch on this before trusting
     // any field below it.
@@ -96,5 +101,27 @@ export async function readBlockPositions(pdfBytes, blocks) {
     // Honest about coverage: a block the engine gave no annotation for has no
     // page/rect, and a consumer should know that rather than infer position 0.
     unlocated: located.filter((b) => b.page == null).map((b) => b.index),
+    fragmented: located.filter((b) => b.fragments).map((b) => b.index),
   }
+}
+
+/**
+ * Turn a block's annotations into its placement. One annotation is the normal
+ * case. Several means the block fragmented across columns or pages: `rect` is
+ * then the **largest** piece, so a consumer that only understands one rect gets
+ * the most useful one rather than an arbitrary one, and `fragments` carries
+ * every piece for a consumer that wants exact hit-testing. The pieces are never
+ * unioned — a union across two columns would cover the text between them.
+ */
+function placement(annots) {
+  if (!annots?.length) return {}
+
+  const ordered = [...annots].sort(
+    (a, b) => a.page - b.page || a.rect[0] - b.rect[0] || b.rect[3] - a.rect[3]
+  )
+  if (ordered.length === 1) return ordered[0]
+
+  const area = (r) => (r[2] - r[0]) * (r[3] - r[1])
+  const biggest = ordered.reduce((best, f) => (area(f.rect) > area(best.rect) ? f : best))
+  return { ...biggest, fragments: ordered }
 }
