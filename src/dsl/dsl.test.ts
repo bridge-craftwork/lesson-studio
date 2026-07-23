@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest'
 import { normalizeHolding, normalizeHand, handHcp, cardCount, toComponentHand } from './hand'
 import { isCall, stripAnnotationMarker, annotationIndex } from './call'
 import { scanReservedBlocks } from './scan'
-import { isReservedBlock } from './types'
+import { isReservedBlock, RESERVED_BLOCKS } from './types'
+import { blockSchema, completions } from './schema'
 import { parseHandBlock, serializeHandBlock } from './hand-block'
 import { parseRowBlock } from './row-block'
 import { validateLesson } from './validate'
@@ -227,6 +228,41 @@ describe('auction block', () => {
     expect(() => parseAuctionBlock('dealer: N\ncolumns: 3\n1C')).toThrow(/illegal columns/)
     expect(() => parseAuctionBlock('dealer: N\ngrid: maybe\n1C')).toThrow(/illegal grid/)
     expect(() => parseAuctionBlock('dealer: N\nlabels: Opener\n1C')).toThrow(/exactly two/)
+  })
+})
+
+describe('block key schema', () => {
+  it('describes every key the auction parser accepts', () => {
+    const names = blockSchema('auction')!.keys.map((k) => k.name)
+    expect(names).toEqual(['dealer', 'columns', 'labels', 'grid'])
+  })
+
+  it('covers every reserved block, and each example parses', () => {
+    for (const tag of RESERVED_BLOCKS) expect(blockSchema(tag), tag).toBeDefined()
+    // The examples are offered as starting points, so they must actually load.
+    expect(() => parseAuctionBlock(blockSchema('auction')!.example)).not.toThrow()
+    expect(() => parseHandBlock(blockSchema('hand')!.example)).not.toThrow()
+    expect(() => parseHandsBlock(blockSchema('hands')!.example)).not.toThrow()
+    expect(() => parseResponseBox(blockSchema('response-box')!.example)).not.toThrow()
+  })
+
+  it('completes on a prefix, and offers everything on an empty one', () => {
+    expect(completions('auction', 'co').map((k) => k.name)).toEqual(['columns'])
+    expect(completions('auction', '').map((k) => k.name)).toEqual([
+      'dealer',
+      'columns',
+      'labels',
+      'grid',
+    ])
+    // prefix, not substring — `l` must not drag in `dealer`/`columns`
+    expect(completions('auction', 'l').map((k) => k.name)).toEqual(['labels'])
+    expect(completions('auction', 'zz')).toEqual([])
+    expect(completions('not-a-block', '')).toEqual([])
+  })
+
+  it('excludes body-line patterns, which are not completable keys', () => {
+    // `hand` describes `S / H / D / C` as a body pattern, not a literal key.
+    expect(completions('hand', '').map((k) => k.name)).toEqual(['seat', 'label', 'marks'])
   })
 })
 

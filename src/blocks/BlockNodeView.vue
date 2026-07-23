@@ -2,7 +2,8 @@
 import { computed, nextTick, ref } from 'vue'
 import { useNodeViewContext } from '@prosemirror-adapter/vue'
 import BlockView from '../render/BlockView.vue'
-import type { ReservedBlock } from '@/dsl'
+import BlockKeyReference from './BlockKeyReference.vue'
+import { completions, type ReservedBlock } from '@/dsl'
 
 // Generic node view for every reserved DSL block: renders the shared read-only
 // BlockView, plus an "edit source" affordance. Editing swaps in a text area for
@@ -42,6 +43,72 @@ function cancel() {
   editing.value = false
   draft.value = body.value
 }
+
+// --- key autocomplete -------------------------------------------------------
+// Offers the block's Contract 1 keys while typing one. Only fires in key
+// position — the start of a line, nothing but letters typed, no colon yet — so
+// it never interrupts a holding, a call, or a response-box row.
+const caret = ref(0)
+const chosen = ref(0)
+
+/** The partial key under the caret, or null if the caret isn't in key position. */
+const keyPrefix = computed(() => {
+  if (!editing.value) return null
+  const upto = draft.value.slice(0, caret.value)
+  const line = upto.slice(upto.lastIndexOf('\n') + 1)
+  return /^[A-Za-z-]*$/.test(line) ? line : null
+})
+
+const suggestions = computed(() =>
+  keyPrefix.value === null ? [] : completions(tag.value, keyPrefix.value)
+)
+
+// An exact, complete key needs no menu — you've already typed it.
+const showSuggestions = computed(
+  () =>
+    suggestions.value.length > 0 &&
+    !(suggestions.value.length === 1 && suggestions.value[0].name === keyPrefix.value)
+)
+
+function syncCaret(e: Event) {
+  caret.value = (e.target as HTMLTextAreaElement).selectionStart ?? 0
+  chosen.value = 0
+}
+
+function accept(index = chosen.value) {
+  const pick = suggestions.value[index]
+  if (!pick || keyPrefix.value === null) return
+  const start = caret.value - keyPrefix.value.length
+  const insert = `${pick.name}: `
+  draft.value = draft.value.slice(0, start) + insert + draft.value.slice(caret.value)
+  const at = start + insert.length
+  caret.value = at
+  nextTick(() => textarea.value?.setSelectionRange(at, at))
+}
+
+function move(delta: number) {
+  const n = suggestions.value.length
+  if (n) chosen.value = (chosen.value + delta + n) % n
+}
+
+// Esc closes the menu first and only cancels the edit once it's gone; Tab and
+// Enter accept a suggestion rather than indenting or breaking the line.
+function onKeydown(e: KeyboardEvent) {
+  if (!showSuggestions.value) {
+    if (e.key === 'Escape') { e.preventDefault(); e.stopPropagation(); cancel() }
+    return
+  }
+  if (e.key === 'ArrowDown') { e.preventDefault(); move(1) }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); move(-1) }
+  else if (e.key === 'Tab' || (e.key === 'Enter' && !e.metaKey && !e.ctrlKey)) {
+    e.preventDefault()
+    accept()
+  } else if (e.key === 'Escape') {
+    e.preventDefault()
+    e.stopPropagation()
+    caret.value = -1
+  }
+}
 </script>
 
 <template>
@@ -58,17 +125,39 @@ function cancel() {
         <button class="block-edit__btn block-edit__btn--primary" @click="apply">Done</button>
       </div>
       <div class="block-edit__panes">
-        <textarea
-          ref="textarea"
-          v-model="draft"
-          class="block-edit__source"
-          spellcheck="false"
-          :rows="rows"
-          @keydown.esc.stop.prevent="cancel"
-          @keydown.enter.meta.stop.prevent="apply"
-          @keydown.enter.ctrl.stop.prevent="apply"
-        />
+        <div class="block-edit__editor">
+          <textarea
+            ref="textarea"
+            v-model="draft"
+            class="block-edit__source"
+            spellcheck="false"
+            :rows="rows"
+            @input="syncCaret"
+            @keyup="syncCaret"
+            @click="syncCaret"
+            @blur="caret = -1"
+            @keydown="onKeydown"
+            @keydown.enter.meta.stop.prevent="apply"
+            @keydown.enter.ctrl.stop.prevent="apply"
+          />
+          <ul v-if="showSuggestions" class="block-edit__ac">
+            <li
+              v-for="(s, i) in suggestions"
+              :key="s.name"
+              class="block-edit__ac-item"
+              :class="{ 'is-active': i === chosen }"
+              @mousedown.prevent="accept(i)"
+              @mouseenter="chosen = i"
+            >
+              <code class="block-edit__ac-name">{{ s.name }}</code>
+              <code class="block-edit__ac-values">{{ s.values }}</code>
+              <span v-if="s.default" class="block-edit__ac-default">({{ s.default }})</span>
+              <span class="block-edit__ac-doc">{{ s.doc }}</span>
+            </li>
+          </ul>
+        </div>
         <div class="block-edit__preview"><BlockView :tag="tag" :body="previewBody" /></div>
+        <BlockKeyReference :tag="tag" />
       </div>
     </div>
 
@@ -162,9 +251,14 @@ function cancel() {
   padding: 0.6rem;
   align-items: flex-start;
 }
-.block-edit__source {
+.block-edit__editor {
   flex: 1 1 18rem;
   min-width: 14rem;
+  position: relative;
+  display: flex;
+}
+.block-edit__source {
+  flex: 1;
   font-family: var(--ls-mono, monospace);
   font-size: 0.8rem;
   line-height: 1.45;
@@ -180,5 +274,54 @@ function cancel() {
 .block-edit__preview {
   flex: 1 1 16rem;
   min-width: 12rem;
+}
+
+/* Autocomplete menu. Anchored under the source box rather than tracking the
+   caret: the textarea gives no caret coordinates without a mirror element, and
+   the blocks are short enough that a fixed anchor is never far from the eye. */
+.block-edit__ac {
+  position: absolute;
+  z-index: 30;
+  top: 100%;
+  left: 0;
+  right: 0;
+  margin: 0.15rem 0 0;
+  padding: 0.15rem;
+  list-style: none;
+  background: var(--ls-bg, #fff);
+  border: 1px solid var(--ls-accent, #1d4ed8);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+  max-height: 13rem;
+  overflow-y: auto;
+}
+.block-edit__ac-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  padding: 0.2rem 0.35rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+.block-edit__ac-item.is-active {
+  background: var(--ls-accent, #1d4ed8);
+  color: #fff;
+}
+.block-edit__ac-name {
+  font-family: var(--ls-mono, monospace);
+  font-weight: 700;
+}
+.block-edit__ac-values {
+  font-family: var(--ls-mono, monospace);
+  opacity: 0.75;
+}
+.block-edit__ac-default,
+.block-edit__ac-doc {
+  opacity: 0.7;
+}
+.block-edit__ac-doc {
+  flex: 1 1 100%;
 }
 </style>

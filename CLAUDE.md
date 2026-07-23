@@ -42,6 +42,7 @@ npm run print:pdf -- --lesson <file.md> --out out.pdf # needs a server running
 
 ```
 src/dsl/        Contract 1 parsers + adapters + validate.ts  (pure, Node-safe)
+                schema.ts = the authorable keys, machine-readable
 src/blocks/     Milkdown node views — how blocks render/edit live in the editor
 src/render/     BlockView.vue — the shared render path (gallery + print + editor)
 src/bridge/     Contract 2 components; vendor/ = real Bridge-Classroom snapshot
@@ -95,6 +96,11 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
 - **Print columns are per-lesson** via front-matter `columns:` (default 2).
   More columns ≠ fewer pages: narrow columns wrap tables *taller*. Trim content
   instead.
+- **A new block key means editing `src/dsl/schema.ts` too.** It's what the
+  editor's key reference and autocomplete read; a key that isn't there exists
+  but is undiscoverable while authoring. It documents, it does *not* parse —
+  the hand-written parsers stay authoritative and accept legacy forms the
+  schema doesn't describe.
 - Every DSL block must **round-trip losslessly** through Milkdown. Blocks store
   their body verbatim in node attrs; parsers are permissive, serializers emit a
   canonical form.
