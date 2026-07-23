@@ -14,6 +14,14 @@
 }
 
 .print-view {
+  /* Figures scale with the authored text size, 12pt being 1.
+     --table-scale is RE-DECLARED here, not just inherited: a var() inside a
+     custom property resolves against the element the property is declared on,
+     so :root's `calc(0.62 * var(--lesson-scale))` had already computed against
+     :root's ratio of 1 and inherited down as a fixed number. Overriding
+     --lesson-scale alone left the hands at 12pt while the prose grew. */
+  --lesson-scale: calc(var(--print-font-pt, 12) * var(--print-text-scale, 1) / 12);
+  --table-scale: calc(0.62 * var(--lesson-scale));
   max-width: 7.5in;
   margin: 0 auto;
   padding: 0;

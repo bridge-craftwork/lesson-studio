@@ -448,7 +448,11 @@ function onPopupSelect(rank) {
 .hcp {
   margin-top: calc(8px * var(--table-scale));
   text-align: center;
-  font-size: max(11px, calc(12px * var(--table-scale)));
+  /* The floor is in `em`, not px, so it tracks the host document's text size:
+     an absolute floor holds the label at one size while everything around it
+     grows with the lesson's font-size, which reads as a bug. 0.68em is ~11px
+     at a 16px document, i.e. the same floor as before at the default size. */
+  font-size: max(0.68em, calc(12px * var(--table-scale)));
   color: #666;
 }
 

@@ -67,18 +67,18 @@ const asComponent = (h: QuizItem['hand']) => ({
 .bc-quiz-placeholder {
   border: 1px solid var(--ls-border, #e4e4e7);
   border-radius: 8px;
-  padding: 0.75rem 1rem;
-  max-width: 34rem;
+  padding: 0.75em 1em;
+  max-width: 34em;
 }
 .head {
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.5em;
 }
 .title {
   display: block;
   font-weight: 650;
 }
 .prompt {
-  font-size: 0.9rem;
+  font-size: 0.9em;
   color: var(--ls-fg, #333);
 }
 .items {
@@ -87,12 +87,12 @@ const asComponent = (h: QuizItem['hand']) => ({
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: 1em;
 }
 .item {
   display: flex;
   align-items: flex-start;
-  gap: 0.25rem;
+  gap: 0.25em;
 }
 .num {
   font-weight: 650;
@@ -103,19 +103,19 @@ const asComponent = (h: QuizItem['hand']) => ({
   color: var(--ls-accent, #1d4ed8);
 }
 .answers {
-  margin-top: 0.75rem;
-  padding-top: 0.5rem;
+  margin-top: 0.75em;
+  padding-top: 0.5em;
   border-top: 1px dashed var(--ls-border, #ccc);
 }
 .answers-head {
-  font-size: 0.75rem;
+  font-size: 0.75em;
   text-transform: uppercase;
   letter-spacing: 0.05em;
   color: var(--ls-muted, #666);
 }
 .answers ol {
-  margin: 0.25rem 0 0;
-  padding-left: 1.2rem;
-  font-size: 0.85rem;
+  margin: 0.25em 0 0;
+  padding-left: 1.2em;
+  font-size: 0.85em;
 }
 </style>

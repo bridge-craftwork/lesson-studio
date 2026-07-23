@@ -25,8 +25,13 @@
      calc() is INVALID, so widths/font-sizes silently fall back — which left
      hand rows shrink-wrapping each suit glyph (ragged card alignment) and
      rendering at inherited text size. Define it here as the host app.
-     Lessons want a denser figure than the app's table view, hence < 1. */
-  --table-scale: 0.62;
+     Lessons want a denser figure than the app's table view, hence < 1.
+
+     Figures track the document's text size through --lesson-scale (1 = the
+     12pt house size). Without that the prose grows on `font-size: 14` and the
+     hands, auctions and boxes stay put, which reads as a bug. */
+  --lesson-scale: 1;
+  --table-scale: calc(0.62 * var(--lesson-scale));
 
   /* HandDisplay hardcodes a card face; this hands it the document's instead,
      so card ranks match the lesson and embed with the rest of the text.

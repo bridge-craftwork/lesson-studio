@@ -169,7 +169,7 @@ const auctionNotes = computed(() =>
   flex: 0 0 auto;
   /* Row figures read as the section's focus — a step up from the document
      baseline (:root --table-scale) so hand badges have room. */
-  --table-scale: 0.78;
+  --table-scale: calc(0.78 * var(--lesson-scale, 1));
 }
 /* An auction spans the full column rather than shrink-wrapping. Otherwise the
    figure's width is set by whichever is wider — the table or the FOOTNOTES —
@@ -183,13 +183,13 @@ const auctionNotes = computed(() =>
   display: block;
   /* Auction bids are natively 18px against the hand's 24px cards, so they need
      a higher scale than the document baseline to read at the same size. */
-  --table-scale: 0.86;
+  --table-scale: calc(0.86 * var(--lesson-scale, 1));
 }
 .auction__notes {
   list-style: none;
   margin: 0.4rem 0 0;
   padding-left: 0;
-  font-size: 0.75rem;
+  font-size: 0.75em;
   color: var(--ls-muted, #666);
 }
 .auction__note-num {

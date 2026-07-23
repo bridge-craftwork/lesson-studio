@@ -111,6 +111,14 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   per lesson (179KB → 53KB after the switch). Suit glyphs (U+2660–2667) are
   *not* in Atkinson's ranges and still fall back per platform; bundling a
   symbol font for four glyphs (382KB) wasn't worth it.
+- **Figures scale with the text.** `--lesson-scale` (1 = the 12pt house size)
+  multiplies every `--table-scale`, and lesson-studio's own components size in
+  `em`. Without it, `font-size: 14` grew the prose and left the hands, auctions
+  and boxes at 12pt — which reads as a bug. **`--table-scale` must be
+  re-declared wherever `--lesson-scale` changes**: a `var()` inside a custom
+  property resolves against the element the property is *declared* on, so
+  `:root`'s copy had already computed against a ratio of 1 and inherited down
+  as a fixed number.
 - **A CSS-wide keyword as a custom-property value doesn't do what it looks
   like.** `--hand-font: inherit` means "this property inherits", not "substitute
   the keyword `inherit`" — so `var(--hand-font, …)` read as unset and the

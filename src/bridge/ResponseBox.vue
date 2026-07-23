@@ -35,17 +35,17 @@ defineProps<{
   border: 1px solid var(--ls-border, #e4e4e7);
   border-radius: 8px;
   overflow: hidden;
-  /* 15rem keeps the box from shrink-wrapping to a cramped width when there's
+  /* 15em keeps the box from shrink-wrapping to a cramped width when there's
      room — but it must never exceed the column, or it spills into the gutter
      and crowds the next column. At 3 print columns the column is ~212px
      against this 240px floor, which is exactly what that looked like. */
-  min-width: min(15rem, 100%);
+  min-width: min(15em, 100%);
   max-width: 100%;
 }
 .title {
-  padding: 0.4rem 0.75rem;
+  padding: 0.4em 0.75em;
   font-weight: 650;
-  font-size: 0.85rem;
+  font-size: 0.85em;
   background: var(--ls-panel, #f7f7f8);
   border-bottom: 1px solid var(--ls-border, #e4e4e7);
 }
@@ -54,8 +54,8 @@ table {
   width: 100%;
 }
 td {
-  padding: 0.3rem 0.75rem;
-  font-size: 0.85rem;
+  padding: 0.3em 0.75em;
+  font-size: 0.85em;
 }
 td.bid {
   font-family: var(--ls-mono, monospace);
@@ -67,8 +67,8 @@ tr:not(:last-child) td {
   border-bottom: 1px solid var(--ls-border, #eee);
 }
 .note {
-  padding: 0.4rem 0.75rem;
-  font-size: 0.75rem;
+  padding: 0.4em 0.75em;
+  font-size: 0.75em;
   color: var(--ls-muted, #666);
   border-top: 1px solid var(--ls-border, #e4e4e7);
 }
