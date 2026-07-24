@@ -163,7 +163,15 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   already in the PDF (your own PBNs) are left untouched.
 - **Not in the text layer** — extraction there loses newlines and leading
   whitespace, which the DSL needs. The browser's own print dialog cannot attach
-  files at all; use `pdf:attach` afterwards.
+  files at all. Two ways to add them: `pdf:attach` (CLI), or the **drop-to-attach
+  bar** on `print.html` — print to PDF, drop it back, and pdf-lib embeds all four
+  client-side (no server). The click-map's positions ride on `beforeprint`
+  anchor-wrapping in `PrintView`, so a browser Cmd+P emits the same
+  `lesson-block:` link annotations Playwright does.
+- **One embed implementation, two callers.** `src/lesson/pdfEmbed.ts` is the
+  browser-safe pdf-lib core (attach/reclaim + read positions); the CLI scripts
+  and the in-browser export both use it, so the name-tree bookkeeping can't
+  drift. The scripts run under `tsx` because they import this `.ts`.
 - **Block positions come from link annotations, not from measuring the DOM.**
   The print view is CSS multicol under `@page`, so the print engine paginates
   and `break-inside: avoid` moves blocks — JS can't see any of it. Each block is

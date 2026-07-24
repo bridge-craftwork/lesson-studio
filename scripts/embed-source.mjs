@@ -16,13 +16,20 @@ import { readFileSync } from 'node:fs'
 import { basename } from 'node:path'
 import { createRequire } from 'node:module'
 import { inflateSync } from 'node:zlib'
-import { PDFDocument, PDFName, PDFDict, PDFArray, AFRelationship } from 'pdf-lib'
+import { PDFDocument, PDFName, PDFDict, PDFArray } from 'pdf-lib'
+import {
+  embedAttachments,
+  buildProvenance,
+  SOURCE_ATTACHMENT,
+  PROVENANCE_ATTACHMENT,
+} from '../src/lesson/pdfEmbed'
 
 const require = createRequire(import.meta.url)
 
-/** The names the payloads are attached under; also how you find them again. */
-export const SOURCE_ATTACHMENT = 'lesson-source.md'
-export const PROVENANCE_ATTACHMENT = 'lesson-provenance.json'
+// The attach core lives in the shared, browser-safe module; these are the
+// Node-only conveniences layered on top (file reading, package version, and
+// zlib-based extraction for the read-back path).
+export { SOURCE_ATTACHMENT, PROVENANCE_ATTACHMENT }
 
 /**
  * What produced this PDF. Recorded because a PDF outlives the context it was
@@ -36,13 +43,11 @@ export function provenance(lessonPath, { renderedAt } = {}) {
   } catch {
     // Fine — provenance is a convenience, never a reason to fail a render.
   }
-  return {
-    generator: 'lesson-studio',
+  return buildProvenance({
     generatorVersion: version,
-    dslSpec: 'contract-1/v1',
     sourceFile: basename(lessonPath),
     renderedAt: renderedAt ?? new Date().toISOString(),
-  }
+  })
 }
 
 /**
@@ -50,93 +55,11 @@ export function provenance(lessonPath, { renderedAt } = {}) {
  * returning the new PDF bytes.
  */
 export async function embedSource(pdfBytes, lessonPath, opts = {}) {
-  const markdown = readFileSync(lessonPath)
-  const pdf = await PDFDocument.load(pdfBytes)
-
-  // `extras` is `{ name: { bytes, mimeType, description } }` — the block map
-  // and PBN ride along the same way, and are replaced on re-embed the same way.
-  const extras = opts.extras ?? {}
-
-  // pdf-lib appends unconditionally, so embedding twice would leave two copies
-  // under the same name — the PDF grows on every re-render and readers disagree
-  // about which one wins. Drop ours first so re-embedding replaces. Attachments
-  // we didn't put there (e.g. a PBN already in the file) are left alone.
-  dropAttachments(pdf, [SOURCE_ATTACHMENT, PROVENANCE_ATTACHMENT, ...Object.keys(extras)])
-
-  // AFRelationship marks *what the file is to this document*, so a reader can
-  // find the source by relationship rather than by guessing our filename —
-  // `Source` is the standard tag for "the document was generated from this".
-  await pdf.attach(markdown, SOURCE_ATTACHMENT, {
-    mimeType: 'text/markdown',
-    description: 'Lesson DSL source — reconstructs this document exactly.',
-    afRelationship: AFRelationship.Source,
+  return embedAttachments(pdfBytes, {
+    sourceBytes: readFileSync(lessonPath),
+    provenance: provenance(lessonPath, opts),
+    extras: opts.extras ?? {},
   })
-
-  const meta = provenance(lessonPath, opts)
-  await pdf.attach(Buffer.from(JSON.stringify(meta, null, 2), 'utf8'), PROVENANCE_ATTACHMENT, {
-    mimeType: 'application/json',
-    description: 'What produced this PDF.',
-    afRelationship: AFRelationship.Supplement,
-  })
-
-  for (const [name, spec] of Object.entries(extras)) {
-    await pdf.attach(spec.bytes, name, {
-      mimeType: spec.mimeType ?? 'application/octet-stream',
-      description: spec.description ?? '',
-      afRelationship: spec.afRelationship ?? AFRelationship.Supplement,
-    })
-  }
-
-  // Surface the same facts in document properties, where a viewer's "Get Info"
-  // panel shows them without anyone knowing to look for attachments at all.
-  pdf.setCreator(`lesson-studio ${meta.generatorVersion}`)
-  pdf.setProducer(`lesson-studio ${meta.generatorVersion} (source embedded)`)
-  pdf.setSubject(`Lesson source embedded as ${SOURCE_ATTACHMENT}`)
-
-  return pdf.save()
-}
-
-/**
- * Remove named attachments from a loaded document. They are registered in two
- * places — the `/Names` `/EmbeddedFiles` name tree and the catalog's `/AF`
- * array (the PDF/A-3 associated-files tag) — and a leftover in either one is a
- * dangling reference, so both are cleaned.
- */
-function dropAttachments(pdf, names) {
-  const list = pdf.catalog
-    .lookupMaybe(PDFName.of('Names'), PDFDict)
-    ?.lookupMaybe(PDFName.of('EmbeddedFiles'), PDFDict)
-    ?.lookupMaybe(PDFName.of('Names'), PDFArray)
-  if (!list) return
-
-  // Back to front: the leaf array is [name, spec, name, spec, …], so removing a
-  // pair shifts everything after it.
-  const orphaned = []
-  for (let i = list.size() - 2; i >= 0; i -= 2) {
-    if (names.includes(list.lookup(i)?.decodeText?.())) {
-      orphaned.push(list.get(i + 1))
-      list.remove(i + 1)
-      list.remove(i)
-    }
-  }
-  if (!orphaned.length) return
-
-  const gone = orphaned.map(String)
-  const af = pdf.catalog.lookupMaybe(PDFName.of('AF'), PDFArray)
-  for (let i = (af?.size() ?? 0) - 1; i >= 0; i--) {
-    if (gone.includes(String(af.get(i)))) af.remove(i)
-  }
-
-  // Unlinking isn't enough: pdf-lib never collects unreferenced objects, so the
-  // old file streams would linger and the PDF would grow on every re-embed.
-  // Delete the filespec and the stream it points at.
-  for (const ref of orphaned) {
-    const spec = pdf.context.lookup(ref, PDFDict)
-    const stream = spec?.get(PDFName.of('EF'))
-    const streamRef = pdf.context.lookupMaybe(stream, PDFDict)?.get(PDFName.of('F'))
-    if (streamRef) pdf.context.delete(streamRef)
-    pdf.context.delete(ref)
-  }
 }
 
 /**

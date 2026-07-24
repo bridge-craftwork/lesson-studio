@@ -22,8 +22,9 @@ import { parseArgs } from 'node:util'
 import { chromium } from 'playwright'
 import { AFRelationship } from 'pdf-lib'
 import { embedSource } from './embed-source.mjs'
-import { markBlocks, readBlockPositions, BLOCK_MAP_ATTACHMENT } from './block-map.mjs'
-import { lessonPbn, PBN_ATTACHMENT } from './lesson-pbn.mjs'
+import { markBlocks } from './block-map.mjs'
+import { readBlockPositions, BLOCK_MAP_ATTACHMENT, PBN_ATTACHMENT } from '../src/lesson/pdfEmbed'
+import { lessonPbn } from '../src/dsl/lesson-pbn'
 import { resolveDealLinks } from '../src/dsl/deal-link'
 
 const { values } = parseArgs({

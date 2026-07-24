@@ -12,8 +12,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "print:pdf": "tsx scripts/print-pdf.mjs",
-    "pdf:attach": "node scripts/pdf-attach.mjs",
-    "pdf:extract": "node scripts/pdf-extract.mjs",
+    "pdf:attach": "tsx scripts/pdf-attach.mjs",
+    "pdf:extract": "tsx scripts/pdf-extract.mjs",
     "lint:lessons": "tsx scripts/lint-lessons.ts"
   },
   "dependencies": {

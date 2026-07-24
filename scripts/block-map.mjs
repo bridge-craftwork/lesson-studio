@@ -16,10 +16,15 @@
  * `lesson-block:<n>` URI turns the printed handout into something tappable
  * without any companion file at all.
  */
-import { PDFDocument, PDFName, PDFArray, PDFDict } from 'pdf-lib'
+// readBlockPositions + the map constants now live in the shared, browser-safe
+// core so the CLI and the in-browser export share one implementation.
+export {
+  readBlockPositions,
+  BLOCK_MAP_ATTACHMENT,
+  BLOCK_URI_SCHEME,
+} from '../src/lesson/pdfEmbed'
+import { BLOCK_URI_SCHEME } from '../src/lesson/pdfEmbed'
 
-export const BLOCK_MAP_ATTACHMENT = 'lesson-blocks.json'
-export const BLOCK_URI_SCHEME = 'lesson-block'
 
 /**
  * Wrap each leaf bridge block in an anchor and return its tag and body, in
@@ -51,77 +56,4 @@ export async function markBlocks(page) {
       return { index: i, kind: el.getAttribute('data-block-tag'), body: el.getAttribute('data-block-body') ?? '' }
     })
   }, BLOCK_URI_SCHEME)
-}
-
-/**
- * Read back the link annotations Chrome emitted, pairing each block with its
- * page and rect. `rect` is `[x1, y1, x2, y2]` in PDF points, origin at the
- * page's bottom-left — PDF's own convention, not the DOM's.
- */
-export async function readBlockPositions(pdfBytes, blocks) {
-  const pdf = await PDFDocument.load(pdfBytes)
-  const byIndex = new Map()
-
-  pdf.getPages().forEach((page, pageIdx) => {
-    const annots = page.node.lookupMaybe(PDFName.of('Annots'), PDFArray)
-    for (let i = 0; i < (annots?.size() ?? 0); i++) {
-      const annot = annots.lookup(i, PDFDict)
-      const uri = annot
-        .lookupMaybe(PDFName.of('A'), PDFDict)
-        ?.lookup(PDFName.of('URI'))
-        ?.decodeText?.()
-      if (!uri?.startsWith(`${BLOCK_URI_SCHEME}:`)) continue
-
-      const index = Number(uri.slice(BLOCK_URI_SCHEME.length + 1))
-      const rect = annot
-        .lookup(PDFName.of('Rect'), PDFArray)
-        .asArray()
-        .map((n) => Math.round(n.asNumber() * 100) / 100)
-      // A block can produce MORE than one annotation: `break-inside: avoid` is
-      // a request, and a block taller than its column fragments anyway, one
-      // annotation per piece. Collect them all — keeping only the last would
-      // silently record the wrong half.
-      if (!byIndex.has(index)) byIndex.set(index, [])
-      byIndex.get(index).push({ page: pageIdx + 1, rect })
-    }
-  })
-
-  const located = blocks.map((b) => ({ ...b, ...placement(byIndex.get(b.index)) }))
-  return {
-    // Contract 5 payload version. Consumers dispatch on this before trusting
-    // any field below it.
-    version: 1,
-    pageSize: pdf.getPages().map((p) => [
-      Math.round(p.getWidth() * 100) / 100,
-      Math.round(p.getHeight() * 100) / 100,
-    ]),
-    pageCount: pdf.getPageCount(),
-    coordinateSpace: 'pdf-points, origin bottom-left',
-    blocks: located,
-    // Honest about coverage: a block the engine gave no annotation for has no
-    // page/rect, and a consumer should know that rather than infer position 0.
-    unlocated: located.filter((b) => b.page == null).map((b) => b.index),
-    fragmented: located.filter((b) => b.fragments).map((b) => b.index),
-  }
-}
-
-/**
- * Turn a block's annotations into its placement. One annotation is the normal
- * case. Several means the block fragmented across columns or pages: `rect` is
- * then the **largest** piece, so a consumer that only understands one rect gets
- * the most useful one rather than an arbitrary one, and `fragments` carries
- * every piece for a consumer that wants exact hit-testing. The pieces are never
- * unioned — a union across two columns would cover the text between them.
- */
-function placement(annots) {
-  if (!annots?.length) return {}
-
-  const ordered = [...annots].sort(
-    (a, b) => a.page - b.page || a.rect[0] - b.rect[0] || b.rect[3] - a.rect[3]
-  )
-  if (ordered.length === 1) return ordered[0]
-
-  const area = (r) => (r[2] - r[0]) * (r[3] - r[1])
-  const biggest = ordered.reduce((best, f) => (area(f.rect) > area(best.rect) ? f : best))
-  return { ...biggest, fragments: ordered }
 }

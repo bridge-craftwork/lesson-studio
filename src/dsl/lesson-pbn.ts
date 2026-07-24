@@ -8,14 +8,13 @@
  * sequentially from 1. The block a board came from is recorded in the click map
  * instead, which is a better place for a join than a non-standard PBN tag.
  */
-import { parseHandBlock } from '../src/dsl/hand-block'
-import { parseHandsBlock } from '../src/dsl/hands-block'
-import { parseAuctionBlock } from '../src/dsl/auction-block'
-import { stripAnnotationMarker } from '../src/dsl/call'
-import { pbnGame, pbnFile } from '../src/dsl/pbn'
-import { resolveDealLinks, auctionsByDeal } from '../src/dsl/deal-link'
-
-export const PBN_ATTACHMENT = 'lesson-hands.pbn'
+import { parseHandBlock } from './hand-block'
+import { parseHandsBlock } from './hands-block'
+import { parseAuctionBlock } from './auction-block'
+import { stripAnnotationMarker } from './call'
+import { pbnGame, pbnFile } from './pbn'
+import { resolveDealLinks, auctionsByDeal } from './deal-link'
+import type { Seat, Hand } from './types'
 
 /**
  * PBN for every deal in the lesson, or null if it has no hands at all.
@@ -25,7 +24,9 @@ export const PBN_ATTACHMENT = 'lesson-hands.pbn'
  * with the block index it came from; the caller stamps that onto the click map
  * so a tool that hit-tests a hand can find its PBN record.
  */
-export function lessonPbn(blocks, { event } = {}) {
+export interface PbnBlock { index: number; kind: string; body: string }
+
+export function lessonPbn(blocks: PbnBlock[], { event }: { event?: string } = {}) {
   // Which auction belongs to which hand — an explicit `deal:` where the lesson
   // says so, otherwise the nearest preceding hand (see deal-link.ts). A deal
   // with several auctions on it takes the first; the rest still render on the
@@ -33,10 +34,10 @@ export function lessonPbn(blocks, { event } = {}) {
   const { links, errors } = resolveDealLinks(blocks)
   const byDeal = auctionsByDeal(links)
 
-  const games = []
-  const boards = []
+  const games: string[] = []
+  const boards: { index: number; board: number; auction: number | null }[] = []
   for (const block of blocks) {
-    let hands = null
+    let hands: Partial<Record<Seat, Hand>> | null = null
     try {
       if (block.kind === 'hand') {
         const { seat, hand } = parseHandBlock(block.body)
@@ -52,11 +53,12 @@ export function lessonPbn(blocks, { event } = {}) {
     if (!hands) continue
 
     const paired = byDeal.get(block.index)?.[0]
-    const bidding = paired == null ? null : safeAuction(blocks.find((b) => b.index === paired)?.body)
+    const pairedBody = paired == null ? undefined : blocks.find((b) => b.index === paired)?.body
+    const bidding = pairedBody == null ? null : safeAuction(pairedBody)
 
     const board = games.length + 1
     const game = pbnGame(hands, {
-      event,
+      event: event ?? undefined,
       board,
       dealer: bidding?.dealer,
       auction: bidding?.calls,
@@ -69,7 +71,7 @@ export function lessonPbn(blocks, { event } = {}) {
   return games.length ? { text: pbnFile(games), boards, links, errors } : null
 }
 
-function safeAuction(body) {
+function safeAuction(body: string) {
   try {
     const { dealer, calls } = parseAuctionBlock(body)
     return { dealer, calls: calls.map(stripAnnotationMarker) }

@@ -235,8 +235,14 @@ npm run pdf:extract -- --pdf out.pdf --out recovered.md   # read back
 npm run pdf:extract -- --pdf out.pdf --info               # provenance only
 ```
 
-`pdf:attach` exists because **the browser's own print dialog cannot attach
-files**. Nothing in HTML, CSS, or JavaScript can add an attachment to a PDF the
+There are two ways to attach: `pdf:attach` (CLI) and the in-browser
+**drop-to-attach** bar on the print view — print to PDF, drop it back, and the
+same shared pdf-lib core embeds all four files client-side, no server. The
+click map's positions survive a browser print because the print view wraps the
+`lesson-block:` anchors on `beforeprint`, so Chrome emits the link annotations
+whether the PDF came from Playwright or from Cmd+P.
+
+Both exist because **the browser's own print dialog cannot attach files**. Nothing in HTML, CSS, or JavaScript can add an attachment to a PDF the
 browser generates; a lesson printed with Cmd+P must have its payload added
 afterwards.
 
