@@ -69,6 +69,15 @@ function onBody(body: string) {
   emitFull()
 }
 
+// Forward the editor's insert/format commands to the ribbon in App.
+const editor = ref<InstanceType<typeof MilkdownEditor> | null>(null)
+defineExpose({
+  insertBlock: (tag: Parameters<NonNullable<typeof editor.value>['insertBlock']>[0], body: string) =>
+    editor.value?.insertBlock(tag, body),
+  command: (name: Parameters<NonNullable<typeof editor.value>['command']>[0]) =>
+    editor.value?.command(name),
+})
+
 // Front-matter panel mutates `fm` in place; a deep watch catches every field.
 watch(fm, emitFull, { deep: true })
 </script>
@@ -79,6 +88,7 @@ watch(fm, emitFull, { deep: true })
     <MilkdownProvider>
       <ProsemirrorAdapterProvider>
         <MilkdownEditor
+          ref="editor"
           :key="String(editable)"
           :initial-markdown="initialBody"
           :editable="editable"

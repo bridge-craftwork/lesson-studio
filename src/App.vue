@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, onMounted, onBeforeUnmount } from 'vue'
 import LessonDocument from './editor/LessonDocument.vue'
+import EditorRibbon from './editor/EditorRibbon.vue'
 import PagePreview from './print/PagePreview.vue'
 import { useLessonSession } from './lesson/useLessonSession'
 
@@ -15,6 +16,7 @@ const session = useLessonSession()
 // out whether the lesson still fits on one page. Off by default; the editor
 // stays full width until you ask.
 const showPreview = ref(false)
+const lessonDoc = ref<InstanceType<typeof LessonDocument> | null>(null)
 
 function formatTime(ts: number): string {
   return new Date(ts).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
@@ -90,9 +92,12 @@ onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPoin
       <a class="studio__link" :href="`${base}gallery.html`" target="_blank">Gallery →</a>
     </header>
 
+    <EditorRibbon :doc="lessonDoc" />
+
     <main class="studio__body" :class="{ 'studio__body--split': showPreview }">
       <div class="studio__edit">
         <LessonDocument
+          ref="lessonDoc"
           :key="session.loadId.value"
           :markdown="session.loadedMarkdown.value"
           @update:markdown="session.onEdit"

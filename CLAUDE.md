@@ -74,6 +74,14 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   shrinks bids. Give auction figures a definite width or they trip it. The
   sensor watches the *parent*, so any shrink-wrapping ancestor makes it measure
   itself and latch (the gallery does this). `columns: 2` auctions are exempt.
+- **Typed markdown fences don't become bridge blocks** — only the load-time
+  parser (`parseMarkdown`) creates them, so a freshly typed ` ```auction ` stays
+  literal text. New blocks are inserted programmatically from the **ribbon**
+  (`EditorRibbon.vue` → `LessonDocument` → `MilkdownEditor.insertBlock`), seeded
+  with the schema `example` so they render valid immediately. Formatting buttons
+  (H2/H3, bold, italic, lists, link) drive commonmark's own commands — those
+  *also* work by typing markdown; the ribbon is for discoverability. No H1
+  button (front-matter title is the heading).
 - **Milkdown's parser matches node specs in REGISTRATION ORDER**, and `priority`
   does *not* apply to markdown parsing. Bridge blocks must be `.use()`d
   **before** `commonmark` or the generic code_block wins.
