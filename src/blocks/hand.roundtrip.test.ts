@@ -16,7 +16,7 @@ import { reservedBlockNode } from './reservedBlockNode'
  * test cannot pass trivially via code_block (which would also preserve the
  * ```hand fence).
  */
-const blockSchemas = (['hand', 'auction', 'pagebreak', 'row'] as const).map(
+const blockSchemas = (['hand', 'auction', 'pagebreak', 'columnbreak', 'row'] as const).map(
   (t) => reservedBlockNode(t).schema,
 )
 
@@ -71,6 +71,13 @@ describe('hand block Milkdown round-trip', () => {
   it('preserves an empty pagebreak block', async () => {
     const md = ['```pagebreak', '```'].join('\n')
     const { out, hasNode } = await roundTrip(md, 'pagebreak')
+    expect(hasNode).toBe(true)
+    expect(out.trim()).toBe(md)
+  })
+
+  it('preserves an empty columnbreak block', async () => {
+    const md = ['```columnbreak', '```'].join('\n')
+    const { out, hasNode } = await roundTrip(md, 'columnbreak')
     expect(hasNode).toBe(true)
     expect(out.trim()).toBe(md)
   })

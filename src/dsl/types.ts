@@ -60,6 +60,7 @@ export const RESERVED_BLOCKS = [
   'deal',
   'quiz',
   'pagebreak',
+  'columnbreak',
   'row',
 ] as const
 
@@ -73,6 +74,7 @@ export const V1_ACTIVE_BLOCKS: ReservedBlock[] = [
   'response-box',
   'quiz',
   'pagebreak',
+  'columnbreak',
   'row',
 ]
 

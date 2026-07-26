@@ -121,6 +121,7 @@ function validateBlock(tag: ReservedBlock, body: string, issues: LintIssue[]): v
         }
         break
       case 'pagebreak':
+      case 'columnbreak':
         if (body.trim() !== '') err('body must be empty')
         break
       case 'deal':

@@ -40,6 +40,7 @@ type Rendered =
   | { kind: 'quiz'; quiz: unknown }
   | { kind: 'row'; items: RowItem[] }
   | { kind: 'pagebreak' }
+  | { kind: 'columnbreak' }
   | { kind: 'error'; message: string }
 
 const model = computed<Rendered>(() => {
@@ -71,6 +72,8 @@ const model = computed<Rendered>(() => {
         return { kind: 'row', items: parseRowBlock(props.body) }
       case 'pagebreak':
         return { kind: 'pagebreak' }
+      case 'columnbreak':
+        return { kind: 'columnbreak' }
       default:
         return { kind: 'error', message: `unsupported block: ${props.tag}` }
     }
@@ -146,6 +149,9 @@ const auctionNotes = computed(() =>
     <template v-else-if="model.kind === 'pagebreak'">
       <div class="pagebreak" title="page break">⎯⎯ page break ⎯⎯</div>
     </template>
+    <template v-else-if="model.kind === 'columnbreak'">
+      <div class="columnbreak" title="column break">⎯⎯ column break ⎯⎯</div>
+    </template>
     <template v-else>
       <div class="block-error">{{ model.message }}</div>
     </template>
@@ -205,7 +211,8 @@ const auctionNotes = computed(() =>
   font-variant-numeric: tabular-nums;
   margin-right: 0.15rem;
 }
-.pagebreak {
+.pagebreak,
+.columnbreak {
   color: var(--ls-muted, #999);
   font-size: 0.75rem;
   letter-spacing: 0.1em;
@@ -213,6 +220,12 @@ const auctionNotes = computed(() =>
   padding: 0.5rem 2rem;
   border-top: 1px dashed var(--ls-border, #ccc);
   border-bottom: 1px dashed var(--ls-border, #ccc);
+}
+/* A column break reads as a lighter divider than a page break — dotted, not
+   dashed — since it's a within-page nudge rather than a hard split. */
+.columnbreak {
+  border-top-style: dotted;
+  border-bottom-style: dotted;
 }
 .block-error {
   font-family: var(--ls-mono, monospace);

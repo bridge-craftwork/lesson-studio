@@ -157,6 +157,13 @@ export const BLOCK_SCHEMAS: Record<string, BlockSchema> = {
     keys: [],
     example: '',
   },
+  columnbreak: {
+    tag: 'columnbreak',
+    summary: 'Forces the next content into a new print column. The body is empty.',
+    keys: [],
+    bodyDoc: 'Only meaningful in a multi-column lesson; single-column falls back to a page break.',
+    example: '',
+  },
   deal: {
     tag: 'deal',
     summary: 'A referenced deal. Reserved — structurally linted, not resolved until Phase 2.',

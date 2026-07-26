@@ -143,6 +143,12 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   larger than a typical handout, for senior readers) times `text-scale:`
   (default 1, the page-fitting nudge). Resolve both through
   `printTypography()` so the preview and the print view can't disagree.
+- **`columnbreak` forces a new print column**, mirroring `pagebreak` (empty
+  body, `break-before: column`). The break must sit on the **direct multicol
+  child** via `.ProseMirror > *:has(.reserved-block--columnbreak)`, not the
+  nested divider — set on the inner element the multicol container never sees it
+  (same reason the `row`'s `column-span` is targeted that way). Single-column
+  lessons degrade it to a page break.
 - **Print columns are per-lesson** via front-matter `columns:` (default 2).
   More columns ≠ fewer pages: narrow columns wrap tables *taller*. Trim content
   instead. Columns are a **print** concern — the editing surface stays

@@ -22,7 +22,7 @@ kinds of structured content layered on top of ordinary prose:
    Contract 2 components in both.
 
 ```
-hand   hands   auction   response-box   deal   quiz   pagebreak   row
+hand   hands   auction   response-box   deal   quiz   pagebreak   columnbreak   row
 ```
 
 Everything else is plain CommonMark and renders normally.
@@ -422,6 +422,24 @@ interactive platform variant).
 
 **Canonical form:** the bare fenced block with an empty body.
 
+### `columnbreak` — explicit column break
+
+Pushes the following content to the top of the next print column, for authors
+who want to control where a column ends rather than leaving it to the
+`column-fill` balancer.
+
+````markdown
+```columnbreak
+```
+````
+
+The body is empty. Maps to `break-before: column` in the print view. **Only
+meaningful in a multi-column lesson** (`columns: 2`+); in a single-column lesson
+`break-before: column` degrades to a page break, which is the sensible fallback.
+The editor renders a labeled divider, lighter than the page break's.
+
+**Canonical form:** the bare fenced block with an empty body.
+
 ## Validation (CI lint)
 
 The lint referenced in the architecture doc's Publishing Workflow, for the
@@ -443,7 +461,7 @@ parts this contract owns:
 6. `response-box`: `title` present; every row has exactly one ` | `.
 7. `deal`: structurally well-formed (v1 does **not** resolve the reference).
 8. `quiz`: body validates against Contract 3 `quiz/v1`.
-9. `pagebreak`: body is empty.
+9. `pagebreak` / `columnbreak`: body is empty.
 10. Every block is already in canonical form (else `--fix` it).
 
 ## Versioning and evolution
