@@ -90,7 +90,13 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   node attr, so undo/redo treats it as a single atomic step (verified).
 - **Bridge blocks are atom nodes — you can't caret inside them**, so a block with
   no paragraph after it can't be Backspace-deleted. Each block node view carries
-  its own **delete** (🗑) button beside the edit (✎) one for that reason.
+  its own **delete** (🗑) button beside the edit (✎) one for that reason. And a
+  block ending the document leaves nowhere to type a following line — a paste
+  "at the end" then lands ON the block and *replaces* it (which also made cut/
+  paste look like it pasted the wrong node). Fixed with a **trailing-paragraph**
+  plugin (`trailingParagraph.ts`), editor-only (a stray paragraph would skew
+  print page-fit), plus **gapcursor**. Milkdown's serializer drops a trailing
+  empty paragraph, so it doesn't dirty the file on load (verified).
 - **Milkdown's listener never fires on initial mount** — only on real edits. Do
   not treat the first emission as a "clean baseline"; it's the user's first edit.
 - **Milkdown reads its content once, at creation** (`defaultValueCtx`), and

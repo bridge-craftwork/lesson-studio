@@ -16,7 +16,8 @@ import {
   wrapInBulletListCommand,
   wrapInOrderedListCommand,
 } from '@milkdown/preset-commonmark'
-import { callCommand } from '@milkdown/utils'
+import { callCommand, $prose } from '@milkdown/utils'
+import { gapCursor } from '@milkdown/prose/gapcursor'
 import { listener, listenerCtx } from '@milkdown/plugin-listener'
 import { history, undoCommand, redoCommand } from '@milkdown/plugin-history'
 import { clipboard } from '@milkdown/plugin-clipboard'
@@ -26,6 +27,7 @@ import type { ReservedBlock } from '@/dsl'
 import { bridgeBlocks } from '../blocks'
 import { suitColoring } from '../blocks/suitColoring'
 import { suitEscapeInput, suitEscapePaste } from '../blocks/suitEscapes'
+import { trailingParagraph } from '../blocks/trailingParagraph'
 
 const props = withDefaults(
   defineProps<{ initialMarkdown?: string; editable?: boolean }>(),
@@ -94,8 +96,8 @@ function command(name: EditorCommand) {
 
 defineExpose({ insertBlock, command })
 
-useEditor((root) =>
-  Editor.make()
+useEditor((root) => {
+  const editor = Editor.make()
     .config((ctx) => {
       ctx.set(rootCtx, root)
       ctx.set(defaultValueCtx, props.initialMarkdown ?? '')
@@ -117,13 +119,25 @@ useEditor((root) =>
     // a single atomic step.
     .use(history)
     .use(clipboard)
+    // Gap cursor: a caret between/after atom bridge blocks where a text cursor
+    // can't otherwise go. Never modifies the doc.
+    .use($prose(() => gapCursor()))
     .use(listener)
     .use(suitColoring)
     // Suit shorthand: `\C`→♣ on type/paste. After commonmark; converts to the
     // real glyph, which suitColoring then reddens for ♥/♦.
     .use(suitEscapeInput)
-    .use(suitEscapePaste),
-)
+    .use(suitEscapePaste)
+
+  // Trailing paragraph only in the EDITOR: bridge blocks are atom nodes, so a
+  // block ending the document leaves nowhere to type a following line, and a
+  // paste "at the end" lands on the block and replaces it — a trailing
+  // paragraph gives an ordinary caret there. Kept out of the read-only print
+  // view, where a stray empty paragraph would add height and skew page-fit.
+  if (props.editable) editor.use(trailingParagraph)
+
+  return editor
+})
 </script>
 
 <template>

@@ -5,6 +5,8 @@ import '@fontsource/atkinson-hyperlegible/400.css'
 import '@fontsource/atkinson-hyperlegible/400-italic.css'
 import '@fontsource/atkinson-hyperlegible/700.css'
 import '@fontsource/atkinson-hyperlegible/700-italic.css'
+// Gap-cursor styling (caret in the empty spot after a trailing block).
+import 'prosemirror-gapcursor/style/gapcursor.css'
 import './styles/app.css'
 // The live page preview renders the real print layout, so the editor needs the
 // print stylesheet too. Every rule in it is scoped under `.print-view` (plus an
