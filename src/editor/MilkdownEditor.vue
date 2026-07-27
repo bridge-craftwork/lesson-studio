@@ -18,6 +18,8 @@ import {
 } from '@milkdown/preset-commonmark'
 import { callCommand } from '@milkdown/utils'
 import { listener, listenerCtx } from '@milkdown/plugin-listener'
+import { history, undoCommand, redoCommand } from '@milkdown/plugin-history'
+import { clipboard } from '@milkdown/plugin-clipboard'
 import { Milkdown, useEditor, useInstance } from '@milkdown/vue'
 import { useNodeViewFactory } from '@prosemirror-adapter/vue'
 import type { ReservedBlock } from '@/dsl'
@@ -66,6 +68,8 @@ type EditorCommand =
   | 'paragraph'
   | 'bullet'
   | 'ordered'
+  | 'undo'
+  | 'redo'
 
 function command(name: EditorCommand) {
   const editor = getEditor()
@@ -79,6 +83,8 @@ function command(name: EditorCommand) {
     paragraph: [turnIntoTextCommand.key],
     bullet: [wrapInBulletListCommand.key],
     ordered: [wrapInOrderedListCommand.key],
+    undo: [undoCommand.key],
+    redo: [redoCommand.key],
   }
   const [key, payload] = spec[name]
   editor.action(callCommand(key as never, payload))
@@ -104,6 +110,12 @@ useEditor((root) =>
     // matchers take precedence over the generic code_block.
     .use(bridgeBlocks(nodeViewFactory))
     .use(commonmark)
+    // History (undo/redo + keymap) and clipboard go AFTER commonmark: they don't
+    // compete with the bridge-block parsers, unlike bridgeBlocks. Each bridge
+    // block stores its body verbatim in one node attr, so undo/redo treats it as
+    // a single atomic step.
+    .use(history)
+    .use(clipboard)
     .use(listener)
     .use(suitColoring),
 )

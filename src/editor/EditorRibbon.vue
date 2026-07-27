@@ -18,7 +18,17 @@ import type LessonDocument from './LessonDocument.vue'
 
 const props = defineProps<{ doc: InstanceType<typeof LessonDocument> | null }>()
 
-type CommandName = 'h2' | 'h3' | 'paragraph' | 'bold' | 'italic' | 'bullet' | 'ordered' | 'link'
+type CommandName =
+  | 'h2'
+  | 'h3'
+  | 'paragraph'
+  | 'bold'
+  | 'italic'
+  | 'bullet'
+  | 'ordered'
+  | 'link'
+  | 'undo'
+  | 'redo'
 const format = (name: CommandName) => props.doc?.command(name)
 const insert = (tag: ReservedBlock) => props.doc?.insertBlock(tag, blockSchema(tag)?.example ?? '')
 
@@ -44,6 +54,13 @@ const blocks = V1_ACTIVE_BLOCKS.map((tag) => ({
   <!-- @mousedown.prevent keeps the caret/selection in the editor when a button
        is clicked, so the command runs on the current selection. -->
   <div class="ribbon" role="toolbar" aria-label="Formatting and insert">
+    <div class="ribbon__group" aria-label="History">
+      <button class="ribbon__btn" title="Undo (⌘Z)" @mousedown.prevent @click="format('undo')">↶</button>
+      <button class="ribbon__btn" title="Redo (⌘⇧Z)" @mousedown.prevent @click="format('redo')">↷</button>
+    </div>
+
+    <div class="ribbon__sep" />
+
     <div class="ribbon__group" aria-label="Text style">
       <button class="ribbon__btn" title="Paragraph" @mousedown.prevent @click="format('paragraph')">¶</button>
       <button class="ribbon__btn" title="Heading 2" @mousedown.prevent @click="format('h2')">H2</button>

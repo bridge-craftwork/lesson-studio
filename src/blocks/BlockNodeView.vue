@@ -9,7 +9,7 @@ import { completions, type ReservedBlock } from '@/dsl'
 // BlockView, plus an "edit source" affordance. Editing swaps in a text area for
 // the block's DSL body with a live preview beside it; applying writes the body
 // back to the node's attrs, which flows out to markdown (and dirty/autosave).
-const { node, selected, setAttrs, view } = useNodeViewContext()
+const { node, selected, setAttrs, view, getPos } = useNodeViewContext()
 
 const tag = computed(() => node.value.type.name as ReservedBlock)
 const body = computed(() => (node.value.attrs.body as string) ?? '')
@@ -42,6 +42,17 @@ function apply() {
 function cancel() {
   editing.value = false
   draft.value = body.value
+}
+
+// Delete the whole block. A bridge block is an atom node — you can't put the
+// caret inside it — so if there's no paragraph after it to Backspace from, it's
+// otherwise unremovable. This deletes the node directly; it's one undo step.
+function remove() {
+  if (!canEdit.value) return
+  const pos = getPos()
+  if (pos == null) return
+  view.dispatch(view.state.tr.delete(pos, pos + node.value.nodeSize))
+  view.focus()
 }
 
 // --- key autocomplete -------------------------------------------------------
@@ -165,9 +176,10 @@ function onKeydown(e: KeyboardEvent) {
 
     <template v-else>
       <BlockView :tag="tag" :body="body" />
-      <button v-if="canEdit" class="block-edit__open" title="Edit source" @click="startEdit">
-        ✎
-      </button>
+      <div v-if="canEdit" class="block-edit__tools">
+        <button class="block-edit__open" title="Edit source" @click="startEdit">✎</button>
+        <button class="block-edit__open block-edit__del" title="Delete block" @click="remove">🗑</button>
+      </div>
     </template>
   </div>
 </template>
@@ -183,13 +195,21 @@ function onKeydown(e: KeyboardEvent) {
   outline: 2px solid var(--ls-accent, #1d4ed8);
 }
 
-/* Edit affordance: quiet until you hover the block (or it's selected). */
-.block-edit__open {
+/* Edit/delete affordances: quiet until you hover the block (or it's selected). */
+.block-edit__tools {
   position: absolute;
   top: 0.1rem;
   right: 0.1rem;
+  display: flex;
+  gap: 0.2rem;
   opacity: 0;
   transition: opacity 0.12s;
+}
+.reserved-block:hover .block-edit__tools,
+.reserved-block.is-selected .block-edit__tools {
+  opacity: 1;
+}
+.block-edit__open {
   border: 1px solid var(--ls-border, #e4e4e7);
   background: var(--ls-bg, #fff);
   color: var(--ls-muted, #666);
@@ -199,13 +219,13 @@ function onKeydown(e: KeyboardEvent) {
   padding: 0.2rem 0.35rem;
   cursor: pointer;
 }
-.reserved-block:hover .block-edit__open,
-.reserved-block.is-selected .block-edit__open {
-  opacity: 1;
-}
 .block-edit__open:hover {
   color: var(--ls-accent, #1d4ed8);
   border-color: var(--ls-accent, #1d4ed8);
+}
+.block-edit__del:hover {
+  color: #c81e1e;
+  border-color: #c81e1e;
 }
 
 .block-edit {

@@ -84,7 +84,13 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   button (front-matter title is the heading).
 - **Milkdown's parser matches node specs in REGISTRATION ORDER**, and `priority`
   does *not* apply to markdown parsing. Bridge blocks must be `.use()`d
-  **before** `commonmark` or the generic code_block wins.
+  **before** `commonmark` or the generic code_block wins. `plugin-history`
+  (undo/redo) and `plugin-clipboard` (cut/paste) go **after** commonmark — they
+  don't compete with the block parsers. A bridge block stores its body in one
+  node attr, so undo/redo treats it as a single atomic step (verified).
+- **Bridge blocks are atom nodes — you can't caret inside them**, so a block with
+  no paragraph after it can't be Backspace-deleted. Each block node view carries
+  its own **delete** (🗑) button beside the edit (✎) one for that reason.
 - **Milkdown's listener never fires on initial mount** — only on real edits. Do
   not treat the first emission as a "clean baseline"; it's the user's first edit.
 - **Milkdown reads its content once, at creation** (`defaultValueCtx`), and
