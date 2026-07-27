@@ -147,6 +147,13 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   like.** `--hand-font: inherit` means "this property inherits", not "substitute
   the keyword `inherit`" — so `var(--hand-font, …)` read as unset and the
   fallback won. Name the actual stack.
+- **The lesson header is a compact two rows** (title+level | author; taxonomy +
+  status + reviewer | date), controllable with `header:` (standard | minimal |
+  none). **Page margins are per-lesson** via `margin-top`/`margin-bottom` (inches,
+  default 0.5) — widen them so a downstream tool's stamped header/footer
+  (pdf-handouts) doesn't overlap. `@page` can't read CSS custom properties, so
+  PrintView injects the `@page` margin rule; the preview mirrors it in its page
+  geometry via `printTypography`.
 - **Print text size is per-lesson** via `font-size:` (points, default **12** —
   larger than a typical handout, for senior readers) times `text-scale:`
   (default 1, the page-fitting nudge). Resolve both through

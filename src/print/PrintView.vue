@@ -11,7 +11,7 @@
  * drop it back to embed the Contract 5 attachments (source, provenance, click
  * map, PBN) client-side. See pdfExport.ts for why the two steps are unavoidable.
  */
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
 import LessonDocument from '../editor/LessonDocument.vue'
 import { STARTER_LESSON } from '../editor/starter'
 import { PRINT_STASH_KEY } from '../lesson/useLessonSession'
@@ -36,6 +36,24 @@ const markdown = computed(() => {
 })
 
 const type = computed(() => printTypography(splitFrontMatter(markdown.value).data))
+
+// @page can't read CSS custom properties, so the per-lesson top/bottom margins
+// are written as a global @page rule. Left/right stay at the 0.5in default.
+// Widening top/bottom leaves room for chrome a downstream tool stamps into the
+// margin (pdf-handouts), so it doesn't overlap the lesson.
+const pageStyle = computed(
+  () => `@page { size: letter; margin: ${type.value.marginTopIn}in 0.5in ${type.value.marginBottomIn}in 0.5in; }`
+)
+watchEffect(() => {
+  const id = 'lesson-page-margins'
+  let el = document.getElementById(id) as HTMLStyleElement | null
+  if (!el) {
+    el = document.createElement('style')
+    el.id = id
+    document.head.appendChild(el)
+  }
+  el.textContent = pageStyle.value
+})
 
 // Wrap each block in a `lesson-block:<n>` anchor for the duration of printing,
 // so Chrome emits the link annotations the click map is read from. Installed on

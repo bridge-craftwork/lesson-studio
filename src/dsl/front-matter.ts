@@ -56,6 +56,10 @@ export function serializeFrontMatter(fm: Partial<FrontMatter>): string {
   if (fm.columns && fm.columns !== 2) ordered.columns = fm.columns
   if (fm['font-size'] && fm['font-size'] !== 12) ordered['font-size'] = fm['font-size']
   if (fm['text-scale'] && fm['text-scale'] !== 1) ordered['text-scale'] = fm['text-scale']
+  if (fm['margin-top'] && fm['margin-top'] !== 0.5) ordered['margin-top'] = fm['margin-top']
+  if (fm['margin-bottom'] && fm['margin-bottom'] !== 0.5) ordered['margin-bottom'] = fm['margin-bottom']
+  if (fm.header && fm.header !== 'standard') ordered.header = fm.header
+  if (fm.date) ordered.date = fm.date
   return `---\n${stringifyYaml(ordered).trimEnd()}\n---\n`
 }
 
@@ -63,6 +67,7 @@ export function serializeFrontMatter(fm: Partial<FrontMatter>): string {
 export const DEFAULT_FONT_SIZE_PT = 12
 export const DEFAULT_TEXT_SCALE = 1
 export const DEFAULT_COLUMNS = 2
+export const DEFAULT_MARGIN_IN = 0.5
 
 export interface PrintTypography {
   columns: number
@@ -72,6 +77,9 @@ export interface PrintTypography {
   textScale: number
   /** What actually renders: `fontSizePt * textScale`, in points. */
   effectivePt: number
+  /** Top/bottom page margins, in inches. */
+  marginTopIn: number
+  marginBottomIn: number
 }
 
 /**
@@ -87,6 +95,8 @@ export function printTypography(data: Partial<FrontMatter> | null | undefined): 
     columns,
     fontSizePt,
     textScale,
+    marginTopIn: numberOr(data?.['margin-top'], DEFAULT_MARGIN_IN),
+    marginBottomIn: numberOr(data?.['margin-bottom'], DEFAULT_MARGIN_IN),
     // Rounded to hundredths: a raw float here ends up in a CSS length, and
     // sub-hundredth jitter would make measurements irreproducible.
     effectivePt: Math.round(fontSizePt * textScale * 100) / 100,

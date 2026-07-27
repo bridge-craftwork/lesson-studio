@@ -17,13 +17,12 @@
  * columns, and `scrollWidth` saturates (measured: it caps at ~1 extra column no
  * matter how much overflows). So the count comes from the flow's own geometry
  * instead: measure the *balanced column height* `H` at unconstrained height,
- * and since each printed page holds one page-height of that flow, the first
- * page holding less because the lesson header spans above it:
+ * and divide by the page text height, the first page short by the header.
  *
- *     pages = H <= (PAGE_H - headerH) ? 1 : 1 + ceil((H - (PAGE_H - headerH)) / PAGE_H)
- *
- * Verified against Playwright-rendered PDFs of the same lessons at 1, 2, 2 and
- * 4 pages — exact agreement on all four.
+ * A forced `pagebreak` puts what follows on a fresh page, so the flow is first
+ * split into segments at each pagebreak and the pages are summed per segment —
+ * segments never share a page. Page text height itself follows the per-lesson
+ * top/bottom margins. Verified against Playwright-rendered PDFs.
  *
  * Only page 1 is drawn. Pages 2+ would need the print engine's fragmentation,
  * which the browser won't expose; the count tells you they exist, and Print
@@ -37,10 +36,11 @@ import { splitFrontMatter, printTypography } from '@/dsl'
 
 const props = defineProps<{ markdown: string }>()
 
-// Letter minus the 0.5in @page margin, in CSS px at 96dpi — the geometry
-// print.css lays out to.
+// Letter text area, in CSS px at 96dpi. Width is fixed (left/right margins stay
+// 0.5in); height shrinks as the per-lesson top/bottom margins widen.
 const PAGE_W = 720
-const PAGE_H = 960
+const LETTER_H_IN = 11
+const pageHeight = () => Math.round((LETTER_H_IN - type.value.marginTopIn - type.value.marginBottomIn) * 96)
 
 const pages = ref(1)
 const scale = ref(0.5)
@@ -63,6 +63,7 @@ const shown = ref(props.markdown)
 // beat before the content it applies to.
 const type = computed(() => printTypography(splitFrontMatter(shown.value).data))
 const columns = computed(() => type.value.columns)
+const pageHpx = computed(() => pageHeight())
 const renderKey = ref(0)
 let settleTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -84,27 +85,62 @@ function fitScale() {
 }
 
 /**
- * Measure on a detached clone at unconstrained height, so the live page box
- * keeps its fixed page height while the measurement sees the full flow.
+ * Compute the page count. Content is split into segments at each `pagebreak`,
+ * because a forced page break puts what follows on a fresh page — segments
+ * never share a page. Each segment's balanced column height is measured on a
+ * detached clone (the overflow approach doesn't work — see the header comment),
+ * and divided by the page text height. The first segment's first page is short
+ * by the lesson header.
  */
 function measure() {
   const el = flow.value
   if (!el) return
-  const clone = el.cloneNode(true) as HTMLElement
-  clone.style.cssText += ';position:absolute;left:-99999px;top:0;width:720px;height:auto;zoom:1;transform:none;'
-  const body = clone.querySelector<HTMLElement>('.ProseMirror')
+  const body = el.querySelector<HTMLElement>('.ProseMirror')
   if (!body) return
-  body.style.height = 'auto'
-  body.style.flex = 'none'
-  body.style.columnFill = 'balance'
-  document.body.appendChild(clone)
-  const columnHeight = body.getBoundingClientRect().height
-  const headerHeight = clone.querySelector('.lesson-header')?.getBoundingClientRect().height ?? 0
-  clone.remove()
 
-  const firstPage = PAGE_H - headerHeight
-  pages.value =
-    columnHeight <= firstPage ? 1 : 1 + Math.ceil((columnHeight - firstPage) / PAGE_H)
+  const H = pageHeight()
+  const headerHeight = el.querySelector('.lesson-header')?.getBoundingClientRect().height ?? 0
+
+  // Partition the flow's blocks into segments split at pagebreak wrappers.
+  const kids = [...body.children]
+  const segments: Element[][] = [[]]
+  for (const kid of kids) {
+    if (kid.querySelector('.reserved-block--pagebreak')) segments.push([])
+    else segments[segments.length - 1].push(kid)
+  }
+
+  let total = 0
+  segments.forEach((seg, i) => {
+    if (!seg.length) {
+      total += 1 // an empty segment (e.g. a trailing pagebreak) is still a page
+      return
+    }
+    const h = measureSegment(seg)
+    // Only the very first page carries the header.
+    const firstPage = i === 0 ? H - headerHeight : H
+    total += h <= firstPage ? 1 : 1 + Math.ceil((h - firstPage) / H)
+  })
+  pages.value = Math.max(1, total)
+}
+
+/**
+ * Balanced column height of one segment. Shallow-clones the flow wrapper so the
+ * measurement keeps the print-view context (the `--print-*` vars, font size,
+ * column count and block styles all come from `.print-view .ProseMirror` rules);
+ * a bare div would measure at the wrong size.
+ */
+function measureSegment(seg: Element[]): number {
+  const wrap = flow.value!.cloneNode(false) as HTMLElement
+  wrap.style.cssText += ';position:absolute;left:-99999px;top:0;width:720px;height:auto;zoom:1;transform:none;'
+  const pm = document.createElement('div')
+  pm.className = 'ProseMirror'
+  pm.style.cssText = 'height:auto;column-fill:balance;'
+  for (const node of seg) pm.appendChild(node.cloneNode(true))
+  wrap.appendChild(pm)
+  document.body.appendChild(wrap)
+  const h = pm.getBoundingClientRect().height
+  wrap.remove()
+  return h
 }
 
 async function refresh() {
@@ -165,7 +201,7 @@ watch(type, refresh, { deep: true })
 
     <div class="pp__pages">
       <div class="pp__page">
-        <div class="pp__clip" :style="{ '--pp-scale': scale }">
+        <div class="pp__clip" :style="{ '--pp-scale': scale, '--pp-page-h': pageHpx + 'px' }">
           <div
             ref="flow"
             class="print-view pp__flow"
@@ -173,6 +209,7 @@ watch(type, refresh, { deep: true })
               '--print-columns': type.columns,
               '--print-font-pt': type.fontSizePt,
               '--print-text-scale': type.textScale,
+              '--pp-page-h': pageHpx + 'px',
             }"
           >
             <LessonDocument :key="renderKey" :markdown="shown" :editable="false" />
@@ -236,14 +273,14 @@ watch(type, refresh, { deep: true })
    inside stays in real print proportion. */
 .pp__clip {
   width: calc(720px * var(--pp-scale));
-  height: calc(960px * var(--pp-scale));
+  height: calc(var(--pp-page-h, 960px) * var(--pp-scale));
   overflow: hidden;
   background: #fff;
   box-shadow: 0 1px 6px rgba(0, 0, 0, 0.16);
 }
 .pp__flow {
   width: 720px;
-  height: 960px;
+  height: var(--pp-page-h, 960px);
   display: flex;
   flex-direction: column;
   zoom: var(--pp-scale);

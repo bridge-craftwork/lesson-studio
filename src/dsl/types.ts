@@ -49,6 +49,22 @@ export interface FrontMatter {
    * a tweak.
    */
   'text-scale'?: number
+  /**
+   * Print top/bottom page margins in inches (default 0.5 each). Widen these to
+   * leave room for chrome a downstream tool (pdf-handouts) stamps into the
+   * margin, so its header/footer doesn't overlap the lesson.
+   */
+  'margin-top'?: number
+  'margin-bottom'?: number
+  /**
+   * How much of the lesson's own header to print:
+   * `standard` (default) — the full two-row header;
+   * `minimal` — title + level only;
+   * `none` — no header, e.g. when a presentation tool supplies its own.
+   */
+  header?: 'standard' | 'minimal' | 'none'
+  /** Optional display date shown in the header (free text, e.g. `July 2026`). */
+  date?: string
 }
 
 /** The reserved fenced-block language tags (Contract 1). */

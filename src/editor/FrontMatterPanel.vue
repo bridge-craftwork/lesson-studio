@@ -21,6 +21,10 @@ export type FrontMatterFields = {
   columns: number
   'font-size': number
   'text-scale': number
+  'margin-top': number
+  'margin-bottom': number
+  header: 'standard' | 'minimal' | 'none'
+  date: string
 }
 
 const props = defineProps<{ data: FrontMatterFields; editable?: boolean }>()
@@ -86,6 +90,30 @@ function removeTag(tag: string) {
             <option :value="1.1">1.10× — looser</option>
           </select>
         </label>
+        <label>Header
+          <select v-model="data.header">
+            <option value="standard">standard</option>
+            <option value="minimal">minimal — title only</option>
+            <option value="none">none</option>
+          </select>
+        </label>
+        <label>Date <input v-model="data.date" placeholder="e.g. July 2026" /></label>
+        <label>Top margin
+          <select v-model.number="data['margin-top']">
+            <option :value="0.5">0.5 in — default</option>
+            <option :value="0.75">0.75 in</option>
+            <option :value="1">1.0 in — room for a header</option>
+            <option :value="1.25">1.25 in</option>
+          </select>
+        </label>
+        <label>Bottom margin
+          <select v-model.number="data['margin-bottom']">
+            <option :value="0.5">0.5 in — default</option>
+            <option :value="0.75">0.75 in</option>
+            <option :value="1">1.0 in — room for a footer</option>
+            <option :value="1.25">1.25 in</option>
+          </select>
+        </label>
         <label class="fm-grid__wide">Skill paths
           <div class="fm-tags">
             <span v-for="tag in data.skill_paths" :key="tag" class="fm-tag">
@@ -110,21 +138,32 @@ function removeTag(tag: string) {
     </details>
   </div>
 
-  <!-- read-only header -->
-  <header v-else-if="data.title" class="lesson-header">
-    <div class="lesson-header__top">
-      <h1 class="lesson-header__title">{{ data.title }}</h1>
-      <span v-if="data.level" class="pill">{{ data.level }}</span>
+  <!-- read-only header: compact two rows. Row 1 — title+level | author.
+       Row 2 — taxonomy + status + reviewer | date. `header: minimal` keeps
+       only the title row; `header: none` omits it entirely. -->
+  <header v-else-if="data.title && data.header !== 'none'" class="lesson-header">
+    <div class="lesson-header__row">
+      <div class="lesson-header__title-wrap">
+        <h1 class="lesson-header__title">{{ data.title }}</h1>
+        <span v-if="data.level" class="pill">{{ data.level }}</span>
+      </div>
+      <span v-if="data.author && data.header !== 'minimal'" class="lesson-header__author">
+        by {{ data.author }}
+      </span>
     </div>
-    <ul v-if="data.skill_paths.length" class="lesson-header__paths">
-      <li v-for="path in data.skill_paths" :key="path" class="tag" :class="{ 'tag--primary': path === data.primary }">
-        {{ path }}
-      </li>
-    </ul>
-    <div class="lesson-header__meta">
-      <span v-if="data.author">by {{ data.author }}</span>
-      <span v-if="data.status" class="status" :class="`status--${data.status}`">{{ data.status }}</span>
-      <span v-if="data['reviewed-by']">reviewed-by: {{ data['reviewed-by'] }}</span>
+    <div v-if="data.header !== 'minimal'" class="lesson-header__row lesson-header__row--sub">
+      <div class="lesson-header__facets">
+        <span
+          v-for="path in data.skill_paths"
+          :key="path"
+          class="tag"
+          :class="{ 'tag--primary': path === data.primary }"
+          >{{ path }}</span
+        >
+        <span v-if="data.status" class="status" :class="`status--${data.status}`">{{ data.status }}</span>
+        <span v-if="data['reviewed-by']" class="lesson-header__reviewer">reviewed by {{ data['reviewed-by'] }}</span>
+      </div>
+      <span v-if="data.date" class="lesson-header__date">{{ data.date }}</span>
     </div>
   </header>
 </template>
@@ -221,17 +260,51 @@ function removeTag(tag: string) {
 /* ── read-only header ── */
 .lesson-header {
   border-bottom: 1px solid var(--ls-border, #e4e4e7);
-  padding-bottom: 1rem;
-  margin-bottom: 1.5rem;
+  padding-bottom: 0.6rem;
+  margin-bottom: 1rem;
 }
-.lesson-header__top {
+.lesson-header__row {
   display: flex;
   align-items: baseline;
+  justify-content: space-between;
   gap: 0.75rem;
+}
+.lesson-header__row--sub {
+  margin-top: 0.4rem;
+}
+.lesson-header__title-wrap {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  min-width: 0;
 }
 .lesson-header__title {
   margin: 0;
-  font-size: 1.6rem;
+  font-size: 1.5rem;
+  line-height: 1.15;
+}
+.lesson-header__author {
+  flex: none;
+  font-size: 0.85rem;
+  color: var(--ls-muted, #666);
+  white-space: nowrap;
+}
+.lesson-header__facets {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+.lesson-header__reviewer {
+  font-size: 0.75rem;
+  color: var(--ls-muted, #666);
+}
+.lesson-header__date {
+  flex: none;
+  font-size: 0.8rem;
+  color: var(--ls-muted, #666);
+  white-space: nowrap;
 }
 .pill {
   font-size: 0.7rem;
@@ -241,14 +314,6 @@ function removeTag(tag: string) {
   border-radius: 999px;
   background: var(--ls-panel, #eef);
   color: var(--ls-muted, #555);
-}
-.lesson-header__paths {
-  list-style: none;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin: 0.6rem 0 0;
-  padding: 0;
 }
 .tag {
   font-family: var(--ls-mono, monospace);
@@ -262,14 +327,6 @@ function removeTag(tag: string) {
   background: color-mix(in srgb, var(--ls-accent, #1d4ed8) 14%, transparent);
   color: var(--ls-accent, #1d4ed8);
   font-weight: 600;
-}
-.lesson-header__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-  margin-top: 0.6rem;
-  font-size: 0.78rem;
-  color: var(--ls-muted, #666);
 }
 .status {
   text-transform: uppercase;

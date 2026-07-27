@@ -236,12 +236,58 @@ describe('auction block', () => {
 describe('print typography', () => {
   it('defaults to the house style when nothing is authored', () => {
     // 12pt is deliberately larger than a typical handout: this material is
-    // read by seniors.
+    // read by seniors. Margins default to the 0.5in @page.
     expect(printTypography(null)).toEqual({
       columns: 2,
       fontSizePt: 12,
       textScale: 1,
       effectivePt: 12,
+      marginTopIn: 0.5,
+      marginBottomIn: 0.5,
+    })
+  })
+
+  it('resolves per-lesson page margins, falling back on nonsense', () => {
+    expect(printTypography({ 'margin-top': 1, 'margin-bottom': 0.75 })).toMatchObject({
+      marginTopIn: 1,
+      marginBottomIn: 0.75,
+    })
+    expect(printTypography({ 'margin-top': -3, 'margin-bottom': 0 })).toMatchObject({
+      marginTopIn: 0.5,
+      marginBottomIn: 0.5,
+    })
+  })
+
+  it('serializes the new header/margin/date fields, omitting defaults', () => {
+    const base = {
+      title: 'T',
+      skill_paths: ['bidding_conventions/stayman'],
+      level: 'basic' as const,
+      author: 'A',
+      status: 'draft' as const,
+      'reviewed-by': 'self',
+    }
+    const plain = serializeFrontMatter({
+      ...base,
+      'margin-top': 0.5,
+      'margin-bottom': 0.5,
+      header: 'standard' as const,
+    })
+    expect(plain).not.toMatch(/margin-|header:|date:/)
+
+    const custom = serializeFrontMatter({
+      ...base,
+      'margin-top': 1,
+      header: 'minimal' as const,
+      date: 'July 2026',
+    })
+    expect(custom).toContain('margin-top: 1')
+    expect(custom).toContain('header: minimal')
+    expect(custom).toContain('date: July 2026')
+    expect(splitFrontMatter(custom).data).toMatchObject({
+      'margin-top': 1,
+      header: 'minimal',
+      date: 'July 2026',
     })
   })
 

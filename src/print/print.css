@@ -8,6 +8,9 @@
  * the print preview (architecture Non-Goal + Open Question 4).
  */
 
+/* The @page rule is injected by PrintView so per-lesson top/bottom margins can
+   apply (@page can't read CSS custom properties). This static fallback covers
+   any render path that doesn't inject one. */
 @page {
   size: letter;
   margin: 0.5in;

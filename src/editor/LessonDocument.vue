@@ -29,6 +29,10 @@ function defaults(): FrontMatterFields {
     columns: 2,
     'font-size': 12,
     'text-scale': 1,
+    'margin-top': 0.5,
+    'margin-bottom': 0.5,
+    header: 'standard',
+    date: '',
   }
 }
 

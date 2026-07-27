@@ -192,6 +192,10 @@ The YAML header of every lesson. Authoritative here; the DSL grammar
 | `columns` | – | number | Newsletter columns in the print view. Default `2`. |
 | `font-size` | – | number | Body text size **in points** for print. Default `12`. |
 | `text-scale` | – | number | Multiplier on `font-size`. Default `1`. |
+| `margin-top` | – | number | Print top page margin **in inches**. Default `0.5`. |
+| `margin-bottom` | – | number | Print bottom page margin **in inches**. Default `0.5`. |
+| `header` | – | enum | Lesson header shown in print: `standard` (default, two rows) \| `minimal` (title + level) \| `none`. |
+| `date` | – | string | Optional display date shown in the header (free text). |
 
 **Print typography.** These three are *presentation* hints — they change how a
 lesson prints, never what it says, and a consumer that renders lessons its own
@@ -210,6 +214,15 @@ per-lesson **fitting nudge**, for a lesson that overruns one page by a little.
 Folding the nudge into the base would hide that a lesson is being squeezed —
 `font-size: 12` with `text-scale: 0.95` says something `font-size: 11.4` does
 not.
+
+**Page margins and header** are also presentation. `margin-top`/`margin-bottom`
+widen the top/bottom page margin (left/right stay 0.5in) — set them to leave
+room for chrome a downstream tool stamps into the margin, e.g. the pdf-handouts
+header/footer, so it doesn't overlap the lesson. `header` controls how much of
+the lesson's own header prints: `standard` is the compact two-row header
+(title + level, then taxonomy + status + reviewer, with author and date on the
+right); `minimal` keeps only the title row; `none` omits it, for when a
+presentation tool supplies its own. `date` is free text shown top-right.
 
 ```yaml
 ---
@@ -231,9 +244,10 @@ reviewed-by: self
    (typos cannot silently fragment the remediation linkage).
 3. `primary`, if present, is a member of `skill_paths`.
 4. A `published` lesson has a non-empty `reviewed-by`.
-5. `columns`, `font-size` and `text-scale`, if present, are positive numbers.
-   A non-positive or unparseable value falls back to the default rather than
-   failing the render — bad typography should not block a lesson.
+5. `columns`, `font-size`, `text-scale`, `margin-top` and `margin-bottom`, if
+   present, are positive numbers; a non-positive or unparseable value falls back
+   to the default rather than failing the render — bad presentation hints should
+   not block a lesson. `header` ∈ {standard, minimal, none}.
 
 ### Reconciliation note
 
