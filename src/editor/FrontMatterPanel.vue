@@ -6,8 +6,8 @@
  *    lesson markdown.
  *  - read-only (print / preview): a rendered header.
  */
-import { ref } from 'vue'
-import type { Level } from '@/dsl'
+import { nextTick, ref } from 'vue'
+import { expandSuitEscapes, type Level } from '@/dsl'
 import SuitText from '../bridge/SuitText.vue'
 
 // All fields present (editable form needs defined bindings).
@@ -43,12 +43,35 @@ function removeTag(tag: string) {
   if (i >= 0) props.data.skill_paths.splice(i, 1)
   if (props.data.primary === tag) props.data.primary = ''
 }
+
+// The title is a plain input (no glyph rendering), so expand `\C` shorthand as
+// it's typed — matching the prose input rule — and keep the caret put. Each
+// escape is two chars collapsing to one, so shift the caret by the number of
+// escapes before it.
+const ESC_BEFORE = /\\[cdhsCDHS]/g
+function onTitleInput(e: Event) {
+  const el = e.target as HTMLInputElement
+  const raw = el.value
+  const caret = el.selectionStart ?? raw.length
+  const converted = expandSuitEscapes(raw)
+  props.data.title = converted
+  if (converted !== raw) {
+    const shift = (raw.slice(0, caret).match(ESC_BEFORE) ?? []).length
+    nextTick(() => el.setSelectionRange(caret - shift, caret - shift))
+  }
+}
 </script>
 
 <template>
   <!-- editable form -->
   <div v-if="editable" class="fm-form">
-    <input class="fm-form__title" v-model="data.title" placeholder="Lesson title" aria-label="Lesson title" />
+    <input
+      class="fm-form__title"
+      :value="data.title"
+      @input="onTitleInput"
+      placeholder="Lesson title"
+      aria-label="Lesson title"
+    />
     <details class="fm-more">
       <summary>Metadata</summary>
       <div class="fm-grid">

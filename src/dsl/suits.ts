@@ -15,6 +15,11 @@ export const RED_SUIT_RE = /[♥♦]/g
 const SUIT_ESCAPE: Record<string, string> = { c: '♣', d: '♦', h: '♥', s: '♠' }
 const SUIT_ESCAPE_RE = /\\([cdhsCDHS])/g
 
+/** Expand every `\C`-style suit escape (either case) to its glyph. */
+export function expandSuitEscapes(text: string): string {
+  return text.replace(SUIT_ESCAPE_RE, (_, l: string) => SUIT_ESCAPE[l.toLowerCase()])
+}
+
 /**
  * Split text so red-suit glyphs (♥/♦) can be colored wherever they appear —
  * response boxes, footnotes, quiz text, the lesson title. Consecutive plain
@@ -23,7 +28,7 @@ const SUIT_ESCAPE_RE = /\\([cdhsCDHS])/g
  * the same suit shorthand as prose (where a Milkdown input rule handles it).
  */
 export function splitRedSuits(text: string): SuitSegment[] {
-  const expanded = text.replace(SUIT_ESCAPE_RE, (_, l: string) => SUIT_ESCAPE[l.toLowerCase()])
+  const expanded = expandSuitEscapes(text)
   const out: SuitSegment[] = []
   let buffer = ''
   for (const ch of expanded) {
