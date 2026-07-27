@@ -103,19 +103,20 @@
    the next column. In a single-column lesson `break-before: column` degrades to
    a page break, which is the sensible fallback.
 
-   The break must sit on the DIRECT multicol child — the node-view wrapper — not
-   the nested `.columnbreak` div, or the multicol container never sees it (the
-   forced break didn't move anything when set on the inner element). Same reason
-   the row's `column-span` is targeted this way. */
+   The break element itself takes NO space — `display: none` removes it from the
+   column flow — and the forced break is applied to the **next** block instead,
+   so the new column starts flush at its top, exactly level with column 1.
+   Putting `break-before` on the break element itself left its wrapper's margins
+   sitting at the top of the new column, nudging the content down.
+
+   `break-before` must sit on a DIRECT multicol child (the node-view wrapper),
+   which the `+ *` sibling is, or the multicol container never sees it — same
+   reason the row's `column-span` is targeted this way. */
 .print-view .ProseMirror > *:has(.reserved-block--columnbreak) {
-  break-before: column;
+  display: none;
 }
-.print-view .columnbreak {
-  border: none;
-  height: 0;
-  padding: 0;
-  margin: 0;
-  color: transparent;
+.print-view .ProseMirror > *:has(.reserved-block--columnbreak) + * {
+  break-before: column;
 }
 
 @media print {

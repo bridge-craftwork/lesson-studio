@@ -18,6 +18,7 @@ import {
   parseRowBlock,
   lessonPbn,
   splitFrontMatter,
+  isLayoutBlock,
 } from '@/dsl'
 import {
   buildProvenance,
@@ -41,9 +42,10 @@ export function flattenLessonBlocks(markdown: string): BlockRef[] {
   for (const occ of scanReservedBlocks(markdown)) {
     if (occ.tag === 'row') {
       for (const item of parseRowBlock(occ.body)) {
-        if (item.kind === 'block') out.push({ index: out.length, kind: item.tag, body: item.body })
+        if (item.kind === 'block' && !isLayoutBlock(item.tag))
+          out.push({ index: out.length, kind: item.tag, body: item.body })
       }
-    } else {
+    } else if (!isLayoutBlock(occ.tag)) {
       out.push({ index: out.length, kind: occ.tag, body: occ.body })
     }
   }
@@ -129,8 +131,12 @@ export function mapCoverage(map: Record<string, unknown>): {
  * lasting mutation.
  */
 export function wrapBlocksForPrint(root: ParentNode = document): () => void {
+  // Filter layout blocks exactly as flattenLessonBlocks does, so the annotation
+  // indices Chrome emits line up with the block list they're merged against.
   const leaves = [...root.querySelectorAll<HTMLElement>('[data-block-tag]')].filter(
-    (el) => !el.querySelector('[data-block-tag]')
+    (el) =>
+      !el.querySelector('[data-block-tag]') &&
+      !isLayoutBlock(el.getAttribute('data-block-tag') ?? '')
   )
   const restore: { anchor: HTMLElement; original: HTMLElement }[] = []
 

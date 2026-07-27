@@ -141,6 +141,10 @@ y_screen = pageHeight − y_pdf     // web/canvas consumers only
 blocks *inside* it, since those are what a reader would tap. No entry in
 `blocks` ever contains another.
 
+**Layout-control blocks are omitted.** `pagebreak` and `columnbreak` shape the
+page but render nothing tappable, so they never appear in `blocks` — block
+indices run over content blocks only.
+
 ### `lesson-hands.pbn`
 
 One PBN game record per `hand`/`hands` block, in document order.

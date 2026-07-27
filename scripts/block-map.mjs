@@ -24,6 +24,7 @@ export {
   BLOCK_URI_SCHEME,
 } from '../src/lesson/pdfEmbed'
 import { BLOCK_URI_SCHEME } from '../src/lesson/pdfEmbed'
+import { LAYOUT_BLOCKS } from '../src/dsl/types'
 
 
 /**
@@ -35,9 +36,11 @@ import { BLOCK_URI_SCHEME } from '../src/lesson/pdfEmbed'
  * what you'd tap — the hand inside the row, not the row.
  */
 export async function markBlocks(page) {
-  return page.evaluate((scheme) => {
+  return page.evaluate(({ scheme, layout }) => {
     const leaves = [...document.querySelectorAll('[data-block-tag]')].filter(
-      (el) => !el.querySelector('[data-block-tag]')
+      (el) =>
+        !el.querySelector('[data-block-tag]') &&
+        !layout.includes(el.getAttribute('data-block-tag'))
     )
     return leaves.map((el, i) => {
       const a = document.createElement('a')
@@ -55,5 +58,5 @@ export async function markBlocks(page) {
       el.replaceWith(a)
       return { index: i, kind: el.getAttribute('data-block-tag'), body: el.getAttribute('data-block-body') ?? '' }
     })
-  }, BLOCK_URI_SCHEME)
+  }, { scheme: BLOCK_URI_SCHEME, layout: [...LAYOUT_BLOCKS] })
 }

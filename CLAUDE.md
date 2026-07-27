@@ -154,9 +154,13 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
 - **`columnbreak` forces a new print column**, mirroring `pagebreak` (empty
   body, `break-before: column`). The break must sit on the **direct multicol
   child** via `.ProseMirror > *:has(.reserved-block--columnbreak)`, not the
-  nested divider — set on the inner element the multicol container never sees it
-  (same reason the `row`'s `column-span` is targeted that way). Single-column
-  lessons degrade it to a page break.
+  nested divider. It's `display: none` in print (takes no space) and the forced
+  break lands on the **next** block via `*:has(.reserved-block--columnbreak) + *`
+  — so the new column starts flush at its top; putting the break on the element
+  itself left its wrapper's margins at the column top. Break blocks are excluded
+  from the PDF click map (they're not tappable) — `isLayoutBlock` in types.ts,
+  applied identically in markBlocks, wrapBlocksForPrint and flattenLessonBlocks
+  so indices stay aligned. Single-column lessons degrade it to a page break.
 - **Print columns are per-lesson** via front-matter `columns:` (default 2).
   More columns ≠ fewer pages: narrow columns wrap tables *taller*. Trim content
   instead. Columns are a **print** concern — the editing surface stays

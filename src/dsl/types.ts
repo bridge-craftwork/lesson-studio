@@ -78,6 +78,18 @@ export const V1_ACTIVE_BLOCKS: ReservedBlock[] = [
   'row',
 ]
 
+/**
+ * Layout-control blocks: they shape the page but render no tappable content, so
+ * the PDF click map (Contract 5) omits them — a card-play tool would never
+ * hit-test a break. Excluded from the block list on both the Playwright and the
+ * in-browser map paths, identically, so block indices stay consistent.
+ */
+export const LAYOUT_BLOCKS: readonly ReservedBlock[] = ['pagebreak', 'columnbreak']
+
+export function isLayoutBlock(tag: string): boolean {
+  return (LAYOUT_BLOCKS as readonly string[]).includes(tag)
+}
+
 export function isReservedBlock(tag: string): tag is ReservedBlock {
   return (RESERVED_BLOCKS as readonly string[]).includes(tag)
 }
