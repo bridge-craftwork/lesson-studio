@@ -8,6 +8,7 @@
  */
 import { ref } from 'vue'
 import type { Level } from '@/dsl'
+import SuitText from '../bridge/SuitText.vue'
 
 // All fields present (editable form needs defined bindings).
 export type FrontMatterFields = {
@@ -144,7 +145,7 @@ function removeTag(tag: string) {
   <header v-else-if="data.title && data.header !== 'none'" class="lesson-header">
     <div class="lesson-header__row">
       <div class="lesson-header__title-wrap">
-        <h1 class="lesson-header__title">{{ data.title }}</h1>
+        <h1 class="lesson-header__title"><SuitText :text="data.title" /></h1>
         <span v-if="data.level" class="pill">{{ data.level }}</span>
       </div>
       <span v-if="data.author && data.header !== 'minimal'" class="lesson-header__author">
