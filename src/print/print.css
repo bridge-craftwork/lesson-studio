@@ -89,34 +89,48 @@
   break-inside: avoid;
 }
 
-/* Explicit page breaks map here (Contract 1 pagebreak block). */
-.print-view .pagebreak {
+/* Explicit breaks (Contract 1 `pagebreak` / `columnbreak`). They need DIFFERENT
+   mechanisms, because the body is a CSS multicol container:
+
+   - PAGE break: `break-before: page` is *ignored inside multicol* (Chrome), so
+     it can't sit on an ordinary block. Instead the break element becomes a
+     zero-height `column-span: all` spanner carrying the break — Chrome honors a
+     forced break on a column-spanning element even in multicol. The spanner
+     closes the current column row and pushes everything after it to page 2 in
+     fresh columns. It must NOT be `display: none`, or there's no spanner.
+
+   - COLUMN break: `break-before: column` DOES work, but only on a direct
+     multicol child, and the break element's own margins would nudge the next
+     column down. So that element is removed from the flow (`display: none`) and
+     the break lands on the next block. In a single-column lesson it degrades to
+     a page break — but see the page-break note above, so single-column page
+     control should use `pagebreak`. */
+.print-view .ProseMirror > *:has(.reserved-block--pagebreak) {
+  column-span: all;
   break-before: page;
-  border: none;
   height: 0;
-  padding: 0;
   margin: 0;
-  color: transparent;
+  padding: 0;
+  /* The spanner is zero-height, but its inner editor divider ("— page break —")
+     would otherwise overflow and paint over the next page's content — clip it. */
+  overflow: hidden;
 }
-
-/* Column breaks (Contract 1 columnbreak block): push what follows to the top of
-   the next column. In a single-column lesson `break-before: column` degrades to
-   a page break, which is the sensible fallback.
-
-   The break element itself takes NO space — `display: none` removes it from the
-   column flow — and the forced break is applied to the **next** block instead,
-   so the new column starts flush at its top, exactly level with column 1.
-   Putting `break-before` on the break element itself left its wrapper's margins
-   sitting at the top of the new column, nudging the content down.
-
-   `break-before` must sit on a DIRECT multicol child (the node-view wrapper),
-   which the `+ *` sibling is, or the multicol container never sees it — same
-   reason the row's `column-span` is targeted this way. */
 .print-view .ProseMirror > *:has(.reserved-block--columnbreak) {
   display: none;
 }
 .print-view .ProseMirror > *:has(.reserved-block--columnbreak) + * {
   break-before: column;
+}
+
+/* The block that starts a column/page sits flush at the top. Chrome does NOT
+   truncate the adjoining top margin at a forced break, so a heading after a
+   break sat ~half a line lower than the paragraph at the natural top of column
+   1. Zero the top margin at every column/page start — the first block overall,
+   the block after a column break, and the block after a page-break spanner. */
+.print-view .ProseMirror > *:first-child,
+.print-view .ProseMirror > *:has(.reserved-block--pagebreak) + *,
+.print-view .ProseMirror > *:has(.reserved-block--columnbreak) + * {
+  margin-top: 0;
 }
 
 @media print {

@@ -151,16 +151,28 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   larger than a typical handout, for senior readers) times `text-scale:`
   (default 1, the page-fitting nudge). Resolve both through
   `printTypography()` so the preview and the print view can't disagree.
-- **`columnbreak` forces a new print column**, mirroring `pagebreak` (empty
-  body, `break-before: column`). The break must sit on the **direct multicol
-  child** via `.ProseMirror > *:has(.reserved-block--columnbreak)`, not the
-  nested divider. It's `display: none` in print (takes no space) and the forced
-  break lands on the **next** block via `*:has(.reserved-block--columnbreak) + *`
-  — so the new column starts flush at its top; putting the break on the element
-  itself left its wrapper's margins at the column top. Break blocks are excluded
-  from the PDF click map (they're not tappable) — `isLayoutBlock` in types.ts,
-  applied identically in markBlocks, wrapBlocksForPrint and flattenLessonBlocks
-  so indices stay aligned. Single-column lessons degrade it to a page break.
+- **Break blocks (`pagebreak` / `columnbreak`) need DIFFERENT print mechanisms**,
+  because the body is always a CSS multicol container:
+  - **`break-before: page` is IGNORED inside multicol** (Chrome). So `pagebreak`
+    can't be an ordinary block — its element becomes a zero-height
+    `column-span: all` spanner (`overflow: hidden` to clip the editor divider)
+    carrying `break-before: page`. Chrome honors a forced break on a *spanning*
+    element even in multicol; it closes the column row and pushes the rest to a
+    new page. Not `display: none` — then there's no spanner. (This was silently
+    broken before: pagebreak never forced a page.)
+  - **`break-before: column` works**, but only on a direct multicol child, and
+    the break element's own margins nudge the next column down. So `columnbreak`
+    is `display: none` and the break lands on the **next** block via
+    `*:has(.reserved-block--columnbreak) + *`.
+  - **Flush top**: Chrome doesn't truncate the adjoining top margin at a forced
+    break, so a heading after a break sat ~½ line low. Zero `margin-top` at
+    every column/page start (`:first-child` + the `+ *` after each break).
+  - Break blocks are **excluded from the PDF click map** (not tappable) via
+    `isLayoutBlock` in types.ts, applied identically in markBlocks,
+    wrapBlocksForPrint and flattenLessonBlocks so indices stay aligned.
+  - **The live preview page count does NOT account for forced pagebreaks** — it
+    divides balanced column height by page height, so a lesson using `pagebreak`
+    will under-count in the preview; Print shows the true page count.
 - **Print columns are per-lesson** via front-matter `columns:` (default 2).
   More columns ≠ fewer pages: narrow columns wrap tables *taller*. Trim content
   instead. Columns are a **print** concern — the editing surface stays

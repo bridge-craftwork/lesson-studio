@@ -416,9 +416,13 @@ answer-deferral break above.
 ```
 ````
 
-The body is empty. Maps to `break-before: page` in the print view; the editor
-renders a labeled divider. Ignored where pagination is not meaningful (e.g. the
-interactive platform variant).
+The body is empty. Forces a new page in the print view; the editor renders a
+labeled divider. Because the print body is a CSS multi-column container (in
+which `break-before: page` is ignored), the renderer implements this as a
+zero-height column-spanning break rather than a plain `break-before` — an
+implementation detail, but the effect is a real page break at any column count.
+Ignored where pagination is not meaningful (e.g. the interactive platform
+variant).
 
 **Canonical form:** the bare fenced block with an empty body.
 
