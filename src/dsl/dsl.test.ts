@@ -161,6 +161,18 @@ describe('call formatting', () => {
     ])
     expect(splitRedSuits('no suits here')).toEqual([{ text: 'no suits here' }])
   })
+
+  it('expands BridgeComposer suit escapes (\\C etc.) in free text', () => {
+    // \\H and \\D expand to red glyphs; \\S and \\C to black; case-insensitive.
+    expect(splitRedSuits('double after 1\\S to show 1\\H')).toEqual([
+      { text: 'double after 1♠ to show 1' },
+      { text: '♥', red: true },
+    ])
+    expect(splitRedSuits('Stayman 2\\c and 2\\d')).toEqual([
+      { text: 'Stayman 2♣ and 2' },
+      { text: '♦', red: true },
+    ])
+  })
 })
 
 describe('auction block', () => {

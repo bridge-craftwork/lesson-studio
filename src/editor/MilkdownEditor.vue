@@ -25,6 +25,7 @@ import { useNodeViewFactory } from '@prosemirror-adapter/vue'
 import type { ReservedBlock } from '@/dsl'
 import { bridgeBlocks } from '../blocks'
 import { suitColoring } from '../blocks/suitColoring'
+import { suitEscapeInput, suitEscapePaste } from '../blocks/suitEscapes'
 
 const props = withDefaults(
   defineProps<{ initialMarkdown?: string; editable?: boolean }>(),
@@ -117,7 +118,11 @@ useEditor((root) =>
     .use(history)
     .use(clipboard)
     .use(listener)
-    .use(suitColoring),
+    .use(suitColoring)
+    // Suit shorthand: `\C`→♣ on type/paste. After commonmark; converts to the
+    // real glyph, which suitColoring then reddens for ♥/♦.
+    .use(suitEscapeInput)
+    .use(suitEscapePaste),
 )
 </script>
 

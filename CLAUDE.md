@@ -104,6 +104,15 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   three-backtick blocks. It round-trips byte-identically (there's a test).
 - Suit glyphs: only **♥/♦ are red**, and only the glyph — never the level digit
   or an annotation superscript.
+- **BridgeComposer suit shorthand `\\C \\D \\H \\S`** (either case) → ♣ ♦ ♥ ♠, for
+  fast typing in text. In **prose** it's a Milkdown input rule + paste transform
+  that converts to the real glyph on the fly (`src/blocks/suitEscapes.ts`). In
+  **free-text SuitText surfaces** (title, response-box meanings, footnotes,
+  quiz) `splitRedSuits` expands it at display. CommonMark keeps a
+  backslash-before-a-letter literal, so `\\C` survives markdown untouched.
+  Caveat: prose conversion is on **type/paste**, not on load — a hand-authored
+  file with `\\C` in a *paragraph* renders literally (title/blocks still expand);
+  type it in the editor or use the glyph.
 
 ## Conventions
 
