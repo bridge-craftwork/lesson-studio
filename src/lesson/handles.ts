@@ -9,7 +9,7 @@
  * files without re-picking them — re-granting permission (a user-gesture-gated
  * step) happens when you actually open one.
  */
-import type { FileHandle, PermissionMode } from './files'
+import type { DirectoryHandle, FileHandle, PermissionMode } from './files'
 
 const DB_NAME = 'lesson-studio'
 const DB_VERSION = 1
@@ -20,7 +20,7 @@ export interface HandleEntry {
   key: string
   name: string
   kind: 'file' | 'directory'
-  handle: FileHandle
+  handle: FileHandle | DirectoryHandle
   lastOpened: number
   favorite: boolean
 }
@@ -96,18 +96,53 @@ export async function rememberFile(handle: FileHandle): Promise<string> {
   return key
 }
 
-/** Find a stored entry that points at the same on-disk file, if any. */
-async function findByIdentity(handle: FileHandle): Promise<HandleEntry | undefined> {
+/**
+ * Remember a directory (e.g. a lesson-library `lessons/` folder) so the Lobby
+ * can list its lessons across reloads. Deduped by identity like files.
+ */
+export async function rememberDirectory(handle: DirectoryHandle): Promise<string> {
+  const existing = await findByIdentity(handle, 'directory')
+  const key = existing?.key ?? crypto.randomUUID()
+  await putEntry({
+    key,
+    name: handle.name ?? existing?.name ?? 'lessons',
+    kind: 'directory',
+    handle,
+    lastOpened: Date.now(),
+    favorite: existing?.favorite ?? false,
+  })
+  return key
+}
+
+/** Find a stored entry of the given kind that points at the same on-disk item. */
+async function findByIdentity(
+  handle: FileHandle | DirectoryHandle,
+  kind: 'file' | 'directory' = 'file',
+): Promise<HandleEntry | undefined> {
   if (typeof handle.isSameEntry !== 'function') return undefined
-  const entries = await listEntries()
+  const entries = (await listEntries()).filter((e) => e.kind === kind)
   for (const entry of entries) {
     try {
-      if (await entry.handle.isSameEntry?.(handle)) return entry
+      // Same-kind handles share the isSameEntry signature; the cast bridges the
+      // File/Directory union without widening the public types.
+      if (await (entry.handle as FileHandle).isSameEntry?.(handle as FileHandle)) return entry
     } catch {
       /* a dead handle can't match; skip it */
     }
   }
   return undefined
+}
+
+export function listFiles(): Promise<HandleEntry[]> {
+  return listEntries().then((es) => es.filter((e) => e.kind === 'file'))
+}
+
+export function listFavorites(): Promise<HandleEntry[]> {
+  return listFiles().then((es) => es.filter((e) => e.favorite).sort((a, b) => b.lastOpened - a.lastOpened))
+}
+
+export function listDirectories(): Promise<HandleEntry[]> {
+  return listEntries().then((es) => es.filter((e) => e.kind === 'directory'))
 }
 
 export async function setFavorite(key: string, favorite: boolean): Promise<void> {
@@ -120,9 +155,25 @@ export async function setFavorite(key: string, favorite: boolean): Promise<void>
  * it on reload. MUST be called from a user gesture (a click) — the browser
  * rejects `requestPermission` otherwise. Returns true if granted.
  */
-export async function ensurePermission(handle: FileHandle, mode: PermissionMode = 'read'): Promise<boolean> {
+export async function ensurePermission(
+  handle: FileHandle | DirectoryHandle,
+  mode: PermissionMode = 'read',
+): Promise<boolean> {
   if (typeof handle.queryPermission !== 'function') return true // fallback handles need none
   const desc = { mode }
   if ((await handle.queryPermission(desc)) === 'granted') return true
   return (await handle.requestPermission?.(desc)) === 'granted'
+}
+
+/**
+ * Query permission WITHOUT requesting — safe to call outside a user gesture
+ * (e.g. at mount, to decide whether a remembered directory can be scanned yet
+ * or needs a "grant access" click first).
+ */
+export async function hasPermission(
+  handle: FileHandle | DirectoryHandle,
+  mode: PermissionMode = 'read',
+): Promise<boolean> {
+  if (typeof handle.queryPermission !== 'function') return true
+  return (await handle.queryPermission({ mode })) === 'granted'
 }

@@ -12,10 +12,25 @@ import {
   openLessonFile,
   saveLessonAs,
   saveToHandle,
+  pickDirectory,
   supportsFsAccess,
+  supportsDirectoryPicker,
   type FileHandle,
+  type DirectoryHandle,
 } from './files'
-import { rememberFile, getEntry, ensurePermission } from './handles'
+import {
+  rememberFile,
+  rememberDirectory,
+  getEntry,
+  ensurePermission,
+  hasPermission,
+  setFavorite,
+  listFavorites,
+  listDirectories,
+  removeEntry,
+  type HandleEntry,
+} from './handles'
+import { scanLibrary, type LibraryLesson } from './lessonLibrary'
 import { readSession, writeSession } from './sessionStore'
 
 const AUTOSAVE_MS = 800
@@ -42,6 +57,12 @@ export function useLessonSession() {
   const handleKey = ref<string | undefined>(undefined) // IDB key of the backing file
   const draftId = ref<string>(crypto.randomUUID())
   const drafts = ref<Draft[]>(listDrafts())
+
+  // Lobby surfaces backed by IndexedDB handles (loaded async below).
+  const favorites = ref<HandleEntry[]>([])
+  const libraryDir = ref<HandleEntry | null>(null)
+  const libraryLessons = ref<LibraryLesson[]>([])
+  const libraryNeedsPermission = ref(false)
 
   let autosaveTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -163,10 +184,83 @@ export function useLessonSession() {
   // Re-attach a persisted file handle to the open document (best-effort).
   async function relinkHandle(key: string) {
     const entry = await getEntry(key)
-    if (entry && handleKey.value === key) {
-      handle.value = entry.handle
+    if (entry && handleKey.value === key && entry.kind === 'file') {
+      handle.value = entry.handle as FileHandle
       if (entry.name) fileName.value = entry.name
     }
+  }
+
+  /**
+   * Open a lesson straight from a persisted/traversed file handle (a Favorite
+   * or a lesson-library entry). Re-requests read permission first — runs inside
+   * the click, the gesture the browser requires.
+   */
+  async function openHandle(fileHandle: FileHandle) {
+    if (!(await ensurePermission(fileHandle, 'read'))) return
+    const file = await fileHandle.getFile()
+    const key = await rememberFile(fileHandle).catch(() => undefined)
+    load(await file.text(), { name: fileHandle.name ?? file.name, handle: fileHandle, handleKey: key })
+    void refreshFavorites()
+  }
+
+  // --- Favorites (disk files) ---
+
+  async function refreshFavorites() {
+    favorites.value = await listFavorites()
+  }
+
+  /** Star / unstar a file by its handle key (from a History `file` row or a Favorite). */
+  async function toggleFavorite(key: string, favorite: boolean) {
+    await setFavorite(key, favorite)
+    await refreshFavorites()
+  }
+
+  // --- lesson-library directory ---
+
+  /** Load the remembered library folder, or flag that it needs a permission click. */
+  async function refreshLibrary() {
+    const dirs = await listDirectories()
+    const entry = dirs[0] ?? null
+    libraryDir.value = entry
+    libraryLessons.value = []
+    libraryNeedsPermission.value = false
+    if (!entry) return
+    const dir = entry.handle as DirectoryHandle
+    // queryPermission only — requesting here would need a user gesture we lack.
+    if (await hasPermission(dir, 'read')) {
+      libraryLessons.value = await scanLibrary(dir).catch(() => [])
+    } else {
+      libraryNeedsPermission.value = true
+    }
+  }
+
+  /** Pick a lessons/ folder to remember (user gesture → permission granted). */
+  async function chooseLibrary() {
+    const dir = await pickDirectory()
+    if (!dir) return
+    await rememberDirectory(dir).catch(() => undefined)
+    libraryLessons.value = await scanLibrary(dir).catch(() => [])
+    libraryNeedsPermission.value = false
+    libraryDir.value = (await listDirectories())[0] ?? null
+  }
+
+  /** Re-grant access to the remembered folder after a reload dropped permission. */
+  async function grantLibrary() {
+    const entry = libraryDir.value
+    if (!entry) return
+    const dir = entry.handle as DirectoryHandle
+    if (await ensurePermission(dir, 'read')) {
+      libraryNeedsPermission.value = false
+      libraryLessons.value = await scanLibrary(dir).catch(() => [])
+    }
+  }
+
+  /** Forget the remembered library folder. */
+  async function forgetLibrary() {
+    if (libraryDir.value) await removeEntry(libraryDir.value.key)
+    libraryDir.value = null
+    libraryLessons.value = []
+    libraryNeedsPermission.value = false
   }
 
   function deleteDraft(id: string) {
@@ -219,6 +313,10 @@ export function useLessonSession() {
   }
   restoreLocation()
 
+  // Load the IndexedDB-backed Lobby surfaces (best-effort; absent APIs no-op).
+  void refreshFavorites()
+  void refreshLibrary()
+
   // Warn before leaving with unsaved edits.
   watch(dirty, (isDirty) => {
     window.onbeforeunload = isDirty ? (e) => (e.preventDefault(), '') : null
@@ -236,15 +334,25 @@ export function useLessonSession() {
     dirty,
     title,
     drafts,
+    favorites,
+    libraryDir,
+    libraryLessons,
+    libraryNeedsPermission,
     canSaveInPlace,
     supportsFsAccess,
+    supportsDirectoryPicker,
     onEdit,
     openTemplate,
     open,
+    openHandle,
     save,
     saveAs,
     restoreDraft,
     deleteDraft,
+    toggleFavorite,
+    chooseLibrary,
+    grantLibrary,
+    forgetLibrary,
     close,
     stashForPrint,
   }

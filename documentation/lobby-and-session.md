@@ -1,12 +1,20 @@
 # Lobby & Session Model
 
-**Status:** Phases A + B implemented (2026-07-27). A: Lobby, Close,
-last-location restore, Templates, merged History. B: File System Access handles
-persisted in IndexedDB (`src/lesson/handles.ts`), file-backed drafts tagged
-`file` in History, Save re-requests permission after a reload. The IndexedDB
-layer and History tagging are automated-verified; the native-picker flows
-(Open→remember, Save-after-reload) need a manual pass with real files. Phase C
-(disk Favorites + lesson-library directory listing) pending.
+**Status:** Phases A + B + C implemented (2026-07-27).
+A: Lobby, Close, last-location restore, Templates, merged History.
+B: File System Access handles persisted in IndexedDB (`src/lesson/handles.ts`),
+file-backed drafts tagged `file` in History, Save re-requests permission after a
+reload.
+C: disk **Favorites** (star a `file` History row; a Favorites section) and a
+remembered **lesson-library** folder (`src/lesson/lessonLibrary.ts` scans
+`lessons/<slug>/<slug>.md` or a flat `.md` folder, listing slugs; opening reads
+the file).
+Automated-verified: the IndexedDB layer (files + directories + favorites),
+History/favorite tagging and reactivity, and `scanLibrary` (Playwright + vitest,
+`lobby.test.ts`). **Still needs a manual pass with real files** — the native
+pickers can't be driven headless: Open→remember, Save-in-place after reload,
+`isSameEntry` dedup, choosing/granting a library folder and opening a listed
+lesson.
 **Author:** Rick Wilson
 **Date:** 2026-07-22
 

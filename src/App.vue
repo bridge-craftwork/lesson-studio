@@ -31,10 +31,20 @@ function restoreHistory(entry: HistoryEntry) {
   <Lobby
     v-if="session.location.value === 'lobby'"
     :drafts="session.drafts.value"
+    :favorites="session.favorites.value"
+    :library-dir="session.libraryDir.value"
+    :library-lessons="session.libraryLessons.value"
+    :library-needs-permission="session.libraryNeedsPermission.value"
+    :supports-directory-picker="session.supportsDirectoryPicker"
     @open-template="session.openTemplate"
     @open-file="session.open()"
     @restore="restoreHistory"
     @delete-draft="session.deleteDraft"
+    @open-handle="session.openHandle"
+    @toggle-favorite="session.toggleFavorite"
+    @choose-library="session.chooseLibrary()"
+    @grant-library="session.grantLibrary()"
+    @forget-library="session.forgetLibrary()"
   />
 
   <div v-else class="studio">

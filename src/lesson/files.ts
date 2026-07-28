@@ -19,6 +19,17 @@ export interface FileHandle {
   requestPermission?(desc?: { mode?: PermissionMode }): Promise<PermissionState>
 }
 
+// A directory handle — same permission/identity surface, plus async iteration
+// over its children. Used to list a remembered lesson-library `lessons/` folder.
+export interface DirectoryHandle {
+  name?: string
+  kind?: 'directory'
+  isSameEntry?(other: DirectoryHandle): Promise<boolean>
+  queryPermission?(desc?: { mode?: PermissionMode }): Promise<PermissionState>
+  requestPermission?(desc?: { mode?: PermissionMode }): Promise<PermissionState>
+  values(): AsyncIterableIterator<FileHandle | DirectoryHandle>
+}
+
 export interface OpenedFile {
   name: string
   text: string
@@ -31,6 +42,18 @@ const MD_TYPES = [{ description: 'Markdown lesson', accept: { 'text/markdown': [
 const w = window as any
 
 export const supportsFsAccess = typeof w.showOpenFilePicker === 'function'
+export const supportsDirectoryPicker = typeof w.showDirectoryPicker === 'function'
+
+/** Pick a directory (e.g. a lesson-library `lessons/` folder). Null if cancelled. */
+export async function pickDirectory(): Promise<DirectoryHandle | null> {
+  if (!supportsDirectoryPicker) return null
+  try {
+    return (await w.showDirectoryPicker({ mode: 'read' })) as DirectoryHandle
+  } catch (err) {
+    if ((err as DOMException)?.name === 'AbortError') return null
+    throw err
+  }
+}
 
 export async function openLessonFile(): Promise<OpenedFile | null> {
   if (supportsFsAccess) {

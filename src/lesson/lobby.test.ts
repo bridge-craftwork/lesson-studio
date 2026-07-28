@@ -4,9 +4,26 @@ import { readSession, writeSession } from './sessionStore'
 import { listHistory } from './history'
 import { upsertDraft } from './drafts'
 import { TEMPLATES, getTemplate } from './templates'
+import { scanLibrary } from './lessonLibrary'
+import type { DirectoryHandle, FileHandle } from './files'
 import { STARTER_LESSON } from '../editor/starter'
 
 beforeEach(() => localStorage.clear())
+
+// Minimal stand-ins for File System Access handles: just a kind, a name, and
+// (for directories) an async-iterable `values()`.
+function mkFile(name: string): FileHandle {
+  return { kind: 'file', name } as unknown as FileHandle
+}
+function mkDir(name: string, children: Array<FileHandle | DirectoryHandle>): DirectoryHandle {
+  return {
+    kind: 'directory',
+    name,
+    async *values() {
+      for (const c of children) yield c
+    },
+  } as unknown as DirectoryHandle
+}
 
 describe('sessionStore — last-location memory', () => {
   it('defaults to the Lobby when nothing is stored', () => {
@@ -46,6 +63,32 @@ describe('history — merged, newest-first, tagged by kind', () => {
     ])
     expect(history[0].handleKey).toBe('k')
     expect(history[0].draftId).toBe('filed')
+  })
+})
+
+describe('scanLibrary — lesson-library folder listing', () => {
+  it('lists lessons/<slug>/<slug>.md, sorted, preferring the canonical file', async () => {
+    const dir = mkDir('lessons', [
+      mkDir('stayman', [mkFile('notes.md'), mkFile('stayman.md')]), // canonical wins over first
+      mkDir('new-minor-forcing', [mkFile('new-minor-forcing.md')]),
+      mkDir('empty', []), // no .md → skipped
+    ])
+    const lessons = await scanLibrary(dir)
+    expect(lessons.map((l) => l.slug)).toEqual(['new-minor-forcing', 'stayman'])
+    expect(lessons.find((l) => l.slug === 'stayman')?.fileHandle.name).toBe('stayman.md')
+  })
+
+  it('handles a flat folder of .md files and ignores non-markdown', async () => {
+    const dir = mkDir('lessons', [mkFile('a.md'), mkFile('README.txt'), mkFile('b.md')])
+    const lessons = await scanLibrary(dir)
+    expect(lessons.map((l) => l.slug)).toEqual(['a', 'b'])
+  })
+
+  it('falls back to the first .md when no file matches the slug', async () => {
+    const dir = mkDir('lessons', [mkDir('twoclub', [mkFile('lesson.md')])])
+    const lessons = await scanLibrary(dir)
+    expect(lessons.map((l) => l.slug)).toEqual(['twoclub'])
+    expect(lessons[0].fileHandle.name).toBe('lesson.md')
   })
 })
 
