@@ -5,9 +5,9 @@
  * points, not a file browser (see documentation/lobby-and-session.md):
  * Templates, Favorites, a lesson-library listing, a merged History, and Open….
  */
-import { computed } from 'vue'
+import { computed, reactive } from 'vue'
 import { TEMPLATES } from '../lesson/templates'
-import { listHistory, type HistoryEntry } from '../lesson/history'
+import { listHistoryGroups, type HistoryEntry, type HistoryGroup } from '../lesson/history'
 import type { Draft } from '../lesson/drafts'
 import type { HandleEntry } from '../lesson/handles'
 import type { LibraryLesson } from '../lesson/lessonLibrary'
@@ -35,11 +35,18 @@ const emit = defineEmits<{
 }>()
 
 // Recompute from the store keyed on the reactive drafts so a delete or autosave
-// refreshes the list.
-const history = computed<HistoryEntry[]>(() => {
+// refreshes the list. Repeat opens/starts of one document collapse into a group
+// whose older drafts are revealed on demand.
+const groups = computed<HistoryGroup[]>(() => {
   void props.drafts
-  return listHistory()
+  return listHistoryGroups()
 })
+
+const expanded = reactive(new Set<string>())
+function toggleExpand(key: string) {
+  if (expanded.has(key)) expanded.delete(key)
+  else expanded.add(key)
+}
 
 // Which History `file` rows are already favorited (by handle key).
 const favoriteKeys = computed(() => new Set(props.favorites.map((f) => f.key)))
@@ -127,32 +134,58 @@ function formatTime(ts: number): string {
 
       <section class="lobby__section">
         <h2 class="lobby__h">Recent</h2>
-        <p v-if="!history.length" class="lobby__empty">
+        <p v-if="!groups.length" class="lobby__empty">
           Nothing yet. Work you start autosaves here — nothing is lost when you Close.
         </p>
         <ul v-else class="hist">
-          <li v-for="entry in history" :key="entry.key" class="hist__row">
-            <button class="hist__open" @click="emit('restore', entry)">
-              <span class="hist__title">{{ entry.title || 'Untitled' }}</span>
-              <span class="hist__meta">
-                <span class="hist__kind" :class="`hist__kind--${entry.kind}`">{{ entry.kind }}</span>
-                <span class="hist__time">{{ formatTime(entry.updatedAt) }}</span>
-              </span>
-            </button>
-            <button
-              v-if="entry.handleKey"
-              class="hist__star"
-              :class="{ 'is-on': favoriteKeys.has(entry.handleKey) }"
-              :title="favoriteKeys.has(entry.handleKey) ? 'Remove from Favorites' : 'Add to Favorites'"
-              @click="emit('toggle-favorite', entry.handleKey, !favoriteKeys.has(entry.handleKey))"
-            >{{ favoriteKeys.has(entry.handleKey) ? '★' : '☆' }}</button>
-            <button
-              v-if="entry.draftId"
-              class="hist__del"
-              title="Remove from history"
-              @click="emit('delete-draft', entry.draftId)"
-            >×</button>
-          </li>
+          <template v-for="group in groups" :key="group.key">
+            <li class="hist__row">
+              <button class="hist__open" @click="emit('restore', group.primary)">
+                <span class="hist__title">{{ group.primary.title || 'Untitled' }}</span>
+                <span class="hist__meta">
+                  <span class="hist__kind" :class="`hist__kind--${group.primary.kind}`">{{ group.primary.kind }}</span>
+                  <span class="hist__time">{{ formatTime(group.primary.updatedAt) }}</span>
+                </span>
+              </button>
+              <button
+                v-if="group.primary.handleKey"
+                class="hist__star"
+                :class="{ 'is-on': favoriteKeys.has(group.primary.handleKey) }"
+                :title="favoriteKeys.has(group.primary.handleKey) ? 'Remove from Favorites' : 'Add to Favorites'"
+                @click="emit('toggle-favorite', group.primary.handleKey, !favoriteKeys.has(group.primary.handleKey))"
+              >{{ favoriteKeys.has(group.primary.handleKey) ? '★' : '☆' }}</button>
+              <button
+                v-if="group.primary.draftId"
+                class="hist__del"
+                title="Remove from history"
+                @click="emit('delete-draft', group.primary.draftId)"
+              >×</button>
+            </li>
+
+            <li v-if="group.older.length" class="hist__more">
+              <button class="hist__expand" @click="toggleExpand(group.key)">
+                {{ expanded.has(group.key) ? '▾' : '▸' }}
+                {{ group.older.length }} earlier {{ group.older.length === 1 ? 'draft' : 'drafts' }}
+              </button>
+            </li>
+
+            <template v-if="expanded.has(group.key)">
+              <li v-for="entry in group.older" :key="entry.key" class="hist__row hist__row--older">
+                <button class="hist__open" @click="emit('restore', entry)">
+                  <span class="hist__title">{{ entry.title || 'Untitled' }}</span>
+                  <span class="hist__meta">
+                    <span class="hist__time">{{ formatTime(entry.updatedAt) }}</span>
+                  </span>
+                </button>
+                <button
+                  v-if="entry.draftId"
+                  class="hist__del"
+                  title="Remove this draft"
+                  @click="emit('delete-draft', entry.draftId)"
+                >×</button>
+              </li>
+            </template>
+          </template>
         </ul>
       </section>
     </div>
@@ -383,5 +416,38 @@ function formatTime(ts: number): string {
 .hist__del:hover {
   background: var(--ls-panel);
   color: var(--ls-fg);
+}
+
+/* Per-document expander revealing older drafts. */
+.hist__more {
+  border-bottom: 1px solid var(--ls-border);
+}
+.hist__more:last-child {
+  border-bottom: none;
+}
+.hist__expand {
+  font: inherit;
+  font-size: 0.76rem;
+  color: var(--ls-muted);
+  background: transparent;
+  border: none;
+  padding: 0.3rem 1rem 0.4rem 1.6rem;
+  cursor: pointer;
+}
+.hist__expand:hover {
+  color: var(--ls-fg);
+}
+.hist__row--older {
+  background: var(--ls-panel);
+}
+.hist__row--older .hist__title {
+  font-weight: 450;
+  font-size: 0.9rem;
+  padding-left: 0.6rem;
+  color: var(--ls-muted);
+}
+.hist__row--older .hist__open {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
 }
 </style>

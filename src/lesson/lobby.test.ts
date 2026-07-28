@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { beforeEach, describe, expect, it } from 'vitest'
 import { readSession, writeSession } from './sessionStore'
-import { listHistory } from './history'
+import { listHistory, listHistoryGroups } from './history'
 import { upsertDraft } from './drafts'
 import { TEMPLATES, getTemplate } from './templates'
 import { scanLibrary } from './lessonLibrary'
@@ -63,6 +63,38 @@ describe('history — merged, newest-first, tagged by kind', () => {
     ])
     expect(history[0].handleKey).toBe('k')
     expect(history[0].draftId).toBe('filed')
+  })
+})
+
+describe('history grouping — one row per document, older drafts tucked away', () => {
+  it('groups repeat opens of one file (same handleKey), newest as primary', () => {
+    upsertDraft({ id: 'v1', title: 'NMF', markdown: 'a', updatedAt: 1000, handleKey: 'k' })
+    upsertDraft({ id: 'v2', title: 'NMF (edited)', markdown: 'b', updatedAt: 3000, handleKey: 'k' })
+    upsertDraft({ id: 'v3', title: 'NMF', markdown: 'c', updatedAt: 2000, handleKey: 'k' })
+
+    const groups = listHistoryGroups()
+    expect(groups).toHaveLength(1)
+    expect(groups[0].primary.draftId).toBe('v2') // newest
+    expect(groups[0].older.map((e) => e.draftId)).toEqual(['v3', 'v1']) // newest-first
+  })
+
+  it('groups repeat template starts by title, but keeps distinct titles apart', () => {
+    upsertDraft({ id: 'a1', title: 'Stayman', markdown: 'a', updatedAt: 1000 })
+    upsertDraft({ id: 'a2', title: 'Stayman', markdown: 'b', updatedAt: 2000 })
+    upsertDraft({ id: 'b1', title: 'Jacoby', markdown: 'c', updatedAt: 1500 })
+
+    const groups = listHistoryGroups()
+    expect(groups.map((g) => g.primary.title)).toEqual(['Stayman', 'Jacoby']) // by primary time desc
+    const stayman = groups.find((g) => g.primary.title === 'Stayman')!
+    expect(stayman.primary.draftId).toBe('a2')
+    expect(stayman.older.map((e) => e.draftId)).toEqual(['a1'])
+    expect(groups.find((g) => g.primary.title === 'Jacoby')!.older).toEqual([])
+  })
+
+  it('does not merge distinct untitled draft-only documents', () => {
+    upsertDraft({ id: 'u1', title: '', markdown: 'a', updatedAt: 1000 })
+    upsertDraft({ id: 'u2', title: '', markdown: 'b', updatedAt: 2000 })
+    expect(listHistoryGroups()).toHaveLength(2)
   })
 })
 

@@ -33,3 +33,44 @@ export function listHistory(): HistoryEntry[] {
     }))
     .sort((a, b) => b.updatedAt - a.updatedAt)
 }
+
+/**
+ * A document and its older drafts. Reopening the same file or restarting the
+ * same template mints a fresh draft each time, so several rows can describe one
+ * document; History shows the newest (`primary`) and tucks the rest into
+ * `older`, which the Lobby reveals on demand — earlier drafts rarely matter.
+ */
+export interface HistoryGroup {
+  key: string
+  primary: HistoryEntry
+  older: HistoryEntry[]
+}
+
+// Same document ⇒ same backing file (handleKey), else same non-empty title
+// (repeat template starts). An untitled draft-only entry groups by its own id,
+// so distinct blanks don't collapse into one.
+function groupKey(e: HistoryEntry): string {
+  if (e.handleKey) return `h:${e.handleKey}`
+  const title = e.title.trim().toLowerCase()
+  return title ? `t:${title}` : `id:${e.draftId}`
+}
+
+export function groupHistory(entries: HistoryEntry[]): HistoryGroup[] {
+  const groups = new Map<string, HistoryEntry[]>()
+  for (const e of entries) {
+    const k = groupKey(e)
+    const bucket = groups.get(k)
+    if (bucket) bucket.push(e)
+    else groups.set(k, [e])
+  }
+  return [...groups.entries()]
+    .map(([key, es]) => {
+      es.sort((a, b) => b.updatedAt - a.updatedAt)
+      return { key, primary: es[0], older: es.slice(1) }
+    })
+    .sort((a, b) => b.primary.updatedAt - a.primary.updatedAt)
+}
+
+export function listHistoryGroups(): HistoryGroup[] {
+  return groupHistory(listHistory())
+}

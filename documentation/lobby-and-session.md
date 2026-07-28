@@ -126,6 +126,10 @@ Resolved 2026-07-27 (decisions in **bold**):
 - **Templates** are `src/lesson/templates.ts` (STARTER_LESSON is now the
   "Topic introduction" template, no longer the implicit default). The app boots
   to the Lobby.
-- **History** is `src/lesson/history.ts` → `HistoryEntry[]`; Phase A sources
-  drafts only, the merge shape is already in place for recent files.
+- **History** is `src/lesson/history.ts`. `listHistory()` is the flat tagged
+  list; `listHistoryGroups()` collapses it to one row per document — repeat
+  opens of a file (same `handleKey`) or repeat template starts (same title)
+  group together, newest as `primary`, the rest under a per-document expander.
+  Untitled draft-only entries group by their own id so distinct blanks don't
+  merge. This is what absorbs the "duplicate drafts accumulate" gap.
 - The old in-document **Drafts** menu is removed — superseded by Lobby History.
