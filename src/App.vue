@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount } from 'vue'
+import { ref } from 'vue'
 import LessonDocument from './editor/LessonDocument.vue'
 import EditorRibbon from './editor/EditorRibbon.vue'
+import Lobby from './editor/Lobby.vue'
 import PagePreview from './print/PagePreview.vue'
 import { useLessonSession } from './lesson/useLessonSession'
+import type { HistoryEntry } from './lesson/history'
 
 // Resolve sibling pages against the deploy base ('/' locally,
 // '/lesson-studio/' on GitHub Pages) so links work in both.
@@ -18,60 +20,35 @@ const session = useLessonSession()
 const showPreview = ref(false)
 const lessonDoc = ref<InstanceType<typeof LessonDocument> | null>(null)
 
-function formatTime(ts: number): string {
-  return new Date(ts).toLocaleString(undefined, { dateStyle: 'short', timeStyle: 'short' })
+// A History entry reconstitutes from its autosave draft (Phase A). Recent files
+// with persisted handles re-open by handleKey in a later phase.
+function restoreHistory(entry: HistoryEntry) {
+  if (entry.draftId) session.restoreDraft(entry.draftId)
 }
-
-// The Drafts <details> behaves like a menu: picking a draft closes it, as does
-// clicking outside. (Deleting leaves it open — you may be pruning several.)
-const draftsMenu = ref<HTMLDetailsElement | null>(null)
-
-function closeDrafts() {
-  if (draftsMenu.value) draftsMenu.value.open = false
-}
-
-function restoreDraft(id: string) {
-  session.restoreDraft(id)
-  closeDrafts()
-}
-
-function onDocumentPointerDown(event: PointerEvent) {
-  const menu = draftsMenu.value
-  if (menu?.open && !menu.contains(event.target as Node)) closeDrafts()
-}
-
-onMounted(() => document.addEventListener('pointerdown', onDocumentPointerDown))
-onBeforeUnmount(() => document.removeEventListener('pointerdown', onDocumentPointerDown))
 </script>
 
 <template>
-  <div class="studio">
+  <Lobby
+    v-if="session.location.value === 'lobby'"
+    :drafts="session.drafts.value"
+    @open-template="session.openTemplate"
+    @open-file="session.open()"
+    @restore="restoreHistory"
+    @delete-draft="session.deleteDraft"
+  />
+
+  <div v-else class="studio">
     <header class="studio__header">
       <h1 class="studio__title">Lesson Studio</h1>
 
       <div class="toolbar">
-        <button @click="session.newLesson()">New</button>
+        <button class="studio__close" title="Close this lesson and return to the Lobby" @click="session.close()">‹ Close</button>
+        <span class="toolbar__sep" />
         <button @click="session.open()">Open…</button>
         <button @click="session.save()">
           {{ session.canSaveInPlace.value ? 'Save' : 'Save…' }}
         </button>
         <button @click="session.saveAs()">Save As…</button>
-
-        <details ref="draftsMenu" class="drafts">
-          <summary>Drafts</summary>
-          <div class="drafts__menu">
-            <p v-if="!session.drafts.value.length" class="drafts__empty">No drafts yet.</p>
-            <ul v-else>
-              <li v-for="d in session.drafts.value" :key="d.id">
-                <button class="drafts__restore" @click="restoreDraft(d.id)">
-                  <span class="drafts__title">{{ d.title }}</span>
-                  <span class="drafts__time">{{ formatTime(d.updatedAt) }}</span>
-                </button>
-                <button class="drafts__delete" title="Delete draft" @click="session.deleteDraft(d.id)">×</button>
-              </li>
-            </ul>
-          </div>
-        </details>
       </div>
 
       <span class="studio__file">

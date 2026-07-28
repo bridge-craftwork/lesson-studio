@@ -1,6 +1,12 @@
 # Lobby & Session Model
 
-**Status:** Captured — not implemented
+**Status:** Phases A + B implemented (2026-07-27). A: Lobby, Close,
+last-location restore, Templates, merged History. B: File System Access handles
+persisted in IndexedDB (`src/lesson/handles.ts`), file-backed drafts tagged
+`file` in History, Save re-requests permission after a reload. The IndexedDB
+layer and History tagging are automated-verified; the native-picker flows
+(Open→remember, Save-after-reload) need a manual pass with real files. Phase C
+(disk Favorites + lesson-library directory listing) pending.
 **Author:** Rick Wilson
 **Date:** 2026-07-22
 
@@ -82,13 +88,36 @@ Found while reviewing the current UI; several disappear once a Lobby exists:
 
 ## Open questions
 
+Resolved 2026-07-27 (decisions in **bold**):
+
 1. Is a **Favorite** a file on disk, a draft, or a `lesson-library` lesson by
-   slug? (Disk favorites need persisted handles.)
+   slug? (Disk favorites need persisted handles.) → **A file on disk**, via a
+   File System Access handle persisted in IndexedDB. (Phase C.)
 2. Does **History** merge drafts and opened files into one list, or keep them
-   separate?
+   separate? → **One merged list, newest-first**, each entry tagged with its
+   `kind`. (Phase A merges drafts; Phase B adds recent files.)
 3. Does **Close** prompt to save when the document is dirty, or auto-save the
-   draft and close silently?
+   draft and close silently? → **Auto-save a draft and close silently.** The
+   Lobby's History is the safety net that makes a save prompt unnecessary.
 4. Should the Lobby list the `lesson-library` lessons directly (needs directory
-   access, or a checked-out path the app remembers)?
+   access, or a checked-out path the app remembers)? → **Yes** — remember a
+   `lessons/` directory handle (IndexedDB) and list its lessons. (Phase C.)
 5. Where does the future **volunteer submit** flow (PR-on-your-behalf, Phase 2)
-   appear — a Lobby action, or a Document action?
+   appear — a Lobby action, or a Document action? → Still open (Phase 2).
+
+## Implementation notes (Phase A)
+
+- **Location** lives in `src/lesson/sessionStore.ts` (`lesson-studio:session:v1`
+  in localStorage): `{ location, draftId?, handleKey?, fileName? }`. `useLessonSession`
+  reads it on construction (`restoreLocation`) and writes it on every
+  enter-document / Close.
+- A document is reconstituted on reload **from its autosave draft** (by
+  `draftId`). Entering a document persists the draft up front so restore works
+  even before the first edit. A backing file handle can't be serialized here —
+  that's Phase B's IndexedDB `handleKey`.
+- **Templates** are `src/lesson/templates.ts` (STARTER_LESSON is now the
+  "Topic introduction" template, no longer the implicit default). The app boots
+  to the Lobby.
+- **History** is `src/lesson/history.ts` → `HistoryEntry[]`; Phase A sources
+  drafts only, the merge shape is already in place for recent files.
+- The old in-document **Drafts** menu is removed — superseded by Lobby History.

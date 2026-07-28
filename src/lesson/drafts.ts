@@ -4,6 +4,13 @@ export interface Draft {
   title: string
   markdown: string
   updatedAt: number
+  /**
+   * If this draft backs a file on disk, the key of its persisted handle
+   * (handles.ts / IndexedDB). Lets History show one row per document — tagged
+   * `file` rather than `draft` — instead of a draft and a file row for the same
+   * work, and lets a reload re-link Save to the original file.
+   */
+  handleKey?: string
 }
 
 const KEY = 'lesson-studio:drafts:v1'

@@ -5,10 +5,18 @@
  */
 
 // Minimal shape of a File System Access handle (avoids a types dependency).
+// The permission/identity methods exist on real FS Access handles and are used
+// by the IndexedDB persistence layer (handles.ts); they're optional so the
+// upload/download fallback's `null` handle and plain test doubles still type.
+export type PermissionMode = 'read' | 'readwrite'
 export interface FileHandle {
   name?: string
+  kind?: 'file'
   getFile(): Promise<File>
   createWritable(): Promise<{ write(data: string): Promise<void>; close(): Promise<void> }>
+  isSameEntry?(other: FileHandle): Promise<boolean>
+  queryPermission?(desc?: { mode?: PermissionMode }): Promise<PermissionState>
+  requestPermission?(desc?: { mode?: PermissionMode }): Promise<PermissionState>
 }
 
 export interface OpenedFile {
