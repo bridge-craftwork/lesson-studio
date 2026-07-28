@@ -3,6 +3,7 @@ import { ref } from 'vue'
 import LessonDocument from './editor/LessonDocument.vue'
 import EditorRibbon from './editor/EditorRibbon.vue'
 import Lobby from './editor/Lobby.vue'
+import UserGuide from './editor/UserGuide.vue'
 import PagePreview from './print/PagePreview.vue'
 import { useLessonSession } from './lesson/useLessonSession'
 import type { HistoryEntry } from './lesson/history'
@@ -20,6 +21,10 @@ const session = useLessonSession()
 const showPreview = ref(false)
 const lessonDoc = ref<InstanceType<typeof LessonDocument> | null>(null)
 
+// The User Guide overlays the Lobby. It's ephemeral UI state, deliberately not a
+// session location — a reload returns to the Lobby, never into the guide.
+const guideOpen = ref(false)
+
 // A History entry reconstitutes from its autosave draft (Phase A). Recent files
 // with persisted handles re-open by handleKey in a later phase.
 function restoreHistory(entry: HistoryEntry) {
@@ -28,8 +33,10 @@ function restoreHistory(entry: HistoryEntry) {
 </script>
 
 <template>
+  <UserGuide v-if="session.location.value === 'lobby' && guideOpen" @close="guideOpen = false" />
+
   <Lobby
-    v-if="session.location.value === 'lobby'"
+    v-else-if="session.location.value === 'lobby'"
     :drafts="session.drafts.value"
     :favorites="session.favorites.value"
     :library-dir="session.libraryDir.value"
@@ -45,6 +52,7 @@ function restoreHistory(entry: HistoryEntry) {
     @choose-library="session.chooseLibrary()"
     @grant-library="session.grantLibrary()"
     @forget-library="session.forgetLibrary()"
+    @open-guide="guideOpen = true"
   />
 
   <div v-else class="studio">

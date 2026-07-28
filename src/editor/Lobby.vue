@@ -32,6 +32,7 @@ const emit = defineEmits<{
   (e: 'choose-library'): void
   (e: 'grant-library'): void
   (e: 'forget-library'): void
+  (e: 'open-guide'): void
 }>()
 
 // Recompute from the store keyed on the reactive drafts so a delete or autosave
@@ -60,8 +61,12 @@ function formatTime(ts: number): string {
   <div class="lobby">
     <div class="lobby__inner">
       <header class="lobby__head">
+        <button class="lobby__guide" @click="emit('open-guide')">User Guide</button>
         <h1 class="lobby__brand">Lesson Studio</h1>
-        <p class="lobby__tagline">One-page bridge lessons. Pick up where you left off, or start fresh.</p>
+        <p class="lobby__tagline">
+          One-page bridge lessons. Pick up where you left off, or start fresh.
+          <button class="lobby__guidelink" @click="emit('open-guide')">New here? Read the User Guide →</button>
+        </p>
       </header>
 
       <section class="lobby__section">
@@ -204,6 +209,7 @@ function formatTime(ts: number): string {
   padding: 3rem 1.5rem 4rem;
 }
 .lobby__head {
+  position: relative;
   margin-bottom: 2.5rem;
 }
 .lobby__brand {
@@ -214,6 +220,37 @@ function formatTime(ts: number): string {
 .lobby__tagline {
   margin: 0.35rem 0 0;
   color: var(--ls-muted);
+}
+.lobby__guide {
+  position: absolute;
+  top: 0;
+  right: 0;
+  font: inherit;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--ls-accent);
+  background: none;
+  border: 1px solid var(--ls-border);
+  border-radius: 0.4rem;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+.lobby__guide:hover {
+  border-color: var(--ls-accent);
+  background: color-mix(in srgb, var(--ls-accent) 8%, transparent);
+}
+.lobby__guidelink {
+  font: inherit;
+  font-size: 0.9rem;
+  color: var(--ls-accent);
+  background: none;
+  border: none;
+  padding: 0;
+  margin-left: 0.35rem;
+  cursor: pointer;
+}
+.lobby__guidelink:hover {
+  text-decoration: underline;
 }
 .lobby__section {
   margin-bottom: 2.5rem;
