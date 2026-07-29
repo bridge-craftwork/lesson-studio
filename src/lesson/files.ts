@@ -28,6 +28,7 @@ export interface DirectoryHandle {
   queryPermission?(desc?: { mode?: PermissionMode }): Promise<PermissionState>
   requestPermission?(desc?: { mode?: PermissionMode }): Promise<PermissionState>
   values(): AsyncIterableIterator<FileHandle | DirectoryHandle>
+  getFileHandle(name: string): Promise<FileHandle>
 }
 
 export interface OpenedFile {
@@ -67,6 +68,32 @@ export async function openLessonFile(): Promise<OpenedFile | null> {
     }
   }
   return openViaInput()
+}
+
+const JSON_TYPES = [{ description: 'Quiz lesson JSON', accept: { 'application/json': ['.json'] } }]
+
+/** Open a `.json` file (e.g. a PBS quiz-lesson). Returns its text, or null if cancelled. */
+export async function pickJsonFile(): Promise<{ name: string; text: string } | null> {
+  if (supportsFsAccess) {
+    try {
+      const [handle] = await w.showOpenFilePicker({ types: JSON_TYPES })
+      const file = await handle.getFile()
+      return { name: file.name, text: await file.text() }
+    } catch (err) {
+      if ((err as DOMException)?.name === 'AbortError') return null
+      throw err
+    }
+  }
+  return new Promise((resolve) => {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = '.json,application/json'
+    input.onchange = async () => {
+      const file = input.files?.[0]
+      resolve(file ? { name: file.name, text: await file.text() } : null)
+    }
+    input.click()
+  })
 }
 
 function openViaInput(): Promise<OpenedFile | null> {

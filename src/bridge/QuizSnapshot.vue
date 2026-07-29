@@ -1,37 +1,55 @@
 <script setup lang="ts">
 /**
  * Phase-1 PLACEHOLDER for the Bridge-Classroom `QuizSnapshot` (Contract 2).
- * Renders a Contract 3 quiz/v1 `bidding` quiz. `variant` controls answer
- * placement (Contract 2 answer-deferral): student defers answers to a trailing
- * list, teacher shows them inline, projection omits them. (The document-level
- * answer registry is a print-view concern; this placeholder shows the
- * per-quiz behavior only.)
+ * Renders one `quiz-embed/v1` exercise (Contract 3 `bidding`): a shared prompt
+ * over a set of hands, each with the auction it faces and its expected call.
+ *
+ * `answers` controls answer visibility (Contract 2 answer-deferral):
+ *   - `inline`   — show each answer beside its hand (author view / teacher print);
+ *   - `deferred` — show questions only; the *document* renders answers elsewhere
+ *                  (the print pipeline's collected answer section);
+ *   - `hidden`   — no answers at all (projection).
+ * `startNumber` lets the document number questions continuously across blocks.
  */
 import { computed } from 'vue'
 import HandDisplay from './vendor/components/HandDisplay.vue'
 import CallLabel from './CallLabel.vue'
 import SuitText from './SuitText.vue'
 
-interface QuizItem {
-  hand: { spades: string; hearts: string; diamonds: string; clubs: string }
+interface Hand {
+  spades: string
+  hearts: string
+  diamonds: string
+  clubs: string
+}
+interface Question {
+  hand: Hand
+  seat?: string
+  dealer?: string
+  vulnerability?: string
+  context?: { dealer?: string; calls: string[] }
   answer: string
+  alternates?: string[]
   explanation?: string
 }
-interface Quiz {
+interface Exercise {
   title: string
   prompt: string
-  items: QuizItem[]
+  questions: Question[]
 }
 
 const props = withDefaults(
-  defineProps<{ quiz: Quiz; variant?: 'student' | 'teacher' | 'projection' }>(),
-  { variant: 'student' },
+  defineProps<{
+    exercise: Exercise
+    answers?: 'inline' | 'deferred' | 'hidden'
+    startNumber?: number
+  }>(),
+  { answers: 'inline', startNumber: 1 },
 )
 
-const showAnswers = computed(() => props.variant === 'teacher')
-const deferAnswers = computed(() => props.variant === 'student')
+const showAnswer = computed(() => props.answers === 'inline')
 
-const asComponent = (h: QuizItem['hand']) => ({
+const toComponentHand = (h: Hand) => ({
   spades: [...h.spades],
   hearts: [...h.hearts],
   diamonds: [...h.diamonds],
@@ -40,82 +58,88 @@ const asComponent = (h: QuizItem['hand']) => ({
 </script>
 
 <template>
-  <div class="bc-quiz-placeholder">
-    <div class="head">
-      <span class="title"><SuitText :text="quiz.title" /></span>
-      <span class="prompt"><SuitText :text="quiz.prompt" /></span>
-    </div>
-    <ol class="items">
-      <li v-for="(item, i) in quiz.items" :key="i" class="item">
-        <span class="num">{{ i + 1 }}</span>
-        <HandDisplay :hand="asComponent(item.hand)" />
-        <span v-if="showAnswers" class="answer">→ <CallLabel :value="item.answer" /></span>
+  <div class="bc-quiz">
+    <p class="bc-quiz__prompt"><SuitText :text="exercise.prompt" /></p>
+    <ol class="bc-quiz__items">
+      <li v-for="(q, i) in exercise.questions" :key="i" class="bc-quiz__item">
+        <div class="bc-quiz__num">{{ startNumber + i }}</div>
+        <HandDisplay :hand="toComponentHand(q.hand)" :show-hcp="true" />
+        <div class="bc-quiz__meta">
+          <div v-if="q.context && q.context.calls.length" class="bc-quiz__auction">
+            <span
+              v-for="(call, c) in q.context.calls"
+              :key="c"
+              class="bc-quiz__call"
+            ><CallLabel :value="call" /></span>
+            <span class="bc-quiz__call bc-quiz__call--turn">?</span>
+          </div>
+          <div v-if="showAnswer" class="bc-quiz__answer">
+            <CallLabel :value="q.answer" /><span
+              v-for="alt in q.alternates || []"
+              :key="alt"
+              class="bc-quiz__alt"
+            >or <CallLabel :value="alt" /></span>
+          </div>
+        </div>
       </li>
     </ol>
-    <div v-if="deferAnswers" class="answers">
-      <div class="answers-head">Answers</div>
-      <ol>
-        <li v-for="(item, i) in quiz.items" :key="i">
-          <CallLabel :value="item.answer" /><template v-if="item.explanation"> — <SuitText :text="item.explanation" /></template>
-        </li>
-      </ol>
-    </div>
   </div>
 </template>
 
 <style scoped>
-.bc-quiz-placeholder {
+.bc-quiz {
   border: 1px solid var(--ls-border, #e4e4e7);
   border-radius: 8px;
   padding: 0.75em 1em;
-  max-width: 34em;
 }
-.head {
-  margin-bottom: 0.5em;
-}
-.title {
-  display: block;
+.bc-quiz__prompt {
+  margin: 0 0 0.6em;
   font-weight: 650;
 }
-.prompt {
-  font-size: 0.9em;
-  color: var(--ls-fg, #333);
-}
-.items {
+.bc-quiz__items {
   list-style: none;
   margin: 0;
   padding: 0;
   display: flex;
   flex-wrap: wrap;
-  gap: 1em;
+  gap: 1em 1.4em;
 }
-.item {
-  display: flex;
-  align-items: flex-start;
-  gap: 0.25em;
+.bc-quiz__item {
+  display: grid;
+  grid-template-columns: auto auto;
+  grid-template-rows: auto auto;
+  align-items: start;
+  gap: 0.1em 0.4em;
 }
-.num {
+.bc-quiz__num {
+  grid-row: 1 / 3;
+  align-self: center;
   font-weight: 650;
   color: var(--ls-muted, #666);
+  font-variant-numeric: tabular-nums;
 }
-.answer {
-  font-family: var(--ls-mono, monospace);
-  color: var(--ls-accent, #1d4ed8);
+.bc-quiz__meta {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1em;
+  font-size: 0.85em;
 }
-.answers {
-  margin-top: 0.75em;
-  padding-top: 0.5em;
-  border-top: 1px dashed var(--ls-border, #ccc);
-}
-.answers-head {
-  font-size: 0.75em;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
+.bc-quiz__auction {
+  display: flex;
+  gap: 0.4em;
   color: var(--ls-muted, #666);
 }
-.answers ol {
-  margin: 0.25em 0 0;
-  padding-left: 1.2em;
-  font-size: 0.85em;
+.bc-quiz__call--turn {
+  color: var(--ls-accent, #1d4ed8);
+  font-weight: 700;
+}
+.bc-quiz__answer {
+  font-weight: 650;
+}
+.bc-quiz__alt {
+  margin-left: 0.35em;
+  font-weight: 400;
+  color: var(--ls-muted, #666);
 }
 </style>

@@ -16,7 +16,7 @@ import { reservedBlockNode } from './reservedBlockNode'
  * test cannot pass trivially via code_block (which would also preserve the
  * ```hand fence).
  */
-const blockSchemas = (['hand', 'auction', 'pagebreak', 'columnbreak', 'row'] as const).map(
+const blockSchemas = (['hand', 'auction', 'quiz', 'pagebreak', 'columnbreak', 'row'] as const).map(
   (t) => reservedBlockNode(t).schema,
 )
 
@@ -64,6 +64,28 @@ describe('hand block Milkdown round-trip', () => {
   it('preserves an auction block (with notes) via the auction node', async () => {
     const md = ['```auction', 'dealer: N', '1C   P    1S   P', '1NT  P    2D^1  P', '2H', '---', '1. New Minor Forcing'].join('\n') + '\n```'
     const { out, hasNode } = await roundTrip(md, 'auction')
+    expect(hasNode).toBe(true)
+    expect(out.trim()).toBe(md)
+  })
+
+  it('preserves a quiz block (multi-line JSON body) via the quiz node', async () => {
+    const json = JSON.stringify(
+      {
+        schema: 'quiz-embed/v1',
+        source: { lesson_id: '1C_WalshStyle' },
+        exercise: {
+          id: '1C_WalshStyle-1',
+          type: 'bidding',
+          title: 'Exercise One',
+          prompt: 'Partner opens 1♣. What do you bid?',
+          questions: [{ hand: { spades: '754', hearts: 'K874', diamonds: 'AK65', clubs: 'A2' }, answer: '1D' }],
+        },
+      },
+      null,
+      2,
+    )
+    const md = '```quiz\n' + json + '\n```'
+    const { out, hasNode } = await roundTrip(md, 'quiz')
     expect(hasNode).toBe(true)
     expect(out.trim()).toBe(md)
   })

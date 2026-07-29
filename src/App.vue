@@ -4,9 +4,12 @@ import LessonDocument from './editor/LessonDocument.vue'
 import EditorRibbon from './editor/EditorRibbon.vue'
 import Lobby from './editor/Lobby.vue'
 import UserGuide from './editor/UserGuide.vue'
+import QuizPicker from './editor/QuizPicker.vue'
 import PagePreview from './print/PagePreview.vue'
 import { useLessonSession } from './lesson/useLessonSession'
+import { useQuizSource } from './lesson/useQuizSource'
 import type { HistoryEntry } from './lesson/history'
+import { serializeQuizBlock, type QuizLesson, type QuizEmbed, type QuizManifestEntry } from '@/dsl'
 
 // Resolve sibling pages against the deploy base ('/' locally,
 // '/lesson-studio/' on GitHub Pages) so links work in both.
@@ -24,6 +27,41 @@ const lessonDoc = ref<InstanceType<typeof LessonDocument> | null>(null)
 // The User Guide overlays the Lobby. It's ephemeral UI state, deliberately not a
 // session location — a reload returns to the Lobby, never into the guide.
 const guideOpen = ref(false)
+
+// Quiz picker: a remembered PBS quiz/ folder + manifest (phase 1), then browse a
+// lesson's exercises and insert selected questions as quiz blocks (phase 2).
+const quiz = useQuizSource()
+const quizLesson = ref<QuizLesson | null>(null)
+const quizPickerOpen = ref(false)
+
+async function openQuizPicker() {
+  await quiz.refresh()
+  quizLesson.value = null
+  quizPickerOpen.value = true
+}
+
+async function onOpenLesson(entry: QuizManifestEntry) {
+  try {
+    quizLesson.value = await quiz.openLesson(entry)
+  } catch (err) {
+    window.alert(`Couldn't open ${entry.file}:\n${err instanceof Error ? err.message : err}`)
+  }
+}
+
+async function onOpenQuizFile() {
+  try {
+    const lesson = await quiz.openSingleFile()
+    if (lesson) quizLesson.value = lesson
+  } catch (err) {
+    window.alert(`Not a usable quiz file:\n${err instanceof Error ? err.message : err}`)
+  }
+}
+
+function insertQuizzes(embeds: QuizEmbed[]) {
+  for (const embed of embeds) lessonDoc.value?.insertBlock('quiz', serializeQuizBlock(embed))
+  quizPickerOpen.value = false
+  quizLesson.value = null
+}
 
 // A History entry reconstitutes from its autosave draft (Phase A). Recent files
 // with persisted handles re-open by handleKey in a later phase.
@@ -87,7 +125,25 @@ function restoreHistory(entry: HistoryEntry) {
       <a class="studio__link" :href="`${base}gallery.html`" target="_blank">Gallery →</a>
     </header>
 
-    <EditorRibbon :doc="lessonDoc" />
+    <EditorRibbon :doc="lessonDoc" @pick-quiz="openQuizPicker" />
+
+    <QuizPicker
+      v-if="quizPickerOpen"
+      :lesson="quizLesson"
+      :manifest="quiz.manifest.value"
+      :folder-name="quiz.dir.value?.name ?? null"
+      :needs-permission="quiz.needsPermission.value"
+      :supports-folder="quiz.supportsFolder"
+      :error="quiz.error.value"
+      @insert="insertQuizzes"
+      @close="quizPickerOpen = false; quizLesson = null"
+      @choose-folder="quiz.chooseFolder()"
+      @grant-folder="quiz.grant()"
+      @forget-folder="quiz.forget()"
+      @open-file="onOpenQuizFile"
+      @open-lesson="onOpenLesson"
+      @back="quizLesson = null"
+    />
 
     <main class="studio__body" :class="{ 'studio__body--split': showPreview }">
       <div class="studio__edit">

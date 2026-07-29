@@ -17,6 +17,7 @@ import { V1_ACTIVE_BLOCKS, blockSchema, type ReservedBlock } from '@/dsl'
 import type LessonDocument from './LessonDocument.vue'
 
 const props = defineProps<{ doc: InstanceType<typeof LessonDocument> | null }>()
+const emit = defineEmits<{ (e: 'pick-quiz'): void }>()
 
 type CommandName =
   | 'h2'
@@ -86,9 +87,9 @@ const blocks = V1_ACTIVE_BLOCKS.map((tag) => ({
         v-for="b in blocks"
         :key="b.tag"
         class="ribbon__btn ribbon__btn--insert"
-        :title="b.title"
+        :title="b.tag === 'quiz' ? 'Pick questions from a quiz file' : b.title"
         @mousedown.prevent
-        @click="insert(b.tag)"
+        @click="b.tag === 'quiz' ? emit('pick-quiz') : insert(b.tag)"
       >
         {{ b.label }}
       </button>

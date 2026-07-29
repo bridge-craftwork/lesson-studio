@@ -4,6 +4,7 @@ import { parseHandBlock } from './hand-block'
 import { parseHandsBlock } from './hands-block'
 import { parseAuctionBlock } from './auction-block'
 import { parseResponseBox } from './response-box-block'
+import { parseQuizBlock } from './quiz-block'
 import { parseRowBlock } from './row-block'
 import { resolveDealLinks } from './deal-link'
 import type { ReservedBlock } from './types'
@@ -113,7 +114,7 @@ function validateBlock(tag: ReservedBlock, body: string, issues: LintIssue[]): v
         parseResponseBox(body)
         break
       case 'quiz':
-        validateQuiz(body)
+        parseQuizBlock(body)
         break
       case 'row':
         for (const item of parseRowBlock(body)) {
@@ -133,9 +134,3 @@ function validateBlock(tag: ReservedBlock, body: string, issues: LintIssue[]): v
   }
 }
 
-function validateQuiz(body: string): void {
-  const quiz = JSON.parse(body) as Record<string, unknown>
-  if (quiz.schema !== 'quiz/v1') throw new Error('schema must be "quiz/v1"')
-  if (!quiz.type) throw new Error('missing `type`')
-  if (!Array.isArray(quiz.items) || quiz.items.length === 0) throw new Error('`items` must be a non-empty array')
-}

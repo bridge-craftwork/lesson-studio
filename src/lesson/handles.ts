@@ -15,6 +15,11 @@ const DB_NAME = 'lesson-studio'
 const DB_VERSION = 1
 const STORE = 'entries'
 
+/** What a remembered directory is for — keeps the lesson-library folder and the
+ *  PBS quiz folder from colliding in the one store. Undefined reads as 'library'
+ *  (the only role before quiz folders existed). */
+export type DirectoryRole = 'library' | 'quiz'
+
 export interface HandleEntry {
   /** App-generated stable id (keyPath). */
   key: string
@@ -23,6 +28,8 @@ export interface HandleEntry {
   handle: FileHandle | DirectoryHandle
   lastOpened: number
   favorite: boolean
+  /** For directories: which surface it backs (default 'library'). */
+  role?: DirectoryRole
 }
 
 let dbPromise: Promise<IDBDatabase> | null = null
@@ -97,10 +104,11 @@ export async function rememberFile(handle: FileHandle): Promise<string> {
 }
 
 /**
- * Remember a directory (e.g. a lesson-library `lessons/` folder) so the Lobby
- * can list its lessons across reloads. Deduped by identity like files.
+ * Remember a directory (a lesson-library `lessons/` folder, or a PBS `quiz/`
+ * folder) so its lessons can be listed across reloads. Deduped by identity;
+ * `role` keeps the two folders from colliding.
  */
-export async function rememberDirectory(handle: DirectoryHandle): Promise<string> {
+export async function rememberDirectory(handle: DirectoryHandle, role: DirectoryRole = 'library'): Promise<string> {
   const existing = await findByIdentity(handle, 'directory')
   const key = existing?.key ?? crypto.randomUUID()
   await putEntry({
@@ -110,6 +118,7 @@ export async function rememberDirectory(handle: DirectoryHandle): Promise<string
     handle,
     lastOpened: Date.now(),
     favorite: existing?.favorite ?? false,
+    role,
   })
   return key
 }
@@ -141,8 +150,8 @@ export function listFavorites(): Promise<HandleEntry[]> {
   return listFiles().then((es) => es.filter((e) => e.favorite).sort((a, b) => b.lastOpened - a.lastOpened))
 }
 
-export function listDirectories(): Promise<HandleEntry[]> {
-  return listEntries().then((es) => es.filter((e) => e.kind === 'directory'))
+export function listDirectories(role: DirectoryRole = 'library'): Promise<HandleEntry[]> {
+  return listEntries().then((es) => es.filter((e) => e.kind === 'directory' && (e.role ?? 'library') === role))
 }
 
 export async function setFavorite(key: string, favorite: boolean): Promise<void> {

@@ -137,10 +137,33 @@ export const BLOCK_SCHEMAS: Record<string, BlockSchema> = {
   },
   quiz: {
     tag: 'quiz',
-    summary: 'An embedded quiz question (Contract 3 JSON).',
+    summary: 'An embedded quiz exercise (Contract 3 questions, by value).',
     keys: [],
-    bodyDoc: 'The body is quiz/v1 JSON, not key lines. Phase 2 adds a picker that writes it.',
-    example: '{ "v": "quiz/v1", "prompt": "…", "answer": "…" }',
+    bodyDoc:
+      'The body is `quiz-embed/v1` JSON — one exercise (its `prompt` + picked ' +
+      'questions), not key lines. The ribbon Quiz button opens a picker that writes it.',
+    example: JSON.stringify(
+      {
+        schema: 'quiz-embed/v1',
+        source: { lesson_id: '1C_WalshStyle', generated: '2026-07-26', pipeline_version: '1.0.0' },
+        exercise: {
+          id: '1C_WalshStyle-1',
+          type: 'bidding',
+          title: 'Exercise One — Responding to 1♣',
+          prompt: 'Partner opens 1♣. What do you bid with each of these hands?',
+          questions: [
+            {
+              hand: { spades: '754', hearts: 'K874', diamonds: 'AK65', clubs: 'A2' },
+              seat: 'S',
+              context: { dealer: 'N', calls: ['1C', 'P'] },
+              answer: '1D',
+            },
+          ],
+        },
+      },
+      null,
+      2,
+    ),
   },
   row: {
     tag: 'row',

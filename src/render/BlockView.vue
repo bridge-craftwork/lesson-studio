@@ -22,9 +22,11 @@ import {
   toAuctionProps,
   parseResponseBox,
   parseRowBlock,
+  parseQuizBlock,
   toComponentHand,
   type ReservedBlock,
   type RowItem,
+  type QuizExercise,
 } from '@/dsl'
 // Self-import so a `row` block can recursively render its child blocks.
 import BlockView from './BlockView.vue'
@@ -37,7 +39,7 @@ type Rendered =
   | { kind: 'hands'; hands: Record<string, ReturnType<typeof toComponentHand>>; layout?: string }
   | { kind: 'auction'; auction: ReturnType<typeof toAuctionProps> }
   | { kind: 'response-box'; box: ReturnType<typeof parseResponseBox> }
-  | { kind: 'quiz'; quiz: unknown }
+  | { kind: 'quiz'; exercise: QuizExercise }
   | { kind: 'row'; items: RowItem[] }
   | { kind: 'pagebreak' }
   | { kind: 'columnbreak' }
@@ -67,7 +69,7 @@ const model = computed<Rendered>(() => {
       case 'response-box':
         return { kind: 'response-box', box: parseResponseBox(props.body) }
       case 'quiz':
-        return { kind: 'quiz', quiz: JSON.parse(props.body) }
+        return { kind: 'quiz', exercise: parseQuizBlock(props.body).exercise }
       case 'row':
         return { kind: 'row', items: parseRowBlock(props.body) }
       case 'pagebreak':
@@ -136,7 +138,7 @@ const auctionNotes = computed(() =>
       <ResponseBox :title="model.box.title" :rows="model.box.rows" :note="model.box.note" />
     </template>
     <template v-else-if="model.kind === 'quiz'">
-      <QuizSnapshot :quiz="model.quiz as any" variant="student" />
+      <QuizSnapshot :exercise="model.exercise as any" answers="inline" />
     </template>
     <template v-else-if="model.kind === 'row'">
       <div class="block-row">
