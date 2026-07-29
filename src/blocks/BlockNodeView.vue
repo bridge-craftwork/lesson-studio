@@ -3,7 +3,8 @@ import { computed, nextTick, ref } from 'vue'
 import { useNodeViewContext } from '@prosemirror-adapter/vue'
 import BlockView from '../render/BlockView.vue'
 import BlockKeyReference from './BlockKeyReference.vue'
-import { completions, type ReservedBlock } from '@/dsl'
+import { completions, answerGroupsFromBodies, type ReservedBlock } from '@/dsl'
+import { docRev, bumpDocRev } from './docRev'
 
 // Generic node view for every reserved DSL block: renders the shared read-only
 // BlockView, plus an "edit source" affordance. Editing swaps in a text area for
@@ -13,6 +14,31 @@ const { node, selected, setAttrs, view, getPos } = useNodeViewContext()
 
 const tag = computed(() => node.value.type.name as ReservedBlock)
 const body = computed(() => (node.value.attrs.body as string) ?? '')
+
+// A quiz's 1-based position among quiz blocks (drives `N-M` numbering), and the
+// answer block's collected answers, both read the *whole* document. docRev makes
+// them refresh in the editor when a sibling block is added/removed/edited.
+const exerciseNumber = computed<number | undefined>(() => {
+  void docRev.value
+  if (tag.value !== 'quiz') return undefined
+  const pos = getPos()
+  if (pos == null) return undefined
+  let n = 0
+  view.state.doc.descendants((nd, p) => {
+    if (nd.type.name === 'quiz' && p <= pos) n++
+  })
+  return n
+})
+
+const answerGroups = computed(() => {
+  void docRev.value
+  if (tag.value !== 'answers') return undefined
+  const bodies: string[] = []
+  view.state.doc.descendants((nd) => {
+    if (nd.type.name === 'quiz') bodies.push((nd.attrs.body as string) ?? '')
+  })
+  return answerGroupsFromBodies(bodies)
+})
 
 const editing = ref(false)
 const draft = ref('')
@@ -36,7 +62,10 @@ async function startEdit() {
 function apply() {
   if (!editing.value) return
   editing.value = false
-  if (draft.value !== body.value) setAttrs({ body: draft.value })
+  if (draft.value !== body.value) {
+    setAttrs({ body: draft.value })
+    bumpDocRev() // a quiz's body changed → refresh dependent numbering/answers
+  }
 }
 
 function cancel() {
@@ -52,6 +81,7 @@ function remove() {
   const pos = getPos()
   if (pos == null) return
   view.dispatch(view.state.tr.delete(pos, pos + node.value.nodeSize))
+  bumpDocRev() // a block was removed → refresh dependent numbering/answers
   view.focus()
 }
 
@@ -169,13 +199,13 @@ function onKeydown(e: KeyboardEvent) {
             </li>
           </ul>
         </div>
-        <div class="block-edit__preview"><BlockView :tag="tag" :body="previewBody" /></div>
+        <div class="block-edit__preview"><BlockView :tag="tag" :body="previewBody" :exercise-number="exerciseNumber" :answer-groups="answerGroups" /></div>
         <BlockKeyReference :tag="tag" />
       </div>
     </div>
 
     <template v-else>
-      <BlockView :tag="tag" :body="body" />
+      <BlockView :tag="tag" :body="body" :exercise-number="exerciseNumber" :answer-groups="answerGroups" />
       <div v-if="canEdit" class="block-edit__tools">
         <button class="block-edit__open" title="Edit source" @click="startEdit">✎</button>
         <button class="block-edit__open block-edit__del" title="Delete block" @click="remove">🗑</button>

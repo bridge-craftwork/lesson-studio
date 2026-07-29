@@ -165,28 +165,36 @@ export function buildQuizEmbed(
 
 /** One quiz block's answers, for the document's collected answer section. */
 export interface QuizAnswerGroup {
+  /** 1-based exercise number, matching the quiz block's order in the document. */
+  exercise: number
   prompt: string
   answers: { answer: Call; alternates?: Call[]; explanation?: string }[]
 }
 
 /**
- * Collect every quiz block's answers from a lesson, in document order, grouped
- * by prompt. Drives the print/preview answer section (Q4). Invalid quiz blocks
- * are skipped — the answer section never breaks a render.
+ * Build answer groups from a list of quiz block bodies in document order.
+ * Each group's `exercise` is its 1-based position, so answers number `N-M` to
+ * match the hands the Nth quiz block shows. Invalid bodies are skipped — the
+ * answer section never breaks a render.
  */
-export function collectQuizAnswers(markdown: string): QuizAnswerGroup[] {
+export function answerGroupsFromBodies(bodies: string[]): QuizAnswerGroup[] {
   const groups: QuizAnswerGroup[] = []
-  for (const block of scanReservedBlocks(markdown)) {
-    if (block.tag !== 'quiz') continue
+  bodies.forEach((body) => {
     try {
-      const { exercise } = parseQuizBlock(block.body)
+      const { exercise } = parseQuizBlock(body)
       groups.push({
+        exercise: groups.length + 1,
         prompt: exercise.prompt,
         answers: exercise.questions.map((q) => ({ answer: q.answer, alternates: q.alternates, explanation: q.explanation })),
       })
     } catch {
       /* skip an unparseable quiz block */
     }
-  }
+  })
   return groups
+}
+
+/** Collect answer groups from a whole lesson's markdown (document order). */
+export function collectQuizAnswers(markdown: string): QuizAnswerGroup[] {
+  return answerGroupsFromBodies(scanReservedBlocks(markdown).filter((b) => b.tag === 'quiz').map((b) => b.body))
 }

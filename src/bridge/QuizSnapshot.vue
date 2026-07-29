@@ -42,12 +42,16 @@ const props = withDefaults(
   defineProps<{
     exercise: Exercise
     answers?: 'inline' | 'deferred' | 'hidden'
-    startNumber?: number
+    /** This quiz's 1-based position in the document; drives `N-M` numbering. */
+    exerciseNumber?: number
   }>(),
-  { answers: 'inline', startNumber: 1 },
+  { answers: 'inline' },
 )
 
 const showAnswer = computed(() => props.answers === 'inline')
+// Hands number `N-M` (exercise-question) when the exercise number is known,
+// else fall back to a plain per-quiz `M`.
+const numberFor = (i: number) => (props.exerciseNumber ? `${props.exerciseNumber}-${i + 1}` : `${i + 1}`)
 
 const toComponentHand = (h: Hand) => ({
   spades: [...h.spades],
@@ -59,10 +63,13 @@ const toComponentHand = (h: Hand) => ({
 
 <template>
   <div class="bc-quiz">
-    <p class="bc-quiz__prompt"><SuitText :text="exercise.prompt" /></p>
+    <p class="bc-quiz__prompt">
+      <span v-if="exerciseNumber" class="bc-quiz__ex">{{ exerciseNumber }}.</span>
+      <SuitText :text="exercise.prompt" />
+    </p>
     <ol class="bc-quiz__items">
       <li v-for="(q, i) in exercise.questions" :key="i" class="bc-quiz__item">
-        <div class="bc-quiz__num">{{ startNumber + i }}</div>
+        <div class="bc-quiz__num">{{ numberFor(i) }}</div>
         <HandDisplay :hand="toComponentHand(q.hand)" :show-hcp="true" />
         <div class="bc-quiz__meta">
           <div v-if="q.context && q.context.calls.length" class="bc-quiz__auction">
@@ -95,6 +102,9 @@ const toComponentHand = (h: Hand) => ({
 .bc-quiz__prompt {
   margin: 0 0 0.6em;
   font-weight: 650;
+}
+.bc-quiz__ex {
+  margin-right: 0.3em;
 }
 .bc-quiz__items {
   list-style: none;

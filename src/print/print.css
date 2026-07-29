@@ -146,11 +146,15 @@
 .print-view[data-quiz-answers='none'] .bc-quiz__answer {
   display: none;
 }
-.print-view .quiz-answers {
-  /* Match the authored body point size; it's outside .ProseMirror so it doesn't
-     inherit that rule. */
-  font-size: calc(var(--print-font-pt, 12) * var(--print-text-scale, 1) * 1pt);
-  line-height: 1.4;
+/* The `answers` block spans all columns as a full-width section (like `row`),
+   and — unlike other blocks — MAY break across pages, since a long answer list
+   naturally runs onto more than one. Start it on a new page with a `pagebreak`
+   block before it (the ribbon inserts one). */
+.print-view .ProseMirror > *:has(.reserved-block--answers) {
+  column-span: all;
+}
+.print-view .reserved-block--answers {
+  break-inside: auto;
 }
 
 @media print {

@@ -32,6 +32,9 @@ type CommandName =
   | 'redo'
 const format = (name: CommandName) => props.doc?.command(name)
 const insert = (tag: ReservedBlock) => props.doc?.insertBlock(tag, blockSchema(tag)?.example ?? '')
+// The answers block collects the document's quizzes; insert it with a page break
+// before it (empty body = a single-column list) rather than the schema example.
+const insertAnswers = () => props.doc?.insertAnswers('')
 
 // Friendly labels for the insert buttons; the schema summary is the tooltip.
 const BLOCK_LABEL: Record<string, string> = {
@@ -40,6 +43,7 @@ const BLOCK_LABEL: Record<string, string> = {
   auction: 'Auction',
   'response-box': 'Response box',
   quiz: 'Quiz',
+  answers: 'Answers',
   row: 'Row',
   pagebreak: 'Page break',
   columnbreak: 'Column break',
@@ -89,7 +93,7 @@ const blocks = V1_ACTIVE_BLOCKS.map((tag) => ({
         class="ribbon__btn ribbon__btn--insert"
         :title="b.tag === 'quiz' ? 'Pick questions from a quiz file' : b.title"
         @mousedown.prevent
-        @click="b.tag === 'quiz' ? emit('pick-quiz') : insert(b.tag)"
+        @click="b.tag === 'quiz' ? emit('pick-quiz') : b.tag === 'answers' ? insertAnswers() : insert(b.tag)"
       >
         {{ b.label }}
       </button>

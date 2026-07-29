@@ -97,8 +97,9 @@ describe('collectQuizAnswers (Q4 answer section)', () => {
     '```quiz\n{ not valid json\n```', // skipped, never throws
   ].join('\n\n')
 
-  it('collects each quiz block in document order, grouped by prompt', () => {
+  it('collects each quiz block in document order, grouped by prompt, numbered N', () => {
     const groups = collectQuizAnswers(md)
+    expect(groups.map((g) => g.exercise)).toEqual([1, 2]) // 1-based, document order
     expect(groups.map((g) => g.prompt)).toEqual([
       'Partner opens 1♣. What do you bid with each of these hands?',
       'Second prompt.',

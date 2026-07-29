@@ -16,7 +16,7 @@ import { reservedBlockNode } from './reservedBlockNode'
  * test cannot pass trivially via code_block (which would also preserve the
  * ```hand fence).
  */
-const blockSchemas = (['hand', 'auction', 'quiz', 'pagebreak', 'columnbreak', 'row'] as const).map(
+const blockSchemas = (['hand', 'auction', 'quiz', 'answers', 'pagebreak', 'columnbreak', 'row'] as const).map(
   (t) => reservedBlockNode(t).schema,
 )
 
@@ -86,6 +86,13 @@ describe('hand block Milkdown round-trip', () => {
     )
     const md = '```quiz\n' + json + '\n```'
     const { out, hasNode } = await roundTrip(md, 'quiz')
+    expect(hasNode).toBe(true)
+    expect(out.trim()).toBe(md)
+  })
+
+  it('preserves an answers block (with a columns setting)', async () => {
+    const md = ['```answers', 'columns: 2', '```'].join('\n')
+    const { out, hasNode } = await roundTrip(md, 'answers')
     expect(hasNode).toBe(true)
     expect(out.trim()).toBe(md)
   })

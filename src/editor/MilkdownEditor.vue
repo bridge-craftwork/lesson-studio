@@ -25,6 +25,7 @@ import { Milkdown, useEditor, useInstance } from '@milkdown/vue'
 import { useNodeViewFactory } from '@prosemirror-adapter/vue'
 import type { ReservedBlock } from '@/dsl'
 import { bridgeBlocks } from '../blocks'
+import { bumpDocRev } from '../blocks/docRev'
 import { suitColoring } from '../blocks/suitColoring'
 import { suitEscapeInput, suitEscapePaste } from '../blocks/suitEscapes'
 import { trailingParagraph } from '../blocks/trailingParagraph'
@@ -55,6 +56,25 @@ function insertBlock(tag: ReservedBlock, body: string) {
     view.dispatch(view.state.tr.replaceSelectionWith(type.create({ body })).scrollIntoView())
     view.focus()
   })
+  bumpDocRev() // structure changed → refresh quiz numbering / answers collection
+}
+
+/**
+ * Insert the collected-answers block, preceded by a page break so the answers
+ * start on a fresh page by default (the author can delete the break to keep
+ * them with the quizzes). Two nodes, so it's its own method.
+ */
+function insertAnswers(body: string) {
+  getEditor()?.action((ctx) => {
+    const view = ctx.get(editorViewCtx)
+    const answers = view.state.schema.nodes['answers']
+    const pagebreak = view.state.schema.nodes['pagebreak']
+    if (!answers) return
+    if (pagebreak) view.dispatch(view.state.tr.replaceSelectionWith(pagebreak.create({ body: '' })))
+    view.dispatch(view.state.tr.replaceSelectionWith(answers.create({ body })).scrollIntoView())
+    view.focus()
+  })
+  bumpDocRev()
 }
 
 /**
@@ -94,7 +114,7 @@ function command(name: EditorCommand) {
   editor.action((ctx) => ctx.get(editorViewCtx).focus())
 }
 
-defineExpose({ insertBlock, command })
+defineExpose({ insertBlock, insertAnswers, command })
 
 useEditor((root) => {
   const editor = Editor.make()

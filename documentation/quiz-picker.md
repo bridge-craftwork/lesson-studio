@@ -7,16 +7,23 @@ the picker (`src/editor/QuizPicker.vue`), ribbon Quiz → picker, one block per
 exercise. Q3 — remembered PBS `quiz/` folder + `index.json` manifest browsing
 (`src/lesson/useQuizSource.ts`, `handles.ts` directory `role`, `parseQuizManifest`),
 two-phase picker (browse lessons → pick questions), single-file fallback.
-Q4 — document answer section: front-matter `quiz-answers: end|inline|none`
-(default end; panel control + serialization), `collectQuizAnswers`, a
-`QuizAnswers.vue` section rendered after the multicol body with `break-before:
-page`, body answers hidden via CSS in end/none, preview page-count includes it.
-Verified: 113 unit tests + Playwright (round-trip, render, select→insert,
-manifest list/filter/open, folder role separation, and the print view — body
-answers hidden, answer section on a new page grouped by prompt with alternates).
-Native directory/JSON pickers + disk reads are the manual-test step (headless
-can't drive them). **All four phases done.**
-**Date:** 2026-07-29
+Q4 — document answer section. Now a real **`answers` block** the author inserts
+(ribbon "Answers", which also drops a `pagebreak` before it so answers start on a
+new page by default). The block collects every `quiz` in the document — its node
+view traverses the ProseMirror doc — and renders them grouped by prompt via
+`QuizAnswers.vue`, spanning all columns and free to break across pages. Numbering
+is hierarchical: each quiz shows `N.` before its prompt and hands number `N-M`
+(exercise-question), mirrored in the answers list; the exercise ordinal `N` comes
+from the quiz block's position (node view), refreshed in the editor via a
+`docRev` tick. Front-matter `quiz-answers: end|inline|none` now controls only
+whether body quizzes show answers *inline* (default hidden). Optional `columns:`
+on the answers block. Verified: 117 unit tests + Playwright (print view —
+`1.`/`2.` prompts, `1-1/1-2/2-1` numbering in body and answers, answers block
+full-width after the page break; editor — ribbon Answers inserts pagebreak+answers,
+placeholder until quizzes exist). Native pickers + disk reads remain the manual
+step. **All phases done; answer section refactored to a placeholder block per
+Rick's feedback.**
+**Date:** 2026-07-29 (Q4 answer-block refactor: 2026-07-29)
 **Contracts touched:** Contract 1 (DSL `quiz` block body), Contract 3 (quiz JSON,
 already `quiz-lesson/v1`). Contract 2 renderer (`QuizSnapshot`) placeholder.
 

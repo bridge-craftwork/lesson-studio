@@ -165,6 +165,23 @@ export const BLOCK_SCHEMAS: Record<string, BlockSchema> = {
       2,
     ),
   },
+  answers: {
+    tag: 'answers',
+    summary: 'The collected quiz answers. Gathers every quiz in the document.',
+    keys: [
+      {
+        name: 'columns',
+        values: 'a number 1–4',
+        default: '1',
+        doc: 'Lay the answer list out in this many columns.',
+      },
+    ],
+    bodyDoc:
+      'Carries no answers of its own — it collects every `quiz` block, numbered ' +
+      'to match. Put a `pagebreak` before it to start answers on a new page ' +
+      '(the ribbon does this for you).',
+    example: 'columns: 2',
+  },
   row: {
     tag: 'row',
     summary: 'Places blocks side by side. Uses a four-backtick fence.',

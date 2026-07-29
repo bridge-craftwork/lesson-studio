@@ -15,6 +15,7 @@ import {
 } from '@bridge-craftwork/bridge-components'
 import CallLabel from '../bridge/CallLabel.vue'
 import SuitText from '../bridge/SuitText.vue'
+import QuizAnswers from './QuizAnswers.vue'
 import {
   parseHandBlock,
   parseHandsBlock,
@@ -23,15 +24,24 @@ import {
   parseResponseBox,
   parseRowBlock,
   parseQuizBlock,
+  parseAnswersBlock,
   toComponentHand,
   type ReservedBlock,
   type RowItem,
   type QuizExercise,
+  type QuizAnswerGroup,
 } from '@/dsl'
 // Self-import so a `row` block can recursively render its child blocks.
 import BlockView from './BlockView.vue'
 
-const props = defineProps<{ tag: ReservedBlock; body: string }>()
+const props = defineProps<{
+  tag: ReservedBlock
+  body: string
+  /** For a `quiz`: its 1-based position among quiz blocks (drives N-M numbering). */
+  exerciseNumber?: number
+  /** For an `answers` block: the collected groups (the node view supplies these). */
+  answerGroups?: QuizAnswerGroup[]
+}>()
 
 type CardMarks = { cards: Record<string, { badge: string }> }
 type Rendered =
@@ -40,6 +50,7 @@ type Rendered =
   | { kind: 'auction'; auction: ReturnType<typeof toAuctionProps> }
   | { kind: 'response-box'; box: ReturnType<typeof parseResponseBox> }
   | { kind: 'quiz'; exercise: QuizExercise }
+  | { kind: 'answers'; columns: number }
   | { kind: 'row'; items: RowItem[] }
   | { kind: 'pagebreak' }
   | { kind: 'columnbreak' }
@@ -70,6 +81,8 @@ const model = computed<Rendered>(() => {
         return { kind: 'response-box', box: parseResponseBox(props.body) }
       case 'quiz':
         return { kind: 'quiz', exercise: parseQuizBlock(props.body).exercise }
+      case 'answers':
+        return { kind: 'answers', columns: parseAnswersBlock(props.body).columns ?? 1 }
       case 'row':
         return { kind: 'row', items: parseRowBlock(props.body) }
       case 'pagebreak':
@@ -138,7 +151,11 @@ const auctionNotes = computed(() =>
       <ResponseBox :title="model.box.title" :rows="model.box.rows" :note="model.box.note" />
     </template>
     <template v-else-if="model.kind === 'quiz'">
-      <QuizSnapshot :exercise="model.exercise as any" answers="inline" />
+      <QuizSnapshot :exercise="model.exercise as any" answers="inline" :exercise-number="exerciseNumber" />
+    </template>
+    <template v-else-if="model.kind === 'answers'">
+      <QuizAnswers v-if="answerGroups && answerGroups.length" :groups="answerGroups" :columns="model.columns" />
+      <div v-else class="block-placeholder">Quiz answers — insert one or more quiz blocks above; they’ll be collected here in the preview and print.</div>
     </template>
     <template v-else-if="model.kind === 'row'">
       <div class="block-row">
@@ -185,8 +202,17 @@ const auctionNotes = computed(() =>
    so an auction with a long note renders wider than one with short notes. A
    definite width also keeps the table above the component's "dense" threshold
    (< 280 × scale), which would otherwise shrink the bids. */
-.block-view--auction {
+.block-view--auction,
+.block-view--answers {
   display: block;
+}
+.block-placeholder {
+  color: var(--ls-muted, #666);
+  font-size: 0.85rem;
+  font-style: italic;
+  padding: 0.6rem 0.8rem;
+  border: 1px dashed var(--ls-border, #ccc);
+  border-radius: 6px;
 }
 /* Figures centre in their column. The auction already did (it fills the
    width); the hand shrink-wrapped and sat left, which read as inconsistent. */
