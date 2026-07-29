@@ -25,6 +25,7 @@ export type FrontMatterFields = {
   'margin-top': number
   'margin-bottom': number
   header: 'standard' | 'minimal' | 'none'
+  'quiz-answers': 'end' | 'inline' | 'none'
   date: string
 }
 
@@ -119,6 +120,13 @@ function onTitleInput(e: Event) {
             <option value="standard">standard</option>
             <option value="minimal">minimal — title only</option>
             <option value="none">none</option>
+          </select>
+        </label>
+        <label>Quiz answers
+          <select v-model="data['quiz-answers']">
+            <option value="end">at end — on a later page</option>
+            <option value="inline">inline — beside each hand</option>
+            <option value="none">none — omit</option>
           </select>
         </label>
         <label>Date <input v-model="data.date" placeholder="e.g. July 2026" /></label>

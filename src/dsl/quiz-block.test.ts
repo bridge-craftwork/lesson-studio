@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { parseQuizBlock, serializeQuizBlock, buildQuizEmbed, type QuizEmbed } from './quiz-block'
+import { parseQuizBlock, serializeQuizBlock, buildQuizEmbed, collectQuizAnswers, type QuizEmbed } from './quiz-block'
+import { quizAnswersMode, serializeFrontMatter } from './front-matter'
+import { splitFrontMatter } from './front-matter'
 
 // A valid embed built from the real 1C_WalshStyle exercise (Contract 3).
 const VALID: QuizEmbed = {
@@ -81,6 +83,52 @@ describe('quiz-block parse/serialize (quiz-embed/v1)', () => {
 
   it('rejects invalid JSON', () => {
     expect(() => parseQuizBlock('{not json')).toThrow(/invalid JSON/)
+  })
+})
+
+describe('collectQuizAnswers (Q4 answer section)', () => {
+  const fence = (embed: unknown) => '```quiz\n' + JSON.stringify(embed) + '\n```'
+  const md = [
+    '---\ntitle: T\n---',
+    'Some prose.',
+    fence(VALID),
+    'More prose.',
+    fence({ ...VALID, exercise: { ...VALID.exercise, prompt: 'Second prompt.', questions: [VALID.exercise.questions[0]] } }),
+    '```quiz\n{ not valid json\n```', // skipped, never throws
+  ].join('\n\n')
+
+  it('collects each quiz block in document order, grouped by prompt', () => {
+    const groups = collectQuizAnswers(md)
+    expect(groups.map((g) => g.prompt)).toEqual([
+      'Partner opens 1♣. What do you bid with each of these hands?',
+      'Second prompt.',
+    ])
+    expect(groups[0].answers.map((a) => a.answer)).toEqual(['1D', '1D'])
+    expect(groups[0].answers[1].alternates).toEqual(['1H'])
+    expect(groups[1].answers).toHaveLength(1)
+  })
+
+  it('returns nothing for a lesson with no quiz blocks', () => {
+    expect(collectQuizAnswers('---\ntitle: T\n---\n\nJust prose.')).toEqual([])
+  })
+})
+
+describe('quizAnswersMode', () => {
+  it('defaults to end, and honors inline/none', () => {
+    expect(quizAnswersMode(null)).toBe('end')
+    expect(quizAnswersMode({})).toBe('end')
+    expect(quizAnswersMode({ 'quiz-answers': 'inline' })).toBe('inline')
+    expect(quizAnswersMode({ 'quiz-answers': 'none' })).toBe('none')
+    expect(quizAnswersMode({ 'quiz-answers': 'bogus' as never })).toBe('end')
+  })
+
+  it('serializeFrontMatter preserves a non-default quiz-answers and omits the default', () => {
+    const base = { title: 'T', level: 'intermediate' as const, author: 'A', status: 'draft' as const, 'reviewed-by': 'self', skill_paths: ['x'] }
+    expect(serializeFrontMatter({ ...base, 'quiz-answers': 'inline' })).toContain('quiz-answers: inline')
+    expect(serializeFrontMatter({ ...base, 'quiz-answers': 'end' })).not.toContain('quiz-answers')
+    // round-trips through split → serialize
+    const md = serializeFrontMatter({ ...base, 'quiz-answers': 'none' })
+    expect(quizAnswersMode(splitFrontMatter(md).data)).toBe('none')
   })
 })
 

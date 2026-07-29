@@ -32,7 +32,8 @@
  */
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import LessonDocument from '../editor/LessonDocument.vue'
-import { splitFrontMatter, printTypography } from '@/dsl'
+import QuizAnswers from '../render/QuizAnswers.vue'
+import { splitFrontMatter, printTypography, quizAnswersMode, collectQuizAnswers } from '@/dsl'
 
 const props = defineProps<{ markdown: string }>()
 
@@ -62,6 +63,8 @@ const shown = ref(props.markdown)
 // Read from the settled text, not the live prop, so the layout can't change a
 // beat before the content it applies to.
 const type = computed(() => printTypography(splitFrontMatter(shown.value).data))
+const answersMode = computed(() => quizAnswersMode(splitFrontMatter(shown.value).data))
+const answerGroups = computed(() => (answersMode.value === 'end' ? collectQuizAnswers(shown.value) : []))
 const columns = computed(() => type.value.columns)
 const pageHpx = computed(() => pageHeight())
 const renderKey = ref(0)
@@ -120,7 +123,25 @@ function measure() {
     const firstPage = i === 0 ? H - headerHeight : H
     total += h <= firstPage ? 1 : 1 + Math.ceil((h - firstPage) / H)
   })
+
+  // The collected answer section (quiz-answers: end) starts on a fresh page.
+  if (answerGroups.value.length) total += measureAnswersPages(H)
+
   pages.value = Math.max(1, total)
+}
+
+/** Pages the answer section adds — it always starts on a new page. Measured on a
+ *  detached clone at real width so `zoom`/clip don't skew the height. */
+function measureAnswersPages(H: number): number {
+  const src = flow.value?.querySelector('.quiz-answers')
+  if (!src) return 1
+  const wrap = flow.value!.cloneNode(false) as HTMLElement
+  wrap.style.cssText += ';position:absolute;left:-99999px;top:0;width:720px;height:auto;zoom:1;transform:none;'
+  wrap.appendChild(src.cloneNode(true))
+  document.body.appendChild(wrap)
+  const h = (wrap.querySelector('.quiz-answers') as HTMLElement).getBoundingClientRect().height
+  wrap.remove()
+  return Math.max(1, Math.ceil(h / H))
 }
 
 /**
@@ -205,6 +226,7 @@ watch(type, refresh, { deep: true })
           <div
             ref="flow"
             class="print-view pp__flow"
+            :data-quiz-answers="answersMode"
             :style="{
               '--print-columns': type.columns,
               '--print-font-pt': type.fontSizePt,
@@ -213,6 +235,7 @@ watch(type, refresh, { deep: true })
             }"
           >
             <LessonDocument :key="renderKey" :markdown="shown" :editable="false" />
+            <QuizAnswers v-if="answerGroups.length" :groups="answerGroups" />
           </div>
         </div>
         <div v-if="pages > 1" class="pp__more">+{{ pages - 1 }} more</div>

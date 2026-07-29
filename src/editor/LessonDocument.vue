@@ -32,6 +32,7 @@ function defaults(): FrontMatterFields {
     'margin-top': 0.5,
     'margin-bottom': 0.5,
     header: 'standard',
+    'quiz-answers': 'end',
     date: '',
   }
 }

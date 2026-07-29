@@ -14,6 +14,7 @@
  */
 import type { Hand, Seat, Call } from './types'
 import { CALL_RE } from './call'
+import { scanReservedBlocks } from './scan'
 
 export type Vulnerability = 'None' | 'NS' | 'EW' | 'Both'
 const SEATS = ['N', 'E', 'S', 'W']
@@ -160,4 +161,32 @@ export function buildQuizEmbed(
   questions: BiddingQuestion[] = exercise.questions,
 ): QuizEmbed {
   return { schema: 'quiz-embed/v1', source, exercise: { ...exercise, questions } }
+}
+
+/** One quiz block's answers, for the document's collected answer section. */
+export interface QuizAnswerGroup {
+  prompt: string
+  answers: { answer: Call; alternates?: Call[]; explanation?: string }[]
+}
+
+/**
+ * Collect every quiz block's answers from a lesson, in document order, grouped
+ * by prompt. Drives the print/preview answer section (Q4). Invalid quiz blocks
+ * are skipped — the answer section never breaks a render.
+ */
+export function collectQuizAnswers(markdown: string): QuizAnswerGroup[] {
+  const groups: QuizAnswerGroup[] = []
+  for (const block of scanReservedBlocks(markdown)) {
+    if (block.tag !== 'quiz') continue
+    try {
+      const { exercise } = parseQuizBlock(block.body)
+      groups.push({
+        prompt: exercise.prompt,
+        answers: exercise.questions.map((q) => ({ answer: q.answer, alternates: q.alternates, explanation: q.explanation })),
+      })
+    } catch {
+      /* skip an unparseable quiz block */
+    }
+  }
+  return groups
 }

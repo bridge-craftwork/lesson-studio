@@ -65,6 +65,11 @@ export interface FrontMatter {
   header?: 'standard' | 'minimal' | 'none'
   /** Optional display date shown in the header (free text, e.g. `July 2026`). */
   date?: string
+  /**
+   * Where quiz answers print: `end` (default) collects them in a section on a
+   * later page; `inline` prints each beside its hand; `none` omits them.
+   */
+  'quiz-answers'?: 'end' | 'inline' | 'none'
 }
 
 /** The reserved fenced-block language tags (Contract 1). */

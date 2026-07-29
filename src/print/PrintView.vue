@@ -13,9 +13,10 @@
  */
 import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from 'vue'
 import LessonDocument from '../editor/LessonDocument.vue'
+import QuizAnswers from '../render/QuizAnswers.vue'
 import { STARTER_LESSON } from '../editor/starter'
 import { PRINT_STASH_KEY } from '../lesson/useLessonSession'
-import { splitFrontMatter, printTypography } from '@/dsl'
+import { splitFrontMatter, printTypography, quizAnswersMode, collectQuizAnswers } from '@/dsl'
 import {
   attachToPrintedPdf,
   downloadPdf,
@@ -36,6 +37,8 @@ const markdown = computed(() => {
 })
 
 const type = computed(() => printTypography(splitFrontMatter(markdown.value).data))
+const answersMode = computed(() => quizAnswersMode(splitFrontMatter(markdown.value).data))
+const answerGroups = computed(() => (answersMode.value === 'end' ? collectQuizAnswers(markdown.value) : []))
 
 // @page can't read CSS custom properties, so the per-lesson top/bottom margins
 // are written as a global @page rule. Left/right stay at the 0.5in default.
@@ -116,6 +119,7 @@ function onPick(e: Event) {
 <template>
   <div
     class="print-view"
+    :data-quiz-answers="answersMode"
     :style="{
       '--print-columns': type.columns,
       '--print-font-pt': type.fontSizePt,
@@ -123,6 +127,7 @@ function onPick(e: Event) {
     }"
   >
     <LessonDocument :markdown="markdown" :editable="false" />
+    <QuizAnswers v-if="answerGroups.length" :groups="answerGroups" />
   </div>
 
   <!-- Screen-only: never part of the printed page. -->

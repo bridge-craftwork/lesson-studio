@@ -59,6 +59,7 @@ export function serializeFrontMatter(fm: Partial<FrontMatter>): string {
   if (fm['margin-top'] && fm['margin-top'] !== 0.5) ordered['margin-top'] = fm['margin-top']
   if (fm['margin-bottom'] && fm['margin-bottom'] !== 0.5) ordered['margin-bottom'] = fm['margin-bottom']
   if (fm.header && fm.header !== 'standard') ordered.header = fm.header
+  if (fm['quiz-answers'] && fm['quiz-answers'] !== 'end') ordered['quiz-answers'] = fm['quiz-answers']
   if (fm.date) ordered.date = fm.date
   return `---\n${stringifyYaml(ordered).trimEnd()}\n---\n`
 }
@@ -101,6 +102,21 @@ export function printTypography(data: Partial<FrontMatter> | null | undefined): 
     // sub-hundredth jitter would make measurements irreproducible.
     effectivePt: Math.round(fontSizePt * textScale * 100) / 100,
   }
+}
+
+/**
+ * Where quiz answers print (Contract 3 answer-deferral):
+ *   `end`    — quizzes print without answers; answers collect in a section on
+ *              a later page (the default — quizzes-then-answers worksheets);
+ *   `inline` — each answer prints beside its hand (a teacher copy);
+ *   `none`   — no answers anywhere (projection).
+ */
+export type QuizAnswersMode = 'end' | 'inline' | 'none'
+export const DEFAULT_QUIZ_ANSWERS: QuizAnswersMode = 'end'
+
+export function quizAnswersMode(data: Partial<FrontMatter> | null | undefined): QuizAnswersMode {
+  const v = data?.['quiz-answers']
+  return v === 'inline' || v === 'none' ? v : DEFAULT_QUIZ_ANSWERS
 }
 
 function numberOr(value: unknown, fallback: number): number {

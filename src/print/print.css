@@ -75,7 +75,7 @@
 .print-view .bc-compass-placeholder,
 .print-view .auction-table,
 .print-view .bc-responsebox-placeholder,
-.print-view .bc-quiz-placeholder {
+.print-view .bc-quiz {
   break-inside: avoid;
 }
 .print-view .reserved-block {
@@ -134,6 +134,23 @@
 .print-view .ProseMirror > *:has(.reserved-block--pagebreak) + *,
 .print-view .ProseMirror > *:has(.reserved-block--columnbreak) + * {
   margin-top: 0;
+}
+
+/* Quiz answer-deferral (front-matter `quiz-answers`). In `end` (default) and
+   `none`, the body hides each quiz's inline answer; `end` then prints the
+   collected answers in `.quiz-answers` on a later page. The answer section is a
+   sibling AFTER the multicol `.ProseMirror`, so it's an ordinary full-width
+   block and its own `break-before: page` lands it on a fresh page — no spanner
+   needed (that's only for breaks *inside* the multicol body). */
+.print-view[data-quiz-answers='end'] .bc-quiz__answer,
+.print-view[data-quiz-answers='none'] .bc-quiz__answer {
+  display: none;
+}
+.print-view .quiz-answers {
+  /* Match the authored body point size; it's outside .ProseMirror so it doesn't
+     inherit that rule. */
+  font-size: calc(var(--print-font-pt, 12) * var(--print-text-scale, 1) * 1pt);
+  line-height: 1.4;
 }
 
 @media print {
