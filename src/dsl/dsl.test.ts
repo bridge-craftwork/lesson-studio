@@ -544,7 +544,8 @@ describe('front matter', () => {
     expect(data?.title).toBe('New Minor Forcing')
     expect(data?.skill_paths).toEqual(['bidding_conventions/new_minor_forcing'])
     expect(data?.level).toBe('intermediate')
-    expect(body.startsWith('\n# New Minor Forcing')).toBe(true)
+    // No body H1 — the front-matter title is the page heading (Contract 1).
+    expect(body.startsWith('\n**New Minor Forcing (NMF)**')).toBe(true)
     // raw is verbatim and re-joins losslessly
     expect(joinFrontMatter(raw, body)).toBe(STARTER_LESSON)
   })
@@ -630,7 +631,7 @@ describe('reserved-block scan', () => {
 
   it('finds the bridge blocks in the starter lesson', () => {
     const found = scanReservedBlocks(STARTER_LESSON)
-    expect(found.map((b) => b.tag)).toEqual(['hand', 'auction', 'response-box'])
+    expect(found.map((b) => b.tag)).toEqual(['auction', 'hand', 'columnbreak', 'response-box', 'auction'])
     const auction = found.find((b) => b.tag === 'auction')!
     expect(auction.body).toContain('dealer: N')
     expect(auction.body).toContain('New Minor Forcing')
