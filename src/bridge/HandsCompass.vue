@@ -60,10 +60,9 @@ const stacked = computed(() => shown.value.join('') === 'NS')
 .cell.e { grid-area: e; }
 .cell.s { grid-area: s; }
 
-/* A vertical N/S pair: left-align both hands (and the centre marker) to a shared
-   edge so the ♠♥♦♣ glyph columns line up down the page. */
+/* A vertical N/S pair: left-align both hands to a shared edge so the ♠♥♦♣ glyph
+   columns line up down the page. The centre marker stays centred over them. */
 .bc-compass-placeholder.is-stacked .cell.n,
-.bc-compass-placeholder.is-stacked .cell.mid,
 .bc-compass-placeholder.is-stacked .cell.s {
   justify-self: start;
 }
