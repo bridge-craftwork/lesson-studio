@@ -31,6 +31,7 @@
     "declarer_play/entry_management",
     "declarer_play/finessing",
     "declarer_play/holdup_plays",
+    "declarer_play/planning_the_play",
     "declarer_play/squeeze_plays",
     "declarer_play/suit_establishment",
     "declarer_play/trump_management",

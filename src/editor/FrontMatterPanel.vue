@@ -6,9 +6,12 @@
  *    lesson markdown.
  *  - read-only (print / preview): a rendered header.
  */
-import { nextTick, ref } from 'vue'
+import { computed, nextTick, ref } from 'vue'
 import { expandSuitEscapes, type Level } from '@/dsl'
+import taxonomy from '@/dsl/taxonomy.json'
 import SuitText from '../bridge/SuitText.vue'
+
+const ALL_PATHS = taxonomy.paths as string[]
 
 // All fields present (editable form needs defined bindings).
 export type FrontMatterFields = {
@@ -32,17 +35,40 @@ export type FrontMatterFields = {
 const props = defineProps<{ data: FrontMatterFields; editable?: boolean }>()
 
 const LEVELS: Level[] = ['basic', 'intermediate', 'advanced', 'expert']
-const newTag = ref('')
 
-function addTag() {
-  const t = newTag.value.trim()
-  if (t && !props.data.skill_paths.includes(t)) props.data.skill_paths.push(t)
-  newTag.value = ''
+// --- skill-path search / typeahead ---
+// Only taxonomy paths are addable (front matter is validated against them), so
+// the input searches the taxonomy rather than accepting free text. Type
+// "declarer" to see what's there.
+const query = ref('')
+const focused = ref(false)
+const active = ref(0)
+
+const suggestions = computed(() => {
+  const q = query.value.trim().toLowerCase()
+  const chosen = new Set(props.data.skill_paths)
+  return ALL_PATHS.filter((p) => !chosen.has(p) && (q === '' || p.toLowerCase().includes(q))).slice(0, 8)
+})
+const showSuggestions = computed(() => focused.value && suggestions.value.length > 0)
+
+function addPath(path: string) {
+  if (path && !props.data.skill_paths.includes(path)) props.data.skill_paths.push(path)
+  query.value = ''
+  active.value = 0
 }
 function removeTag(tag: string) {
   const i = props.data.skill_paths.indexOf(tag)
   if (i >= 0) props.data.skill_paths.splice(i, 1)
   if (props.data.primary === tag) props.data.primary = ''
+}
+
+function onPathKeydown(e: KeyboardEvent) {
+  if (!showSuggestions.value) return
+  const n = suggestions.value.length
+  if (e.key === 'ArrowDown') { e.preventDefault(); active.value = (active.value + 1) % n }
+  else if (e.key === 'ArrowUp') { e.preventDefault(); active.value = (active.value - 1 + n) % n }
+  else if (e.key === 'Enter' || e.key === 'Tab') { e.preventDefault(); addPath(suggestions.value[active.value]) }
+  else if (e.key === 'Escape') { e.preventDefault(); focused.value = false }
 }
 
 // The title is a plain input (no glyph rendering), so expand `\C` shorthand as
@@ -151,13 +177,26 @@ function onTitleInput(e: Event) {
             <span v-for="tag in data.skill_paths" :key="tag" class="fm-tag">
               {{ tag }}<button type="button" class="fm-tag__x" @click="removeTag(tag)">×</button>
             </span>
-            <input
-              class="fm-tag__input"
-              v-model="newTag"
-              placeholder="add path…"
-              @keydown.enter.prevent="addTag"
-              @blur="addTag"
-            />
+            <div class="fm-path">
+              <input
+                class="fm-tag__input"
+                v-model="query"
+                placeholder="search taxonomy…"
+                @focus="focused = true; active = 0"
+                @blur="focused = false"
+                @keydown="onPathKeydown"
+              />
+              <ul v-if="showSuggestions" class="fm-path__menu">
+                <li
+                  v-for="(p, i) in suggestions"
+                  :key="p"
+                  class="fm-path__item"
+                  :class="{ 'is-active': i === active }"
+                  @mousedown.prevent="addPath(p)"
+                  @mouseenter="active = i"
+                >{{ p }}</li>
+              </ul>
+            </div>
           </div>
         </label>
         <label class="fm-grid__wide">Primary path
@@ -283,10 +322,43 @@ function onTitleInput(e: Event) {
 .fm-tag__x:hover {
   color: #c81e1e;
 }
-.fm-tag__input {
+.fm-path {
+  position: relative;
   flex: 1;
-  min-width: 8rem;
+  min-width: 10rem;
+}
+.fm-tag__input {
+  width: 100%;
+  box-sizing: border-box;
   border: 1px dashed var(--ls-border, #ddd) !important;
+}
+.fm-path__menu {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 2px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 0.15rem;
+  list-style: none;
+  max-height: 12rem;
+  overflow-y: auto;
+  background: var(--ls-bg, #fff);
+  border: 1px solid var(--ls-accent, #1d4ed8);
+  border-radius: 6px;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+.fm-path__item {
+  font-family: var(--ls-mono, monospace);
+  font-size: 0.72rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.fm-path__item.is-active {
+  background: var(--ls-accent, #1d4ed8);
+  color: #fff;
 }
 
 /* ── read-only header ── */
