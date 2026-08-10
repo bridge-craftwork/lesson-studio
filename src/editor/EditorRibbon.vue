@@ -42,6 +42,7 @@ const BLOCK_LABEL: Record<string, string> = {
   hands: 'Hands',
   auction: 'Auction',
   'response-box': 'Response box',
+  'plan-box': 'Plan box',
   quiz: 'Quiz',
   answers: 'Answers',
   row: 'Row',

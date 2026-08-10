@@ -177,6 +177,42 @@ The `response-box` convention table.
 
 Read-only.
 
+### `PlanBox` (new — build for package)
+
+The declarer-play planning worksheet (`plan-box`): count the tricks, then decide
+which technique produces the rest. Two variants, each two sections of three rows
+— a header bar, a label row, a value row.
+
+| Prop | Type | Default | Notes |
+|---|---|---|---|
+| `table` | `'winners' \| 'losers'` | `'winners'` | Picks both headings and the technique columns. |
+| `counting` | boolean | `true` | Show the counting section (all three of its rows). |
+| `techniques` | boolean | `true` | Show the technique section (all three of its rows). |
+| `counts` | `string[]` | blank | The four counting cells, ♠ ♥ ♦ ♣ order. |
+| `total` | string | computed | The total cell; see below. |
+| `plan` | `string[]` | blank | One cell per technique column. |
+| `labels` | `string[]` | the variant's | Override the technique column labels (and their count). |
+
+Headings and default columns per variant:
+
+| `table` | Count heading | Decide heading | Techniques |
+|---|---|---|---|
+| `winners` | Count Sure Winners | Decide How to Develop Winners | Promotion, Length, Finesse, End Play |
+| `losers` | Count Fast and Slow Losers | Decide How to Reduce Losers | Ruffs, Finesse, Pitch, Length |
+
+**Cells are free text, and blank is the normal case** — an empty cell renders as
+a box with height to write in, which is what a classroom worksheet wants. A
+filled cell carries a worked example and may contain suit glyphs (`♦K`).
+
+**The total is derived unless it can't be.** With no `total`, the component sums
+`counts` when all four are plain integers and leaves the cell blank otherwise —
+so a worked example doesn't make the teacher add up their own four numbers, and
+a cell reading `2+` doesn't produce a wrong total. An explicit `total` always
+wins.
+
+Read-only. Fills its container's width (it's a worksheet, not a figure), and
+must not split across a column or page break.
+
 ### `QuizSnapshot` (new — build for package)
 
 Renders a Contract 3 `quiz/v1` object embedded by value. Dispatches on `type`;
@@ -220,7 +256,7 @@ consumes so editor and print render identically:
 - Suit glyph colors (`--suit-spades`, `--suit-hearts`, `--suit-diamonds`,
   `--suit-clubs`), card/table sizing units, and the box/border tokens.
 - **`break-inside: avoid`** is applied by every block component's root, so a
-  `HandsCompass`, `AuctionTable`, `ResponseBox`, or `QuizSnapshot` never splits
+  `HandsCompass`, `AuctionTable`, `ResponseBox`, `PlanBox`, or `QuizSnapshot` never splits
   across a print column/page break (architecture doc Open Question 4).
 - **Section-level breaks, not multicol breaks.** The print view is a sequence
   of independently multi-column sections (questions, then the deferred Answers
@@ -265,6 +301,7 @@ on every snapshot. Components stay pure, read-only renderers behind their props.
 | `AuctionTable` | `auction`, quiz `context` | Exists; extract as-is. |
 | `HandsCompass` | `hands` | New (compose `HandDisplay`). |
 | `ResponseBox` | `response-box` | New. |
+| `PlanBox` | `plan-box` | New (lesson-studio is the first consumer). |
 | `QuizSnapshot` | `quiz` | New (renders Contract 3). |
 | `DealView` | `deal` | Phase 2. |
 
@@ -291,7 +328,7 @@ happens against the now-proven consumer (architecture doc Roadmap).
    a W-N-E-S source grid to a flat dealer-first call list, matching this
    component and Contract 3. Confirm the flat source reads acceptably for the
    New Minor Forcing multi-round auction.
-3. **New components' fidelity.** `HandsCompass`, `ResponseBox`, `QuizSnapshot`
+3. **New components' fidelity.** `HandsCompass`, `ResponseBox`, `PlanBox`, `QuizSnapshot`
    are new. Confirm `HandsCompass` may reuse `HandDisplay` without dragging in
    `SeatPanel`'s interaction coupling.
 4. **Package export surface.** Confirm the print stylesheet tokens ship from the

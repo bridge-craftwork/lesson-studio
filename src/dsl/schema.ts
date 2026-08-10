@@ -135,6 +135,61 @@ export const BLOCK_SCHEMAS: Record<string, BlockSchema> = {
     bodyDoc: 'Text after a `---` line becomes a footer note.',
     example: 'title: Opener’s rebids\n2H | Four hearts\n2S | Three-card spade support\n2NT | Minimum, neither',
   },
+  'plan-box': {
+    tag: 'plan-box',
+    summary: 'The declarer-play planning worksheet: count the tricks, then decide how to get them.',
+    keys: [
+      {
+        name: 'table',
+        values: 'winners | losers',
+        default: 'winners',
+        doc: 'winners = count sure winners and develop them; losers = count losers and reduce them.',
+      },
+      {
+        name: 'counting',
+        values: 'on | off',
+        default: 'on',
+        doc: 'off hides the counting section — its header, suit labels and value row.',
+      },
+      {
+        name: 'techniques',
+        values: 'on | off',
+        default: 'on',
+        doc: 'off hides the technique section — its header, labels and value row.',
+      },
+      {
+        name: 'labels',
+        values: '<a>, <b>, <c>, <d>',
+        default: 'the variant’s techniques',
+        doc: 'Rename the technique columns, e.g. `Promotion, Length, Finesse, End Play`.',
+      },
+      {
+        name: 'counts',
+        values: 'S | H | D | C | total',
+        doc: 'The counting row, left to right. Omit trailing cells; blank cells stay blank.',
+      },
+      {
+        name: 'plan',
+        values: '<cell> | <cell> | …',
+        doc: 'The technique row, one cell per column.',
+      },
+      {
+        name: 'total',
+        values: '<text>',
+        default: 'the sum, when all four suits are numbers',
+        doc: 'Fill the total cell explicitly — needed only when a suit cell isn’t a plain number.',
+      },
+      {
+        name: 'S / H / D / C',
+        values: '<text>',
+        doc: 'One counting cell, as a key line instead of a `counts` row.',
+      },
+    ],
+    bodyDoc:
+      'Cells are free text — a blank one prints as an empty box to write in. A ' +
+      'technique column can also be filled by name: `promotion: 2`.',
+    example: 'table: winners\ncounts: 2 | 1 | 3 | 1\nplan: | 2 | ♦K |',
+  },
   quiz: {
     tag: 'quiz',
     summary: 'An embedded quiz exercise (Contract 3 questions, by value).',

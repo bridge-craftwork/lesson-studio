@@ -124,6 +124,29 @@ export const GALLERY: BlockSpecimens[] = [
     ],
   },
   {
+    tag: 'plan-box',
+    title: 'plan-box',
+    blurb: 'Declarer-play worksheet: count the tricks, then decide how to get them.',
+    specimens: [
+      {
+        label: 'winners — blank worksheet',
+        body: lines('table: winners'),
+      },
+      {
+        label: 'losers — worked, key form',
+        body: lines('table: losers', 'S: 1', 'H: 2', 'D: 0', 'C: 1', 'ruffs: 2', 'pitch: ♦K'),
+      },
+      {
+        label: 'counting only',
+        body: lines('table: winners', 'techniques: off', 'counts: 3 | 2 | 1 | 2'),
+      },
+      {
+        label: 'techniques only',
+        body: lines('table: losers', 'counting: off'),
+      },
+    ],
+  },
+  {
     tag: 'quiz',
     title: 'quiz',
     blurb: 'Embedded Contract 3 quiz/v1 (student variant — answers deferred).',

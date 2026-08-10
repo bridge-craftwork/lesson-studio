@@ -11,6 +11,7 @@ import {
   HandsCompass,
   AuctionTable,
   ResponseBox,
+  PlanBox,
   QuizSnapshot,
 } from '@bridge-craftwork/bridge-components'
 import CallLabel from '../bridge/CallLabel.vue'
@@ -22,6 +23,7 @@ import {
   parseAuctionBlock,
   toAuctionProps,
   parseResponseBox,
+  parsePlanBox,
   parseRowBlock,
   parseQuizBlock,
   parseAnswersBlock,
@@ -49,6 +51,7 @@ type Rendered =
   | { kind: 'hands'; hands: Record<string, ReturnType<typeof toComponentHand>>; layout?: string }
   | { kind: 'auction'; auction: ReturnType<typeof toAuctionProps> }
   | { kind: 'response-box'; box: ReturnType<typeof parseResponseBox> }
+  | { kind: 'plan-box'; plan: ReturnType<typeof parsePlanBox> }
   | { kind: 'quiz'; exercise: QuizExercise }
   | { kind: 'answers'; columns: number }
   | { kind: 'row'; items: RowItem[] }
@@ -79,6 +82,8 @@ const model = computed<Rendered>(() => {
         return { kind: 'auction', auction: toAuctionProps(parseAuctionBlock(props.body)) }
       case 'response-box':
         return { kind: 'response-box', box: parseResponseBox(props.body) }
+      case 'plan-box':
+        return { kind: 'plan-box', plan: parsePlanBox(props.body) }
       case 'quiz':
         return { kind: 'quiz', exercise: parseQuizBlock(props.body).exercise }
       case 'answers':
@@ -150,6 +155,17 @@ const auctionNotes = computed(() =>
     <template v-else-if="model.kind === 'response-box'">
       <ResponseBox :title="model.box.title" :rows="model.box.rows" :note="model.box.note" />
     </template>
+    <template v-else-if="model.kind === 'plan-box'">
+      <PlanBox
+        :table="model.plan.table"
+        :counting="model.plan.counting"
+        :techniques="model.plan.techniques"
+        :counts="model.plan.counts"
+        :total="model.plan.total"
+        :plan="model.plan.plan"
+        :labels="model.plan.labels"
+      />
+    </template>
     <template v-else-if="model.kind === 'quiz'">
       <QuizSnapshot :exercise="model.exercise as any" answers="inline" :exercise-number="exerciseNumber" />
     </template>
@@ -204,6 +220,11 @@ const auctionNotes = computed(() =>
    (< 280 × scale), which would otherwise shrink the bids. */
 .block-view--auction,
 .block-view--answers {
+  display: block;
+}
+/* The plan box is a worksheet, not a figure — it fills its column so the cells
+   are wide enough to write in. */
+.block-view--plan-box {
   display: block;
 }
 .block-placeholder {

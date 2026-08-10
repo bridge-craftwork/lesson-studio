@@ -11,6 +11,7 @@ import { parseRowBlock } from './row-block'
 import { validateLesson } from './validate'
 import { parseAuctionBlock, toAuctionProps } from './auction-block'
 import { parseResponseBox } from './response-box-block'
+import { parsePlanBox } from './plan-box-block'
 import { parseHandsBlock } from './hands-block'
 import { formatCall, callSegments, bidTextSegments } from './call'
 import { splitRedSuits } from './suits'
@@ -492,6 +493,7 @@ describe('block key schema', () => {
     expect(() => parseHandBlock(blockSchema('hand')!.example)).not.toThrow()
     expect(() => parseHandsBlock(blockSchema('hands')!.example)).not.toThrow()
     expect(() => parseResponseBox(blockSchema('response-box')!.example)).not.toThrow()
+    expect(() => parsePlanBox(blockSchema('plan-box')!.example)).not.toThrow()
   })
 
   it('completes on a prefix, and offers everything on an empty one', () => {

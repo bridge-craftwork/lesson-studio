@@ -4,6 +4,7 @@ import { parseHandBlock } from './hand-block'
 import { parseHandsBlock } from './hands-block'
 import { parseAuctionBlock } from './auction-block'
 import { parseResponseBox } from './response-box-block'
+import { parsePlanBox } from './plan-box-block'
 import { parseQuizBlock } from './quiz-block'
 import { parseAnswersBlock } from './answers-block'
 import { parseRowBlock } from './row-block'
@@ -113,6 +114,9 @@ function validateBlock(tag: ReservedBlock, body: string, issues: LintIssue[]): v
         break
       case 'response-box':
         parseResponseBox(body)
+        break
+      case 'plan-box':
+        parsePlanBox(body)
         break
       case 'quiz':
         parseQuizBlock(body)

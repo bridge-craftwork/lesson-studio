@@ -75,6 +75,7 @@
 .print-view .bc-compass-placeholder,
 .print-view .auction-table,
 .print-view .bc-responsebox-placeholder,
+.print-view .bc-planbox-placeholder,
 .print-view .bc-quiz {
   break-inside: avoid;
 }

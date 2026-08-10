@@ -22,7 +22,8 @@ kinds of structured content layered on top of ordinary prose:
    Contract 2 components in both.
 
 ```
-hand   hands   auction   response-box   deal   quiz   pagebreak   columnbreak   row
+hand   hands   auction   response-box   plan-box   deal   quiz
+pagebreak   columnbreak   row
 ```
 
 Everything else is plain CommonMark and renders normally.
@@ -303,6 +304,48 @@ glyphs when it parses as one) but free text is allowed (e.g. `5NT` ranges,
 **Canonical form:** `title` line; rows with a single ` | ` separator, left
 column left-aligned; optional `---` then the footer note.
 
+### `plan-box` — declarer-play planning worksheet
+
+The count-then-decide worksheet: how many tricks do I have, and which technique
+gets me the rest. Two variants — `winners` (count sure winners, develop more)
+and `losers` (count fast and slow losers, reduce them) — each rendered as two
+sections of three rows: a coloured header bar, a label row, a value row.
+
+Cells are **free text and usually blank**: a blank cell prints as a box for the
+student to write in, and a filled one carries a worked example (`2`, `♦K`,
+`2+`). This is the one block whose *empty* form is the common one.
+
+````markdown
+```plan-box
+table: winners
+counts: 2 | 1 | 3 | 1
+plan: 2 | | ♦K |
+```
+````
+
+| Key | Req | Default | Notes |
+|---|---|---|---|
+| `table` | | `winners` | `winners` \| `losers`. Picks the headings and the technique columns. |
+| `counting` | | `on` | `off` hides the counting section — all three of its rows. |
+| `techniques` | | `on` | `off` hides the technique section — all three of its rows. |
+| `labels` | | the variant's | Rename the technique columns, comma-separated. Sets the column *count*. |
+| `counts` | | blank | The counting row: `S \| H \| D \| C \| total`. Trailing cells may be omitted. |
+| `plan` | | blank | The technique row, one cell per column. |
+| `total` | | computed | The total cell. Omitted, the renderer sums `counts` when all four are plain numbers. |
+
+The technique columns are `Promotion, Length, Finesse, End Play` for `winners`
+and `Ruffs, Finesse, Pitch, Length` for `losers`.
+
+Cells may also be written as **key lines** instead of a pipe row — `S: 2` for a
+counting cell, or the column's own name for a technique cell (`promotion: 2`).
+Key matching ignores case, spaces and hyphens, so `End Play`, `end-play` and
+`endplay` are the same column. Both forms parse; the canonical form is the pipe
+rows. Turning both sections off is an error — there'd be nothing to render.
+
+**Canonical form:** `table` first, then any non-default `counting` /
+`techniques` / `labels`, then `counts` and `plan` as pipe rows with trailing
+blank cells dropped.
+
 ### `deal` — repository board reference (Phase 2; stubbed in v1)
 
 References a bba-filtered board by stable identity (per ADR-0001 and the
@@ -463,10 +506,13 @@ parts this contract owns:
    and no `id:` is declared twice. An auction with **no** pairing is not an
    error — the default rule leaves opening illustrations unpaired by design.
 6. `response-box`: `title` present; every row has exactly one ` | `.
-7. `deal`: structurally well-formed (v1 does **not** resolve the reference).
-8. `quiz`: body validates against Contract 3 `quiz/v1`.
-9. `pagebreak` / `columnbreak`: body is empty.
-10. Every block is already in canonical form (else `--fix` it).
+7. `plan-box`: `table` ∈ {winners, losers}; `counting`/`techniques` are on/off
+   and not both off; `counts` has at most five cells and `plan` at most one per
+   technique column; every key line names a suit, a known key, or a column.
+8. `deal`: structurally well-formed (v1 does **not** resolve the reference).
+9. `quiz`: body validates against Contract 3 `quiz/v1`.
+10. `pagebreak` / `columnbreak`: body is empty.
+11. Every block is already in canonical form (else `--fix` it).
 
 ## Versioning and evolution
 
@@ -483,7 +529,7 @@ parts this contract owns:
 ## v1 scope (Phase 1)
 
 Active in Phase 1: `hand` (with `marks`), `hands`, `auction`, `response-box`,
-`pagebreak`, `row`, front matter. `quiz` is defined and hand-authorable but the
+`plan-box`, `pagebreak`, `row`, front matter. `quiz` is defined and hand-authorable but the
 picker that
 populates it is Phase 2. `deal` is reserved and structurally linted but not
 resolved until Phase 2. This is exactly the vocabulary the two seed lessons

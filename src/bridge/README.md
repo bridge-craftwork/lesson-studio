@@ -7,7 +7,7 @@ and `vite.config.ts` aliases the package name here.
 
 - `HandDisplay`, `AuctionTable` — copy from Bridge-Classroom `src/components/`
   once decoupled from the app's stores/router/API (they already are).
-- `HandsCompass`, `ResponseBox`, `QuizSnapshot` — new components to build
+- `HandsCompass`, `ResponseBox`, `PlanBox`, `QuizSnapshot` — new components to build
   (Contract 2 build-status table).
 
 The placeholders here render the Contract 2 prop shapes so the editor node
