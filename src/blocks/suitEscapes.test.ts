@@ -31,8 +31,9 @@ async function typeEscape(letter: string): Promise<string> {
     view.dispatch(view.state.tr.insertText('\\', 1))
     const pos = view.state.selection.from
     // Simulate typing `letter` there — the inputrules plugin's handleTextInput
-    // is exactly what a keystroke triggers.
-    view.someProp('handleTextInput', (f) => f(view, pos, pos, letter))
+    // is exactly what a keystroke triggers. Cast: the bundled prop type carries
+    // an extra optional arg the runtime doesn't require.
+    view.someProp('handleTextInput', (f) => (f as (...a: unknown[]) => boolean)(view, pos, pos, letter))
   })
 
   const out = editor.action(getMarkdown())
