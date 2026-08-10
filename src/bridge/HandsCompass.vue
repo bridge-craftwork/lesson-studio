@@ -24,10 +24,15 @@ const shown = computed<Seat[]>(() => {
 })
 
 const at = (s: Seat) => (shown.value.includes(s) ? s : null)
+
+// A vertical N/S partnership pair (no E/W). Centering each hand would leave the
+// wider hand and the narrower one with different left edges, so their suit
+// glyphs wouldn't line up column-to-column — left-align the stack instead.
+const stacked = computed(() => shown.value.join('') === 'NS')
 </script>
 
 <template>
-  <div class="bc-compass-placeholder">
+  <div class="bc-compass-placeholder" :class="{ 'is-stacked': stacked }">
     <div class="cell n"><HandDisplay v-if="at('N') && hands.N" :hand="hands.N" /><span v-if="labels?.N" class="lbl">{{ labels.N }}</span></div>
     <div class="cell w"><HandDisplay v-if="at('W') && hands.W" :hand="hands.W" /><span v-if="labels?.W" class="lbl">{{ labels.W }}</span></div>
     <div class="cell mid">♦</div>
@@ -54,6 +59,14 @@ const at = (s: Seat) => (shown.value.includes(s) ? s : null)
 .cell.mid { grid-area: mid; color: var(--ls-muted, #999); }
 .cell.e { grid-area: e; }
 .cell.s { grid-area: s; }
+
+/* A vertical N/S pair: left-align both hands (and the centre marker) to a shared
+   edge so the ♠♥♦♣ glyph columns line up down the page. */
+.bc-compass-placeholder.is-stacked .cell.n,
+.bc-compass-placeholder.is-stacked .cell.mid,
+.bc-compass-placeholder.is-stacked .cell.s {
+  justify-self: start;
+}
 .lbl {
   display: block;
   text-align: center;
