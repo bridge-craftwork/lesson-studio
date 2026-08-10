@@ -99,6 +99,18 @@ function validateFrontMatter(
   }
 }
 
+/**
+ * Lint one block body on its own — the whole-lesson lint minus the lesson.
+ * Cross-block checks (an auction's `deal:` id) can't apply, by definition.
+ * This is what lets fixed specimen/example bodies be tested at build time
+ * rather than discovered broken in the browser.
+ */
+export function validateBlockBody(tag: ReservedBlock, body: string): LintIssue[] {
+  const issues: LintIssue[] = []
+  validateBlock(tag, body, issues)
+  return issues
+}
+
 function validateBlock(tag: ReservedBlock, body: string, issues: LintIssue[]): void {
   const err = (message: string) => issues.push({ severity: 'error', message: `\`${tag}\` block: ${message}` })
   try {

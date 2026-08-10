@@ -149,27 +149,41 @@ export const GALLERY: BlockSpecimens[] = [
   {
     tag: 'quiz',
     title: 'quiz',
-    blurb: 'Embedded Contract 3 quiz/v1 (student variant — answers deferred).',
+    blurb: 'One exercise embedded by value (quiz-embed/v1); answers deferred.',
     specimens: [
       {
         label: 'Responding to 1♣',
         body: JSON.stringify(
           {
-            schema: 'quiz/v1',
-            type: 'bidding',
-            id: '1C_WalshStyle',
-            title: 'Exercise One — Responding to 1♣',
-            prompt: 'Partner opens 1♣. What do you bid?',
-            provenance: {
-              source: 'Practice-Bidding-Scenarios',
-              pipeline_version: '0.0.0',
+            schema: 'quiz-embed/v1',
+            source: {
+              lesson_id: '1C_WalshStyle',
+              title: 'Responding to 1♣ — Walsh style',
               generated: '2026-07-11',
-              source_quiz: '1C_WalshStyle',
+              pipeline_version: '1.0.0',
             },
-            items: [
-              { hand: { spades: 'AQ', hearts: 'A5', diamonds: '8743', clubs: 'QJT95' }, answer: '1D', explanation: 'Up the line with a real diamond suit and game interest.' },
-              { hand: { spades: 'Q98', hearts: 'K73', diamonds: 'Q63', clubs: 'AK86' }, answer: '1D', explanation: 'Walsh: bypass diamonds only with a weak hand — here bid them.' },
-            ],
+            exercise: {
+              id: '1C_WalshStyle-1',
+              type: 'bidding',
+              title: 'Exercise One — Responding to 1♣',
+              prompt: 'Partner opens 1♣. What do you bid?',
+              questions: [
+                {
+                  hand: { spades: 'AQ', hearts: 'A5', diamonds: '8743', clubs: 'QJT95' },
+                  seat: 'S',
+                  context: { dealer: 'N', calls: ['1C', 'P'] },
+                  answer: '1D',
+                  explanation: 'Up the line with a real diamond suit and game interest.',
+                },
+                {
+                  hand: { spades: 'Q98', hearts: 'K73', diamonds: 'Q63', clubs: 'AK86' },
+                  seat: 'S',
+                  context: { dealer: 'N', calls: ['1C', 'P'] },
+                  answer: '1D',
+                  explanation: 'Walsh: bypass diamonds only with a weak hand — here bid them.',
+                },
+              ],
+            },
           },
           null,
           2,
