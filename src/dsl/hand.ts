@@ -4,26 +4,46 @@ import type { Hand } from './types'
 export const RANKS = ['A', 'K', 'Q', 'J', 'T', '9', '8', '7', '6', '5', '4', '3', '2'] as const
 const RANK_INDEX = new Map<string, number>(RANKS.map((r, i) => [r, i]))
 
+/**
+ * The **small-card placeholder**, lowercase `x` — teaching notation for "any
+ * low card", as in `AKQxx`. It is not a rank: it carries no HCP, it repeats
+ * within a suit (that's the whole point), and it sorts below the 2. Held
+ * lowercase because that's how bridge literature writes it, and because it
+ * keeps the placeholder distinguishable from a real rank downstream — notably
+ * in the PBN sidecar, which carries it deliberately off-spec.
+ */
+export const SMALL_CARD = 'x'
+
 /** High-card points per rank. */
 const HCP = new Map([['A', 4], ['K', 3], ['Q', 2], ['J', 1]])
 
 /**
  * Normalize a single suit holding into canonical form: ranks descending, no
- * separators, `T` for ten, `""` for a void. Accepts spaced (`"A Q 5 4"`),
- * packed (`"AQ54"`), lowercase, and `-`/empty for a void.
- * Throws on an illegal rank or a duplicate card.
+ * separators, `T` for ten, `x` for a small card, `""` for a void. Accepts
+ * spaced (`"A Q 5 4"`), packed (`"AQ54"`), lowercase, and `-`/empty for a void.
+ * Throws on an illegal rank or a duplicate card — `x` excepted, since a holding
+ * is free to say `AKQxx`.
  */
 export function normalizeHolding(input: string): string {
   const raw = input.trim()
   if (raw === '' || raw === '-') return ''
-  const ranks = raw.toUpperCase().replace(/10/g, 'T').replace(/[\s]/g, '').split('')
+  const ranks = raw
+    .replace(/10/g, 'T')
+    .replace(/[\s]/g, '')
+    .split('')
+    // `x` is the one character that stays lowercase; everything else is a rank.
+    .map((c) => (c.toLowerCase() === SMALL_CARD ? SMALL_CARD : c.toUpperCase()))
   const seen = new Set<string>()
   for (const r of ranks) {
+    if (r === SMALL_CARD) continue
     if (!RANK_INDEX.has(r)) throw new Error(`illegal rank "${r}" in holding "${input}"`)
     if (seen.has(r)) throw new Error(`duplicate card "${r}" in holding "${input}"`)
     seen.add(r)
   }
-  return ranks.sort((a, b) => RANK_INDEX.get(a)! - RANK_INDEX.get(b)!).join('')
+  // Small cards sort below the 2; Array#sort is stable, so a run of them keeps
+  // its length.
+  const order = (r: string) => (r === SMALL_CARD ? RANKS.length : RANK_INDEX.get(r)!)
+  return ranks.sort((a, b) => order(a) - order(b)).join('')
 }
 
 /** Canonicalize every suit of a hand. */

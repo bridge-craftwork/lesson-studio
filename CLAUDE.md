@@ -141,6 +141,24 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   and `grid: off`), the convention in most teaching material. The source keeps
   every call including the opponents' passes; eliding them is display-only, and
   a competitive auction silently falls back to four columns.
+- **A fragment is defined by the suits NAMED, not by the card count.** Name only
+  some suits (`S: A K Q x x`) and the hand renders as those rows alone, no HCP;
+  write all four lines and it renders whole, voids included. So `C: -` and no
+  `C:` line differ, and the `--fix` formatter must not fill a fragment out to
+  four lines. `HandDisplay`'s own heuristic calls a hand a fragment only below
+  **5 cards**, which is useless for teaching material — a suit combination is
+  usually longer — so BlockView asserts the vendor `fragment` prop from the
+  parser's `given`. Card count was the other candidate and it's wrong: an
+  illustrative hand is often short of 13 and would lose the very void it exists
+  to show.
+- **`x` is a card, not a rank.** Holdings accept the small-card placeholder
+  (`AKQxx`, lowercase, uppercase `X` canonicalized down): it repeats within a
+  suit, sorts below the 2, counts toward length, scores nothing. It is emitted
+  into the PBN sidecar **deliberately off-spec** — the stage app click-tests
+  cards against it, so dropping placeholders would silently shorten the suit.
+  Lowercase is load-bearing: real ranks are uppercase, so a consumer can tell a
+  placeholder from an unknown rank. Repeated `x`s also mean rank lists **cannot
+  be keyed by card** in a `v-for` (duplicate keys) — a vendor delta fixes that.
 - **Skill paths must exist in the taxonomy.** Validated against a **STOPGAP**
   `src/dsl/taxonomy.json` (48 paths extracted from Bridge-Classroom's
   `bakerBridgeTaxonomy.js`) until Contract 4 publishes the canonical one.

@@ -37,7 +37,7 @@ export interface BlockSchema {
   example: string
 }
 
-const HOLDING = 'ranks, `-` for a void'
+const HOLDING = 'ranks, `x` for a small card, `-` for a void'
 
 export const BLOCK_SCHEMAS: Record<string, BlockSchema> = {
   hand: {
@@ -56,7 +56,12 @@ export const BLOCK_SCHEMAS: Record<string, BlockSchema> = {
         values: '<suit><rank>=<badge>',
         doc: 'Badge specific cards, e.g. `S9=1` — a "1" on the ♠9.',
       },
-      { name: 'S / H / D / C', values: HOLDING, required: true, doc: 'The holding in that suit.' },
+      {
+        name: 'S / H / D / C',
+        values: HOLDING,
+        required: true,
+        doc: 'The holding in that suit. Name only some suits and it renders as a fragment — those rows only, no HCP. `-` shows a void; omitting the line hides the suit.',
+      },
     ],
     example: 'seat: S\nS: A Q 9 5 4\nH: K 7 3\nD: A 5\nC: J 8 4',
   },
@@ -79,7 +84,7 @@ export const BLOCK_SCHEMAS: Record<string, BlockSchema> = {
         name: 'N / E / S / W',
         values: 'S:… H:… D:… C:…',
         required: true,
-        doc: "That seat's holding, all four suits on one line. At least two seats.",
+        doc: "That seat's holding, all four suits on one line. At least two seats. Name one suit only (e.g. `H:A K Q x x`) for a suit-combination fragment.",
       },
     ],
     example: 'layout: NS\nN: S:K T 6  H:J T 9 2  D:Q J  C:K 7 6 3\nS: S:A Q  H:A 5  D:8 7 4 3  C:Q J T 9 5',

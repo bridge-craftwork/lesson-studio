@@ -16,6 +16,17 @@ export interface HandBlock {
   id?: string
   hand: Hand
   marks?: HandMarks
+  /**
+   * Which suits the author actually wrote a line for, in `S H D C` order.
+   *
+   * This is the difference between `C: -` and no `C:` line at all — both leave
+   * the holding empty, but the first says "void, and the void is the point"
+   * while the second says "this suit isn't part of what I'm showing". Renderers
+   * use it to decide whether a hand is a *fragment* (show only these suits, no
+   * HCP) or a whole hand (show all four rows, voids included). Empty means the
+   * block named no suits at all, which is treated as a whole hand.
+   */
+  given: ('S' | 'H' | 'D' | 'C')[]
 }
 
 const SEATS: Seat[] = ['N', 'E', 'S', 'W']
@@ -36,6 +47,7 @@ const rankIndex = (r: string) => RANKS.indexOf(r as (typeof RANKS)[number])
  */
 export function parseHandBlock(body: string): HandBlock {
   const holdings: Record<'S' | 'H' | 'D' | 'C', string> = { S: '', H: '', D: '', C: '' }
+  const given = new Set<'S' | 'H' | 'D' | 'C'>()
   let seat: Seat | undefined
   let label: string | undefined
   let id: string | undefined
@@ -67,7 +79,9 @@ export function parseHandBlock(body: string): HandBlock {
 
     const suit = line.match(SUIT_LINE)
     if (suit) {
-      holdings[suit[1] as 'S' | 'H' | 'D' | 'C'] = normalizeHolding(suit[2])
+      const s = suit[1] as 'S' | 'H' | 'D' | 'C'
+      holdings[s] = normalizeHolding(suit[2])
+      given.add(s)
       continue
     }
 
@@ -79,6 +93,7 @@ export function parseHandBlock(body: string): HandBlock {
     label,
     id,
     marks,
+    given: SUITS.filter((s) => given.has(s)),
     hand: {
       spades: holdings.S,
       hearts: holdings.H,
@@ -116,19 +131,29 @@ function marksLine(marks: HandMarks): string {
 
 /**
  * Serialize a HandBlock to its canonical body (Contract 1): `seat`/`label`/`id`
- * keys, then the four suit lines in S H D C order, then an optional `marks`
- * line. `parseHandBlock ∘ serializeHandBlock` is the identity on normalized
- * input, and `serializeHandBlock` is idempotent — the `--fix` formatter.
+ * keys, then the suit lines in S H D C order, then an optional `marks` line.
+ * `parseHandBlock ∘ serializeHandBlock` is the identity on normalized input,
+ * and `serializeHandBlock` is idempotent — the `--fix` formatter.
+ *
+ * A **fragment** (the author named only some suits) keeps exactly those lines.
+ * Filling it out to four would erase the distinction the renderer reads —
+ * the block would come back as a whole hand with three voids.
  */
 export function serializeHandBlock(block: HandBlock): string {
   const lines: string[] = []
   if (block.seat) lines.push(`seat: ${block.seat}`)
   if (block.label) lines.push(`label: ${block.label}`)
   if (block.id) lines.push(`id: ${block.id}`)
-  lines.push(`S: ${holdingLine(block.hand.spades)}`)
-  lines.push(`H: ${holdingLine(block.hand.hearts)}`)
-  lines.push(`D: ${holdingLine(block.hand.diamonds)}`)
-  lines.push(`C: ${holdingLine(block.hand.clubs)}`)
+  const holdings: Record<'S' | 'H' | 'D' | 'C', string> = {
+    S: block.hand.spades,
+    H: block.hand.hearts,
+    D: block.hand.diamonds,
+    C: block.hand.clubs,
+  }
+  const shown = block.given?.length ? block.given : SUITS
+  for (const suit of SUITS) {
+    if (shown.includes(suit)) lines.push(`${suit}: ${holdingLine(holdings[suit])}`)
+  }
   if (block.marks) lines.push(marksLine(block.marks))
   return lines.join('\n')
 }

@@ -54,6 +54,20 @@ concurrent Bridge-Classroom refactor can't destabilize lesson-studio (see the
      label while everything around it grew. **Pending upstream** — small text
      wants a floor, not only a proportional size, which is a general concern
      rather than a lesson-studio one.
+  8. `HandDisplay.vue` gains a **`fragment`** prop (default `null` = unchanged
+     behaviour). It overrides the internal `isPartialHand` heuristic, which
+     calls a hand a fragment only below **5 cards** — far too low for teaching
+     material, where a suit combination (`A K Q x x` opposite `x x x`) is
+     exactly the thing you want shown as bare suit rows. Above the threshold
+     those rendered as whole hands with three empty rows. lesson-studio derives
+     the flag in `BlockView` from the suits the author actually named, which the
+     component can't see — a void and an unnamed suit both arrive as an empty
+     array. **Pending upstream** (specified in Contract 2).
+  9. `HandDisplay.vue` keys its rank `v-for`s (visible row + probe) by **index
+     instead of by card**. A holding may repeat the small-card placeholder
+     (`AKQxx`), and duplicate keys make Vue warn and patch unreliably. Safe
+     here: the list is re-derived whole from `hand`, never spliced in place.
+     **Pending upstream** — a plain bug once `x` is in the vocabulary.
   6. `HandDisplay.vue`'s `.suit-row` takes its family from
      `var(--hand-font, …)` instead of hardcoding `'Segoe UI', system-ui`.
      Hardcoding a family overrides the host document's typography: in

@@ -32,8 +32,21 @@ describe('hand notation', () => {
   })
 
   it('rejects illegal ranks and duplicates', () => {
-    expect(() => normalizeHolding('A X')).toThrow(/illegal rank/)
+    expect(() => normalizeHolding('A Z')).toThrow(/illegal rank/)
     expect(() => normalizeHolding('A A')).toThrow(/duplicate/)
+  })
+
+  it('accepts the small-card placeholder, repeated, sorted below the 2', () => {
+    expect(normalizeHolding('A K Q x x')).toBe('AKQxx')
+    expect(normalizeHolding('AKQXX')).toBe('AKQxx') // uppercase X is the same card
+    expect(normalizeHolding('xxx')).toBe('xxx')
+    expect(normalizeHolding('x 2 A')).toBe('A2x') // below the 2, never above it
+  })
+
+  it('counts a small card as a card but never as a point', () => {
+    const hand = normalizeHand({ spades: 'AKQxx', hearts: 'xxx', diamonds: 'Kxx', clubs: 'xx' })
+    expect(cardCount(hand)).toBe(13)
+    expect(handHcp(hand)).toBe(4 + 3 + 2 + 3) // A K Q + K = 12
   })
 
   it('computes HCP and card count for a full hand', () => {
@@ -88,6 +101,29 @@ describe('hand block parse/serialize', () => {
 
   it('rejects an illegal seat', () => {
     expect(() => parseHandBlock('seat: Z\nS: A')).toThrow(/illegal seat/)
+  })
+
+  it('round-trips a holding written with small cards', () => {
+    const canonical = ['S: A K Q x x', 'H: x x x', 'D: K x x', 'C: x x'].join('\n')
+    expect(serializeHandBlock(parseHandBlock(canonical))).toBe(canonical)
+    // Authored uppercase, canonicalized lowercase.
+    expect(serializeHandBlock(parseHandBlock('S: AKQXX')).split('\n')[0]).toBe('S: A K Q x x')
+  })
+
+  it('records which suits the author named, `-` included', () => {
+    expect(parseHandBlock('S: A K Q x x').given).toEqual(['S'])
+    // An explicit void is a named suit: it is shown, not dropped.
+    expect(parseHandBlock('S: A K\nH: -\nD: 2\nC: 3').given).toEqual(['S', 'H', 'D', 'C'])
+    // Canonical S H D C order regardless of how the block was written.
+    expect(parseHandBlock('C: 5 4\nS: A K').given).toEqual(['S', 'C'])
+  })
+
+  it('does not fill a fragment out to four suit lines when formatting', () => {
+    // Filling it out would erase the fragment: it would come back as a whole
+    // hand holding three voids, and render as one.
+    const fragment = 'label: Declarer\nS: A K Q x x'
+    expect(serializeHandBlock(parseHandBlock(fragment))).toBe(fragment)
+    expect(parseHandBlock(serializeHandBlock(parseHandBlock(fragment))).given).toEqual(['S'])
   })
 
   it('parses and round-trips card badges (marks)', () => {
@@ -450,6 +486,14 @@ describe('PBN emission', () => {
     expect(pbnDeal(hands)).toBe('N:KT6.JT92.QJ.K763 - AQ.A5.8743.QJT95 -')
   })
 
+  it('carries a small-card placeholder through to the sidecar, off-spec on purpose', () => {
+    // PBN has no `x` rank. It is emitted anyway (lowercase, so it reads as a
+    // placeholder rather than an unknown rank): the stage app click-tests cards
+    // against this sidecar, and dropping them would shorten the suit silently.
+    const suitCombo = parseHandsBlock(['N: H:A K Q x x', 'S: H:x x x'].join('\n'))
+    expect(pbnDeal(suitCombo.hands)).toBe('N:.AKQxx.. - .xxx.. -')
+  })
+
   it('returns null when there are no hands at all', () => {
     expect(pbnDeal({})).toBeNull()
     expect(pbnGame({})).toBeNull()
@@ -537,6 +581,21 @@ describe('hands block', () => {
     expect(block.layout).toBe('NS')
     expect(block.hands.N).toEqual({ spades: 'KT6', hearts: 'JT92', diamonds: 'QJ', clubs: 'K763' })
     expect(block.hands.S).toEqual({ spades: 'AQ', hearts: 'A5', diamonds: '8743', clubs: 'QJT95' })
+  })
+
+  it('parses a one-suit fragment with small cards on both sides', () => {
+    const block = parseHandsBlock(['layout: NS', 'N: H:A K Q x x', 'S: H:x x x'].join('\n'))
+    expect(block.hands.N).toEqual({ spades: '', hearts: 'AKQxx', diamonds: '', clubs: '' })
+    expect(block.hands.S).toEqual({ spades: '', hearts: 'xxx', diamonds: '', clubs: '' })
+    // One named suit per seat — what marks the block a fragment to render.
+    expect(block.given).toEqual({ N: 1, S: 1 })
+  })
+
+  it('counts a full seat line as all four suits named', () => {
+    const block = parseHandsBlock(
+      ['N: S:K T 6  H:J T 9 2  D:Q J  C:K 7 6 3', 'S: S:A Q  H:A 5  D:8 7 4 3  C:Q J T 9 5'].join('\n')
+    )
+    expect(block.given).toEqual({ N: 4, S: 4 })
   })
 })
 

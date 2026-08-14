@@ -12,7 +12,18 @@ import type { Hand, Seat } from './types'
 
 const SEAT_ORDER: Seat[] = ['N', 'E', 'S', 'W']
 
-/** One hand as a PBN holding: `AQ954.K73.A5.J84`, voids as empty. */
+/**
+ * One hand as a PBN holding: `AQ954.K73.A5.J84`, voids as empty.
+ *
+ * **Deliberately off-spec:** a small-card placeholder (`x`) is emitted as the
+ * literal `x`, which PBN §3.4.11 does not define — its rank set is `AKQJT98..2`.
+ * Lessons write holdings like `AKQxx`, and the downstream stage app click-tests
+ * cards against this sidecar, so dropping the placeholder would leave those
+ * cards untappable and silently shorten the suit. It stays lowercase precisely
+ * so a reader can tell it from a rank rather than meeting an unknown uppercase
+ * letter. A strict PBN parser will reject such a record; that trade is recorded
+ * in Contract 5.
+ */
 export function pbnHolding(hand: Hand): string {
   return [hand.spades, hand.hearts, hand.diamonds, hand.clubs]
     .map((h) => (h === '-' ? '' : h))
