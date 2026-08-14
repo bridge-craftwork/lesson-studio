@@ -68,6 +68,22 @@ concurrent Bridge-Classroom refactor can't destabilize lesson-studio (see the
      (`AKQxx`), and duplicate keys make Vue warn and patch unreliably. Safe
      here: the list is re-derived whole from `hand`, never spliced in place.
      **Pending upstream** — a plain bug once `x` is in the vocabulary.
+  10. `HandDisplay.vue`'s `measure()` **resets `--suit-scale` to 1 before it
+     reads any rect**, so the fit is never computed through a compression the
+     component applied itself. `available` comes from the row's own box, so
+     wherever an ancestor is sized by its content — a grid cell on an `auto`
+     track, an inline-block, a hugging flex item — compressing narrows that
+     ancestor, the ResizeObserver re-fires, and the next measurement reads the
+     smaller width. The scale ratchets down and the hand disappears: measured at
+     1 → 0.60 → 0.22 → 0 in the `hands` compass, where each seat sits in an auto
+     track. `computeFit`'s own comment records this loop being closed for the
+     *truncation* path (`allowTruncate: false`); the compression path kept it.
+     Resetting makes `available` mean "the width this row has at natural size",
+     which a content-sized ancestor reports as the natural width (nothing
+     compresses) and a genuinely constrained one reports as its real constraint
+     (compresses to a fixed point). **Pending upstream** — a plain bug, and the
+     cardplay app's own layouts can hit it wherever a hand sits in a
+     shrink-to-fit box.
   6. `HandDisplay.vue`'s `.suit-row` takes its family from
      `var(--hand-font, …)` instead of hardcoding `'Segoe UI', system-ui`.
      Hardcoding a family overrides the host document's typography: in

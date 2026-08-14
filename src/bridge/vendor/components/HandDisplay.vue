@@ -233,6 +233,24 @@ const OVERHANG_MARGIN = 3
 function measure() {
   if (!props.hand) return
   const tableScale = parseFloat(getComputedStyle(rootEl.value).getPropertyValue('--table-scale')) || 1
+  // LESSON-STUDIO DELTA — measure the row at scale 1, never through a
+  // compression we applied ourselves.
+  //
+  // `available` comes from the row's own box. Where an ancestor is sized by its
+  // content (a grid cell with an `auto` track, an inline-block, a flex item
+  // hugging), compressing the row narrows that ancestor, the ResizeObserver
+  // re-fires, and the next measurement reads the SMALLER width — so the scale
+  // ratchets down, 1 → 0.60 → 0.22 → 0, and the hand vanishes. computeFit's own
+  // comment records the same loop being closed for the TRUNCATION path
+  // (`allowTruncate: false`); the compression path kept it.
+  //
+  // Resetting first makes `available` mean "the width this row has at natural
+  // size", which is stable: a content-sized ancestor then reports the natural
+  // width and nothing compresses, while a genuinely constrained one reports its
+  // real constraint and compresses to a fixed point. The reads below force
+  // layout, so the reset is in effect by the time any rect is taken. Vue
+  // re-applies `rowStyle` when `fit` changes, so nothing is left overridden.
+  for (const suit of suits) rowEls[suit]?.style.setProperty('--suit-scale', '1')
   for (const suit of suits) {
     const rowEl = rowEls[suit]
     const cardsEl = cardsEls[suit]

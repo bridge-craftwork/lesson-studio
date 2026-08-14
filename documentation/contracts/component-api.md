@@ -304,6 +304,18 @@ boundary, which is exactly what this contract is for.
 Both are already implied by the Print stylesheet tokens section above — the
 components own their print behavior; consumers pass props.
 
+**Bugs found downstream, fixed as vendor deltas, owed upstream** (see
+`src/bridge/vendor/README.md` for the in-file marks):
+
+| Bug | Symptom | Fix |
+|---|---|---|
+| `HandDisplay` computes its fit through its own compression | In any content-sized ancestor the scale ratchets 1 → 0.6 → 0.2 → 0 and the hand **vanishes** (measured, in the `hands` compass) | Reset `--suit-scale` to 1 before measuring, so `available` means the width at natural size |
+| `HandDisplay` keys its rank `v-for` by card | A holding repeating a rank (`AKQxx`) yields duplicate Vue keys | Key by index |
+
+The first is not lesson-studio-specific: any host that puts a hand in a
+shrink-to-fit box hits it, and `computeFit` already carries a comment about
+having closed the same loop on the truncation path.
+
 **Rule for structured (per-block) editing.** When lesson-studio adds in-place
 editing for a block type, it edits the **DSL model** and re-renders through the
 component's props. It must never make the component's rendered DOM editable or
