@@ -97,6 +97,19 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   plugin (`trailingParagraph.ts`), editor-only (a stray paragraph would skew
   print page-fit), plus **gapcursor**. Milkdown's serializer drops a trailing
   empty paragraph, so it doesn't dirty the file on load (verified).
+- **A block's `body` attr must stay REQUIRED (no default), or the gap cursor
+  dies everywhere.** `GapCursor.valid()` ends by asking whether the parent's
+  `ContentMatch.defaultType` is a textblock, and `defaultType` returns the first
+  child type that isn't text and has no required attrs. Bridge blocks are
+  registered *before* commonmark, so they're first in the schema too — with a
+  default on `body` the doc's defaultType was `hand`, an atom, and **every** gap
+  cursor position in the document was invalid. The plugin was installed and
+  silently inert: clicking between two adjacent blocks put the caret in the next
+  paragraph, and arrowing off a selected block selected the *next* block, so the
+  next keystroke replaced it (measured — an ArrowDown and five letters destroyed
+  a `columnbreak`). Removing the default fixes all of it. Two adjacent blocks are
+  common in practice: any block followed by a `pagebreak`/`columnbreak`.
+  `gapcursor.test.ts` pins it; the trap is invisible in code review.
 - **Milkdown's listener never fires on initial mount** — only on real edits. Do
   not treat the first emission as a "clean baseline"; it's the user's first edit.
 - **Milkdown reads its content once, at creation** (`defaultValueCtx`), and
