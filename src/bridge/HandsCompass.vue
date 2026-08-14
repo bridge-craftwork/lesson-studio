@@ -14,6 +14,11 @@ const props = defineProps<{
   hands: Partial<Record<Seat, Holding>>
   layout?: 'NS' | 'EW' | 'all'
   labels?: Partial<Record<Seat, string>>
+  /**
+   * Fragment mode, passed straight to each HandDisplay: show only the suits
+   * that have cards. Omit to leave each hand to the component's own default.
+   */
+  fragment?: boolean
 }>()
 
 const shown = computed<Seat[]>(() => {
@@ -33,11 +38,11 @@ const stacked = computed(() => shown.value.join('') === 'NS')
 
 <template>
   <div class="bc-compass-placeholder" :class="{ 'is-stacked': stacked }">
-    <div class="cell n"><HandDisplay v-if="at('N') && hands.N" :hand="hands.N" /><span v-if="labels?.N" class="lbl">{{ labels.N }}</span></div>
-    <div class="cell w"><HandDisplay v-if="at('W') && hands.W" :hand="hands.W" /><span v-if="labels?.W" class="lbl">{{ labels.W }}</span></div>
+    <div class="cell n"><HandDisplay v-if="at('N') && hands.N" :hand="hands.N" :fragment="fragment" /><span v-if="labels?.N" class="lbl">{{ labels.N }}</span></div>
+    <div class="cell w"><HandDisplay v-if="at('W') && hands.W" :hand="hands.W" :fragment="fragment" /><span v-if="labels?.W" class="lbl">{{ labels.W }}</span></div>
     <div class="cell mid">♦</div>
-    <div class="cell e"><HandDisplay v-if="at('E') && hands.E" :hand="hands.E" /><span v-if="labels?.E" class="lbl">{{ labels.E }}</span></div>
-    <div class="cell s"><HandDisplay v-if="at('S') && hands.S" :hand="hands.S" /><span v-if="labels?.S" class="lbl">{{ labels.S }}</span></div>
+    <div class="cell e"><HandDisplay v-if="at('E') && hands.E" :hand="hands.E" :fragment="fragment" /><span v-if="labels?.E" class="lbl">{{ labels.E }}</span></div>
+    <div class="cell s"><HandDisplay v-if="at('S') && hands.S" :hand="hands.S" :fragment="fragment" /><span v-if="labels?.S" class="lbl">{{ labels.S }}</span></div>
   </div>
 </template>
 

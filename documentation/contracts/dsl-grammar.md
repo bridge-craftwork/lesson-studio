@@ -115,6 +115,18 @@ reviewed-by: self
 One holding per suit line, spades-high. Optional keys precede the holding
 lines. Void as `-`.
 
+**Small cards.** A holding may write `x` for a card whose rank doesn't matter —
+`S: A K Q x x`, the notation teaching material has always used. It repeats
+within a suit, sorts below the 2, counts toward the suit's length, and is worth
+no points. Uppercase `X` is accepted and canonicalized to lowercase.
+
+**Naming only some suits renders a fragment**: just those suit rows appear, and
+no HCP is shown (a fragment has no honest point count). Write all four lines and
+it renders as a whole hand, voids included. So `C: -` and no `C:` line are
+**not** the same thing — the first says "void, and that's the point", the second
+says "clubs aren't part of this picture". The `--fix` formatter preserves the
+distinction rather than filling a fragment out to four lines.
+
 ````markdown
 ```hand
 seat: S
@@ -135,7 +147,8 @@ C: Q 8 5
 **Canonical form:** keys first (order `seat`, `label`, `id`), then the four suit lines
 in `S H D C` order (one space between ranks, `-` for a void, every suit line
 present), then an optional `marks` line with cards in `S H D C` / high-to-low
-order.
+order. A **fragment** is the one exception: it keeps exactly the suit lines it
+named, in the same order, since that set is what makes it a fragment.
 
 ### `hands` — two- or four-hand fragment (compass layout)
 
@@ -159,6 +172,20 @@ S: S:A Q    H:A 5      D:8 7 4 3  C:Q J T 9 5
 **Canonical form:** `layout` then `id`, then seat lines in `N E S W` order for the
 seats present; within a seat line, suits in `S H D C` order, `-` for a void,
 single spaces between ranks, two spaces between suit groups.
+
+**Suit combinations.** Name one suit and omit the rest, and the compass shows
+that row alone per seat — the standard way to print a suit combination:
+
+````markdown
+```hands
+layout: NS
+N: H:A K Q x x
+S: H:x x x
+```
+````
+
+The fragment rule is per *block*, not per seat: the compass drops unnamed suit
+rows only when no seat named all four suits.
 
 ### `auction` — bidding table
 

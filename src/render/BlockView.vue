@@ -47,8 +47,19 @@ const props = defineProps<{
 
 type CardMarks = { cards: Record<string, { badge: string }> }
 type Rendered =
-  | { kind: 'hand'; hand: ReturnType<typeof toComponentHand>; label?: string; marks?: CardMarks }
-  | { kind: 'hands'; hands: Record<string, ReturnType<typeof toComponentHand>>; layout?: string }
+  | {
+      kind: 'hand'
+      hand: ReturnType<typeof toComponentHand>
+      label?: string
+      marks?: CardMarks
+      fragment: boolean
+    }
+  | {
+      kind: 'hands'
+      hands: Record<string, ReturnType<typeof toComponentHand>>
+      layout?: string
+      fragment: boolean
+    }
   | { kind: 'auction'; auction: ReturnType<typeof toAuctionProps> }
   | { kind: 'response-box'; box: ReturnType<typeof parseResponseBox> }
   | { kind: 'plan-box'; plan: ReturnType<typeof parsePlanBox> }
@@ -58,6 +69,21 @@ type Rendered =
   | { kind: 'pagebreak' }
   | { kind: 'columnbreak' }
   | { kind: 'error'; message: string }
+
+/**
+ * Is this authored holding a *fragment* — a suit or two shown on their own —
+ * rather than a whole hand? The author says so by naming only some suits, and
+ * that's the flag lesson-studio asserts on HandDisplay rather than letting its
+ * own heuristic (fewer than 5 cards) decide. Five is far too low for teaching
+ * material: a suit combination like `AKQxx` opposite `xxx` would render as a
+ * whole hand with three empty rows.
+ *
+ * Counting *cards* instead was the other candidate and it's wrong: an
+ * illustrative hand is often short of 13, and cutting on that hides the `C: -`
+ * of a hand whose whole point is the void. Naming the suit is the author's own
+ * statement that it belongs in the picture.
+ */
+const isFragment = (suitsNamed: number) => suitsNamed > 0 && suitsNamed < 4
 
 const model = computed<Rendered>(() => {
   try {
@@ -70,13 +96,28 @@ const model = computed<Rendered>(() => {
           for (const [card, badge] of Object.entries(b.marks)) cards[card] = { badge }
           marks = { cards }
         }
-        return { kind: 'hand', hand: toComponentHand(b.hand), label: b.label ?? b.seat, marks }
+        return {
+          kind: 'hand',
+          hand: toComponentHand(b.hand),
+          label: b.label ?? b.seat,
+          marks,
+          fragment: isFragment(b.given.length),
+        }
       }
       case 'hands': {
         const b = parseHandsBlock(props.body)
         const hands: Record<string, ReturnType<typeof toComponentHand>> = {}
         for (const [seat, hand] of Object.entries(b.hands)) hands[seat] = toComponentHand(hand!)
-        return { kind: 'hands', hands, layout: b.layout }
+        // One flag covers the whole compass, so it turns on only when no seat
+        // named all four suits — a compass mixing a whole hand with a bare suit
+        // is malformed, and of the two readings, showing too much is safer.
+        const named = Object.values(b.given).map((n) => n ?? 0)
+        return {
+          kind: 'hands',
+          hands,
+          layout: b.layout,
+          fragment: isFragment(Math.max(...named)),
+        }
       }
       case 'auction':
         return { kind: 'auction', auction: toAuctionProps(parseAuctionBlock(props.body)) }
@@ -124,11 +165,22 @@ const auctionNotes = computed(() =>
     :data-block-tag="tag"
     :data-block-body="body"
   >
+    <!-- `fragment` is asserted on every hand rather than left to HandDisplay's
+         own card-count heuristic — see `isFragment` above. -->
     <template v-if="model.kind === 'hand'">
-      <HandDisplay :hand="model.hand" :show-hcp="true" :marks="model.marks" />
+      <HandDisplay
+        :hand="model.hand"
+        :show-hcp="true"
+        :marks="model.marks"
+        :fragment="model.fragment"
+      />
     </template>
     <template v-else-if="model.kind === 'hands'">
-      <HandsCompass :hands="model.hands" :layout="model.layout as any" />
+      <HandsCompass
+        :hands="model.hands"
+        :layout="model.layout as any"
+        :fragment="model.fragment"
+      />
     </template>
     <template v-else-if="model.kind === 'auction'">
       <div class="auction">

@@ -25,7 +25,11 @@
           :ref="el => setRowRef(suit, el)"
         >
           <span class="suit-symbol" :class="suitClass(suit)">{{ suitSymbol(suit) }}</span>
-          <span class="cards" :ref="el => setCardsRef(suit, el)"><template v-for="(card, i) in visibleRanks(suit)" :key="card"><span
+          <!-- LESSON-STUDIO DELTA: keyed by index, not by card. A holding may
+               repeat the small-card placeholder (`AKQxx`), and duplicate keys
+               make Vue warn and patch unreliably. Index is safe here: the list
+               is re-derived whole from `hand`, never spliced in place. -->
+          <span class="cards" :ref="el => setCardsRef(suit, el)"><template v-for="(card, i) in visibleRanks(suit)" :key="i"><span
             class="cell"
             :class="cellClass(suit, card)"
             :style="cellFill(suit, card)"
@@ -51,7 +55,7 @@
       <template v-for="suit in suits" :key="'p' + suit">
         <div v-if="!isPartialHand || hasSuitCards(suit)" class="suit-row">
           <span class="suit-symbol">{{ suitSymbol(suit) }}</span>
-          <span class="cards" :ref="el => setProbeRef(suit, el)"><template v-for="(card, i) in renderedRanks(suit)" :key="card"><span class="cell">{{ formatCard(card) }}</span>{{ i < renderedRanks(suit).length - 1 ? ' ' : '' }}</template></span>
+          <span class="cards" :ref="el => setProbeRef(suit, el)"><template v-for="(card, i) in renderedRanks(suit)" :key="i"><span class="cell">{{ formatCard(card) }}</span>{{ i < renderedRanks(suit).length - 1 ? ' ' : '' }}</template></span>
           <span class="cell chip chip-probe" :class="{ pill: clickable }" :ref="el => setChipRef(suit, el)">+13</span>
         </div>
       </template>
@@ -104,7 +108,15 @@ const props = defineProps({
   density: { type: String, default: 'full' },
   // When true, played cards collapse out of the holding (live-play default);
   // when false they stay struck through (review / teaching).
-  hidePlayedCards: { type: Boolean, default: false }
+  hidePlayedCards: { type: Boolean, default: false },
+  // LESSON-STUDIO DELTA — explicit fragment mode. `null` (the default) keeps the
+  // historic card-count heuristic below, so existing callers are unaffected;
+  // `true` renders only the suits that have cards and hides the HCP label,
+  // `false` always renders all four rows. Teaching material shows suit
+  // fragments (`♥ K J 4 2` alone, or a suit combination across two hands), and
+  // those are routinely five cards or longer — the heuristic's threshold makes
+  // exactly the interesting holdings render as whole hands with three empty rows.
+  fragment: { type: Boolean, default: null }
 })
 
 const emit = defineEmits(['card-click'])
@@ -135,7 +147,10 @@ const totalCards = computed(() => {
   if (!props.hand) return 0
   return suits.reduce((sum, suit) => sum + (props.hand[suit]?.length || 0), 0)
 })
-const isPartialHand = computed(() => totalCards.value > 0 && totalCards.value < 5)
+// LESSON-STUDIO DELTA — `fragment` overrides the heuristic when set.
+const isPartialHand = computed(() =>
+  props.fragment !== null ? props.fragment : totalCards.value > 0 && totalCards.value < 5
+)
 
 function hasSuitCards(suit) {
   return props.hand && props.hand[suit] && props.hand[suit].length > 0

@@ -28,6 +28,9 @@ export const GALLERY: BlockSpecimens[] = [
       { label: 'balanced 15', body: lines('seat: S', 'S: A Q 5 4', 'H: K J 3', 'D: A 7 2', 'C: Q 8 5') },
       { label: 'shapely, with void', body: lines('label: Opener', 'S: A K Q J 9 8', 'H: A K 5', 'D: Q 4', 'C: -') },
       { label: 'flat minimum', body: lines('S: J 7 3', 'H: Q 9 4', 'D: K 8 5 2', 'C: T 6 3') },
+      // Short of 13 cards, so it renders as a fragment: only the suits given,
+      // and no HCP (a holding with small cards has no honest point count).
+      { label: 'one-suit fragment, small cards', body: lines('label: Declarer', 'S: A K Q x x') },
     ],
   },
   {
@@ -42,6 +45,12 @@ export const GALLERY: BlockSpecimens[] = [
           'N: S:K T 6  H:J T 9 2  D:Q J  C:K 7 6 3',
           'S: S:A Q  H:A 5  D:8 7 4 3  C:Q J T 9 5',
         ),
+      },
+      {
+        // A suit combination: one suit, two hands, small cards for the
+        // irrelevant spots. The compass shows just the ♥ row per seat.
+        label: 'suit combination',
+        body: lines('layout: NS', 'N: H:A K Q x x', 'S: H:x x x'),
       },
       {
         label: 'full deal',

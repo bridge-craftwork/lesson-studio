@@ -42,7 +42,10 @@ The wire vocabulary is owned by Contract 1 and reused verbatim here.
 - **Seat** — `"N" | "E" | "S" | "W"`.
 - **Hand (wire form)** — `{ spades, hearts, diamonds, clubs }`, each a rank
   **string**, ranks descending, ten as `T`, void `""`. Frozen across
-  Contracts 1/3/4.
+  Contracts 1/3/4. A holding may also carry the lowercase **small-card
+  placeholder `x`** (Contract 1), which repeats freely, sorts below the 2, and
+  is worth no HCP — components must treat it as a card they cannot name, not as
+  an unknown rank.
 
 ### Hand adapter (wire → component)
 
@@ -100,9 +103,22 @@ Pure holding renderer.
 | `density` | `'chip'\|'compact'\|'full'` | Rendering budget (`full` today). |
 | `marks` | object | Per-card annotation map keyed by card code (`"SK"`, `"DT"`). |
 | `clickable` | boolean | Editor interaction only. |
+| `fragment` | boolean \| null | Render only the suits holding cards, and no HCP. `null` (default) keeps the historic heuristic — fragment iff the hand has 1–4 cards. |
 
 Emits `card-click: { suit: Seat-less suit letter, rank }`. In lessons it renders
 read-only (`clickable` off, `marks` unset).
+
+**`fragment` exists because the card-count heuristic is wrong for teaching
+material.** Lessons show suit fragments constantly — one suit alone, or a suit
+combination across two hands — and those run to five cards and beyond, above
+the heuristic's threshold, so they rendered as whole hands trailing three empty
+suit rows. No card count fixes this: an illustrative hand is often short of 13
+without being a fragment, and cutting on length hides the very void a hand may
+exist to show. lesson-studio therefore drives the prop from **authorial intent**
+— Contract 1's `given`, the suits the author wrote a line for — which the
+component itself cannot recover, since a void and an unnamed suit reach it as
+the same empty array. Default `null` leaves every existing caller unchanged.
+**Pending upstream.**
 
 ### `HandsCompass` (new — build for package)
 
@@ -116,6 +132,7 @@ static compass instead.
 | `hands` | `{ [seat: Seat]: Hand }` | 2 or 4 seats. |
 | `layout` | `'NS'\|'EW'\|'all'` | Which seats shown; default inferred from keys. |
 | `labels` | `{ [seat: Seat]: string }` | Optional seat captions. |
+| `fragment` | boolean | Passed to every seat's `HandDisplay`; one flag for the compass. |
 
 Read-only; no events.
 

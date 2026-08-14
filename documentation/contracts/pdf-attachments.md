@@ -160,6 +160,15 @@ One PBN game record per `hand`/`hands` block, in document order.
   usually a single seat, and **no cards are ever invented** to complete a deal.
 - The mandatory PBN tag set is emitted with `?` placeholders where a lesson has
   nothing to say, which is conventional for PBN exporters.
+- **Small cards are emitted as a literal `x`, which is off-spec.** PBN §3.4.11
+  defines the rank set as `AKQJT` + `9`–`2`; `x` is not in it, and a strict
+  parser will reject such a record. It is written anyway: lessons routinely
+  hold `AKQxx`, and the downstream stage app click-tests cards against this
+  sidecar, so dropping the placeholders would leave those cards untappable and
+  silently shorten the suit — a wrong deal is worse than an unparseable one.
+  Lowercase is load-bearing: every real rank is uppercase, so a consumer can
+  tell a placeholder from an unknown rank with a case test. Only affects
+  records whose lesson block used `x`; deals of real cards stay strictly valid.
 - An `[Auction]` section is included when the deal has an auction paired with
   it — Contract 1's `deal:` key, defaulting to the nearest preceding hand. A
   deal with several auctions on it takes the first; the others still render on
