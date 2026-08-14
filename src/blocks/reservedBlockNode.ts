@@ -24,7 +24,22 @@ export function reservedBlockNode(tag: ReservedBlock) {
     selectable: true,
     marks: '',
     priority: 100,
-    attrs: { body: { default: '' } },
+    // `body` is REQUIRED — deliberately no default, which is what keeps a caret
+    // reachable between two adjacent blocks.
+    //
+    // ProseMirror's `ContentMatch.defaultType` returns the first child type that
+    // isn't text and hasn't got required attrs, and `GapCursor.valid()` ends by
+    // asking whether that type is a textblock. Bridge blocks are registered
+    // *before* commonmark (the markdown parser matches in registration order),
+    // so they are also first in the schema — with a default on `body`, the
+    // doc's defaultType was `hand`, an atom, and the gap cursor was therefore
+    // invalid at every position in the document. The plugin was installed and
+    // silently inert: no caret between a hand and a following pagebreak, and
+    // clicking the gap put the caret in the next paragraph instead.
+    //
+    // A required attr takes these types out of that calculation without
+    // affecting anything we do — every creation site passes a body explicitly.
+    attrs: { body: {} },
     parseDOM: [
       {
         tag: `div[data-block="${tag}"]`,
