@@ -70,6 +70,16 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   the hand's card size (24px) — 0.9 puts a bid a hair *above* body text, which
   is the floor a bid should never fall below. **One global scale can't serve
   both.**
+- **HandDisplay's fit sensor is a feedback loop wherever its ancestor is sized
+  by content.** It reads `available` from the row's own box and compresses to
+  fit; in a shrink-to-fit ancestor (a compass cell on an `auto` grid track, an
+  inline-block, a hugging flex item) that compression narrows the ancestor, the
+  ResizeObserver re-fires, and the next read is smaller again — 1 → 0.60 → 0.22
+  → **0**, and the hand silently vanishes while its text stays in the DOM. Seen
+  live: adding a 5th card to a hand in the block source-editor's preview pane.
+  The vendor delta measures at `--suit-scale: 1` so `available` always means
+  "the width at natural size". Same family as the AuctionTable sensor below —
+  **any shrink-wrapping ancestor is a hazard for both**.
 - **AuctionTable has a "dense" mode** below `280 × scale` container width that
   shrinks bids. Give auction figures a definite width or they trip it. The
   sensor watches the *parent*, so any shrink-wrapping ancestor makes it measure
@@ -187,6 +197,14 @@ Three page entries: `index.html` (editor), `gallery.html`, `print.html`.
   made the suits hard to tell apart. The cost is that suits stay
   platform-dependent and bring back a few Type 3 subsets; worth it, and far
   short of the original 60+.
+- **Every figure centres in its column**, and the centring is applied to the
+  figure's **box**, not its contents — `.block-view--hand` and
+  `--hands` are `flex; justify-content: center`. Centring the compass box is
+  what lets a stacked N/S pair keep one shared left edge (so the ♠♥♦♣ glyph
+  columns line up) while the pair as a whole sits in the middle. `.block-view`
+  defaults to `inline-block`, so a new figure block sits against the left margin
+  until it says otherwise — which is exactly how the compass came to be the only
+  uncentred figure on the page.
 - **Figures scale with the text.** `--lesson-scale` (1 = the 12pt house size)
   multiplies every `--table-scale`, and lesson-studio's own components size in
   `em`. Without it, `font-size: 14` grew the prose and left the hands, auctions

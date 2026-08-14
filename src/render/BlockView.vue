@@ -288,8 +288,14 @@ const auctionNotes = computed(() =>
   border-radius: 6px;
 }
 /* Figures centre in their column. The auction already did (it fills the
-   width); the hand shrink-wrapped and sat left, which read as inconsistent. */
-.block-view--hand {
+   width); the hand shrink-wrapped and sat left, which read as inconsistent.
+   The compass needs saying too — it inherits `.block-view`'s inline-block, so
+   it hugged the hands and sat against the left margin while every single-hand
+   figure beside it was centred. Centring the compass as a BOX (rather than its
+   cells) is what keeps a stacked N/S pair sharing one left edge: the two hands
+   stay aligned to each other, and the pair as a whole sits in the middle. */
+.block-view--hand,
+.block-view--hands {
   display: flex;
   justify-content: center;
 }
