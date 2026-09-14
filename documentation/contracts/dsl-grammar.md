@@ -22,7 +22,7 @@ kinds of structured content layered on top of ordinary prose:
    Contract 2 components in both.
 
 ```
-hand   hands   auction   response-box   plan-box   deal   quiz
+hand   hands   auction   response-box   plan-box   table   deal   quiz
 pagebreak   columnbreak   row
 ```
 
@@ -373,6 +373,52 @@ rows. Turning both sections off is an error — there'd be nothing to render.
 `techniques` / `labels`, then `counts` and `plan` as pipe rows with trailing
 blank cells dropped.
 
+### `table` — general table
+
+A table for anything the purpose-built blocks don't cover — most often a
+comparison ("does this rule apply against notrump? against a suit?"). An
+optional title bar, an optional header row, pipe rows, and an optional footer
+note.
+
+````markdown
+```table
+title: Choose the Card
+header: # | NT | Lead | Suit | Examples
+1 | [x] | Top of a doubleton | [x] | S:[K]5, H:[8]2
+2 | [ ] | Top of two touching honors | [x] | D:[K]Q62
+---
+Against notrump, lead low even from an ace: D:A85[4]
+```
+````
+
+| Key | Req | Default | Notes |
+|---|---|---|---|
+| `title` | – | none | Heading bar above the table. |
+| `header` | – | none | Column headings, pipe-separated. When present it sets the column count, and a wider row is an error. |
+| `align` | – | auto | Per-column `left`/`center`/`right` (or `l`/`c`/`r`), pipe-separated; a blank entry keeps the default. Auto centres a column whose body cells are all checkboxes, short numbers or blank, and left-aligns the rest. |
+
+**Rows.** `a | b | c`, cells trimmed. There are no outer pipes and no GFM
+delimiter row: a leading `|` means the first cell is **blank**. Rows shorter
+than the column count are padded with blank cells. A line with no `|` is an
+error.
+
+**Cell notation.** Cells are free text with suit glyphs and `\C \D \H \S`
+shorthand, plus two inline forms:
+
+- **Checkbox** — a cell that is exactly `[x]` (or `✓`) renders a ticked box;
+  exactly `[ ]` renders an empty one. Checkbox is a whole-cell value only.
+- **Holding** — `S:KQ62` (suit letter, colon, ranks with no spaces) renders as
+  the suit glyph and its cards. **Bracket a card to highlight it**:
+  `D:[K]Q62` is "lead the king". Ten is `T` or `10`; `x` is a small card; `S:-`
+  is a void. The suit letter must not continue a word and the ranks must end
+  the token, so prose like `S:Ace` is left alone. Holdings in a cell are not
+  checked for legality — they are illustrations, not hands.
+
+The footer note accepts the same inline holdings.
+
+**Canonical form:** `title`, `header`, `align` in that order when present; rows
+with ` | ` separators; optional `---` then the note.
+
 ### `deal` — repository board reference (Phase 2; stubbed in v1)
 
 References a bba-filtered board by stable identity (per ADR-0001 and the
@@ -536,6 +582,9 @@ parts this contract owns:
 7. `plan-box`: `table` ∈ {winners, losers}; `counting`/`techniques` are on/off
    and not both off; `counts` has at most five cells and `plan` at most one per
    technique column; every key line names a suit, a known key, or a column.
+7a. `table`: at least one row; every row contains a `|` and is no wider than
+   `header`; `align` entries are left/center/right (or l/c/r) and no more than
+   the column count.
 8. `deal`: structurally well-formed (v1 does **not** resolve the reference).
 9. `quiz`: body validates against Contract 3 `quiz/v1`.
 10. `pagebreak` / `columnbreak`: body is empty.
@@ -556,7 +605,7 @@ parts this contract owns:
 ## v1 scope (Phase 1)
 
 Active in Phase 1: `hand` (with `marks`), `hands`, `auction`, `response-box`,
-`plan-box`, `pagebreak`, `row`, front matter. `quiz` is defined and hand-authorable but the
+`plan-box`, `table`, `pagebreak`, `row`, front matter. `quiz` is defined and hand-authorable but the
 picker that
 populates it is Phase 2. `deal` is reserved and structurally linted but not
 resolved until Phase 2. This is exactly the vocabulary the two seed lessons

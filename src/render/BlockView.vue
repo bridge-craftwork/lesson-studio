@@ -12,6 +12,7 @@ import {
   AuctionTable,
   ResponseBox,
   PlanBox,
+  TableBox,
   QuizSnapshot,
 } from '@bridge-craftwork/bridge-components'
 import CallLabel from '../bridge/CallLabel.vue'
@@ -24,6 +25,8 @@ import {
   toAuctionProps,
   parseResponseBox,
   parsePlanBox,
+  parseTable,
+  resolveTableAlign,
   parseRowBlock,
   parseQuizBlock,
   parseAnswersBlock,
@@ -63,6 +66,11 @@ type Rendered =
   | { kind: 'auction'; auction: ReturnType<typeof toAuctionProps> }
   | { kind: 'response-box'; box: ReturnType<typeof parseResponseBox> }
   | { kind: 'plan-box'; plan: ReturnType<typeof parsePlanBox> }
+  | {
+      kind: 'table'
+      table: ReturnType<typeof parseTable>
+      align: ReturnType<typeof resolveTableAlign>
+    }
   | { kind: 'quiz'; exercise: QuizExercise }
   | { kind: 'answers'; columns: number }
   | { kind: 'row'; items: RowItem[] }
@@ -125,6 +133,10 @@ const model = computed<Rendered>(() => {
         return { kind: 'response-box', box: parseResponseBox(props.body) }
       case 'plan-box':
         return { kind: 'plan-box', plan: parsePlanBox(props.body) }
+      case 'table': {
+        const table = parseTable(props.body)
+        return { kind: 'table', table, align: resolveTableAlign(table) }
+      }
       case 'quiz':
         return { kind: 'quiz', exercise: parseQuizBlock(props.body).exercise }
       case 'answers':
@@ -218,6 +230,15 @@ const auctionNotes = computed(() =>
         :labels="model.plan.labels"
       />
     </template>
+    <template v-else-if="model.kind === 'table'">
+      <TableBox
+        :title="model.table.title"
+        :header="model.table.header"
+        :rows="model.table.rows"
+        :align="model.align"
+        :note="model.table.note"
+      />
+    </template>
     <template v-else-if="model.kind === 'quiz'">
       <QuizSnapshot :exercise="model.exercise as any" answers="inline" :exercise-number="exerciseNumber" />
     </template>
@@ -276,7 +297,8 @@ const auctionNotes = computed(() =>
 }
 /* The plan box is a worksheet, not a figure — it fills its column so the cells
    are wide enough to write in. */
-.block-view--plan-box {
+.block-view--plan-box,
+.block-view--table {
   display: block;
 }
 .block-placeholder {
