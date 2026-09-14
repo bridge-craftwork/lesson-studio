@@ -230,6 +230,27 @@ wins.
 Read-only. Fills its container's width (it's a worksheet, not a figure), and
 must not split across a column or page break.
 
+### `TableBox` (new — build for package)
+
+The general `table` block: an optional title bar and header row over rows of
+free-text cells.
+
+| Prop | Type | Default | Notes |
+|---|---|---|---|
+| `title` | string | none | Heading bar. |
+| `header` | `string[]` | none | Column headings. |
+| `rows` | `string[][]` | — | Body rows, each padded to the column count. |
+| `align` | `('left' \| 'center' \| 'right')[]` | — | Resolved alignment, one per column (the DSL's `resolveTableAlign`). |
+| `note` | string | none | Footer note. |
+
+Cells are rendered through the DSL's `parseCellText`: `[x]` / `[ ]` become a
+ticked / empty checkbox, and `D:[K]Q62` becomes an inline holding with the
+bracketed card shaded (kept in print via `print-color-adjust: exact`).
+
+Read-only. Shrink-wraps to its columns (up to the container width) and centres,
+like the other figures — stretched, a comparison table's tick columns drift
+apart. Must not split across a column or page break.
+
 ### `QuizSnapshot` (new — build for package)
 
 Renders a Contract 3 `quiz/v1` object embedded by value. Dispatches on `type`;

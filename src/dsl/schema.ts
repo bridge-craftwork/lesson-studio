@@ -195,6 +195,37 @@ export const BLOCK_SCHEMAS: Record<string, BlockSchema> = {
       'technique column can also be filled by name: `promotion: 2`.',
     example: 'table: winners\ncounts: 2 | 1 | 3 | 1\nplan: | 2 | ♦K |',
   },
+  table: {
+    tag: 'table',
+    summary: 'A general table: optional title and header, pipe rows, checkboxes and inline holdings.',
+    keys: [
+      { name: 'title', values: '<text>', doc: 'Heading bar above the table.' },
+      {
+        name: 'header',
+        values: '<a> | <b> | …',
+        doc: 'Column headings. Sets the column count; a row may not be wider.',
+      },
+      {
+        name: 'align',
+        values: 'left | center | right, per column',
+        default: 'centre tick and number columns, left otherwise',
+        doc: 'Column alignment, e.g. `align: c | c | l | c`. Leave a cell blank for the default.',
+      },
+      {
+        name: '<cell> | <cell> | …',
+        values: 'one row per line',
+        required: true,
+        doc: 'A leading `|` leaves the first cell blank; short rows are padded.',
+      },
+    ],
+    bodyDoc:
+      'In a cell, `[x]` is a ticked box and `[ ]` an empty one. `D:KQ62` is a holding ' +
+      '(♦ K Q 6 2); bracket a card to highlight it — `D:[K]Q62`. Text after a ' +
+      '`---` line becomes a footer note.',
+    example:
+      'title: Choose the suit\nheader: # | NT | Lead | Suit\n1 | [x] | Partner’s suit | [x]\n' +
+      '2 | [ ] | A singleton | [x]\n---\nLead the top of a doubleton: S:[K]5',
+  },
   quiz: {
     tag: 'quiz',
     summary: 'An embedded quiz exercise (Contract 3 questions, by value).',

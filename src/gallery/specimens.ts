@@ -156,6 +156,33 @@ export const GALLERY: BlockSpecimens[] = [
     ],
   },
   {
+    tag: 'table',
+    title: 'table',
+    blurb: 'General table: checkbox columns and inline holdings with a highlighted card.',
+    specimens: [
+      {
+        label: 'comparison with tick columns',
+        body: lines(
+          'title: Choose the suit',
+          'header: # | NT | Lead | Suit',
+          '1 | [x] | Partner’s suit | [x]',
+          '2 | [x] | An unbid suit | [x]',
+          '3 | [ ] | A singleton or doubleton | [x]',
+        ),
+      },
+      {
+        label: 'holdings, blank first cell, footer',
+        body: lines(
+          'header: Holding | Lead',
+          'Doubleton | S:[K]5, H:[8]2',
+          '| D:KJ7[3], C:J[10]8x',
+          '---',
+          'Bracket a card to highlight it: D:[Q]J3',
+        ),
+      },
+    ],
+  },
+  {
     tag: 'quiz',
     title: 'quiz',
     blurb: 'One exercise embedded by value (quiz-embed/v1); answers deferred.',
