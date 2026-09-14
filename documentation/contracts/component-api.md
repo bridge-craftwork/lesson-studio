@@ -241,7 +241,7 @@ free-text cells.
 | `header` | `string[]` | none | Column headings. |
 | `rows` | `string[][]` | — | Body rows, each padded to the column count. |
 | `align` | `('left' \| 'center' \| 'right')[]` | — | Resolved alignment, one per column (the DSL's `resolveTableAlign`). |
-| `note` | string | none | Footer note. |
+| `notes` | `string[]` | none | Footer notes, one paragraph each; line breaks inside a note are kept. |
 
 Cells are rendered through the DSL's `parseCellText`: `[x]` / `[ ]` become a
 ticked / empty checkbox, and `D:[K]Q62` becomes an inline holding with the

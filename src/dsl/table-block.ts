@@ -11,7 +11,8 @@ export interface TableBlock {
   align?: (TableAlign | undefined)[]
   /** Body rows, each padded to the column count. */
   rows: string[][]
-  note?: string
+  /** Footer notes, one per `---` section, in order. Line breaks are kept. */
+  notes: string[]
 }
 
 const KEY_LINE = /^(title|header|align):\s*(.*)$/
@@ -28,13 +29,14 @@ const cells = (line: string) => line.split('|').map((c) => c.trim())
 
 /**
  * Parse a `table` block body: optional `title:`, `header:` and `align:` keys,
- * then `a | b | c` rows, then an optional footer note after `---`.
+ * then `a | b | c` rows, then any number of footer notes, each after its own
+ * `---` line. A line break inside a note is kept.
  *
  * Unlike a GFM table there are no outer pipes and no delimiter row — a leading
  * `|` means the first cell is blank, which a comparison table needs.
  */
 export function parseTable(body: string): TableBlock {
-  const [rowPart, notePart] = body.split(/^---\s*$/m)
+  const [rowPart, ...noteParts] = body.split(/^---\s*$/m)
 
   let title: string | undefined
   let header: string[] | undefined
@@ -75,8 +77,17 @@ export function parseTable(body: string): TableBlock {
     })
   }
 
-  const note = notePart?.trim() || undefined
-  return { title, header, align, rows, note }
+  // An empty section (two `---` lines in a row) adds no note.
+  const notes = noteParts
+    .map((part) =>
+      part
+        .split('\n')
+        .map((l) => l.trim())
+        .join('\n')
+        .trim()
+    )
+    .filter(Boolean)
+  return { title, header, align, rows, notes }
 }
 
 /**

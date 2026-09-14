@@ -377,8 +377,8 @@ blank cells dropped.
 
 A table for anything the purpose-built blocks don't cover — most often a
 comparison ("does this rule apply against notrump? against a suit?"). An
-optional title bar, an optional header row, pipe rows, and an optional footer
-note.
+optional title bar, an optional header row, pipe rows, and any number of
+footer notes.
 
 ````markdown
 ```table
@@ -414,10 +414,13 @@ shorthand, plus two inline forms:
   the token, so prose like `S:Ace` is left alone. Holdings in a cell are not
   checked for legality — they are illustrations, not hands.
 
-The footer note accepts the same inline holdings.
+**Footer notes.** Each `---` line starts a note, so a table can carry several;
+they render as separate paragraphs in order. A line break inside a note is
+kept, and an empty section adds nothing. Notes accept the same inline
+holdings.
 
 **Canonical form:** `title`, `header`, `align` in that order when present; rows
-with ` | ` separators; optional `---` then the note.
+with ` | ` separators; then each note after its own `---` line.
 
 ### `deal` — repository board reference (Phase 2; stubbed in v1)
 

@@ -196,6 +196,15 @@ body {
   margin: 0 auto;
 }
 
+/* The editor's scroll pane is a size container, so a block's source editor can
+   widen past the 44rem reading column to the pane's width (BlockNodeView's
+   `.is-editing`). In split view the nearer `.studio__edit` pane wins, so the
+   editor never grows under the preview. */
+.studio__body,
+.studio__edit {
+  container-type: inline-size;
+}
+
 /* Milkdown's ProseMirror surface */
 .lesson-document .milkdown {
   outline: none;

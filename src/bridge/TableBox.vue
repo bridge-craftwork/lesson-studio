@@ -18,12 +18,13 @@ defineProps<{
   rows: string[][]
   /** Resolved per-column alignment, one entry per column. */
   align: Align[]
-  note?: string
+  /** Footer notes, each its own paragraph; line breaks inside one are kept. */
+  notes?: string[]
 }>()
 </script>
 
 <template>
-  <div class="bc-tablebox-placeholder">
+  <div class="bc-tablebox-placeholder" :class="{ 'has-notes': notes?.length }">
     <div v-if="title" class="title"><SuitText :text="title" /></div>
     <table>
       <thead v-if="header">
@@ -37,7 +38,9 @@ defineProps<{
         </tr>
       </tbody>
     </table>
-    <div v-if="note" class="note"><CellText :text="note" /></div>
+    <div v-if="notes?.length" class="notes">
+      <p v-for="(n, i) in notes" :key="i" class="note"><CellText :text="n" /></p>
+    </div>
   </div>
 </template>
 
@@ -64,8 +67,14 @@ defineProps<{
    `contain: inline-size` drops their text from the box's intrinsic width, so a
    long footer doesn't stretch a narrow table across the column. */
 .title,
-.note {
+.notes {
   contain: inline-size;
+}
+/* …but a narrow table would then squeeze its notes into a sliver a few words
+   wide. With notes, the table is at least a readable measure (never wider than
+   its column), which short tables with no notes don't pay for. */
+.has-notes {
+  min-width: min(24em, 100%);
 }
 .title {
   padding: 0.35em 0.6em;
@@ -94,10 +103,18 @@ th {
 tbody tr:not(:last-child) td {
   border-bottom: 1px solid var(--ls-border-soft, #ececef);
 }
-.note {
+.notes {
   padding: 0.35em 0.6em;
   font-size: 0.8em;
   color: var(--ls-muted, #52525b);
   border-top: 1px solid var(--ls-border, #d4d4d8);
+}
+/* One paragraph per `---` section; an authored line break stays a break. */
+.note {
+  margin: 0;
+  white-space: pre-line;
+}
+.note + .note {
+  margin-top: 0.3em;
 }
 </style>

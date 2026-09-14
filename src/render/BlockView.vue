@@ -236,7 +236,7 @@ const auctionNotes = computed(() =>
         :header="model.table.header"
         :rows="model.table.rows"
         :align="model.align"
-        :note="model.table.note"
+        :notes="model.table.notes"
       />
     </template>
     <template v-else-if="model.kind === 'quiz'">

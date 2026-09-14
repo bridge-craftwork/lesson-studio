@@ -224,6 +224,17 @@ function onKeydown(e: KeyboardEvent) {
 .reserved-block.is-selected {
   outline: 2px solid var(--ls-accent, #1d4ed8);
 }
+/* While its source is open, a block breaks out of the 44rem reading column to
+   the editor pane's width (`100cqi` — the pane is a size container, app.css),
+   centred on the column, so a wide table's source and preview sit side by side
+   instead of wrapping. Never narrower than the column; capped so a very wide
+   window doesn't stretch the source lines unreadably. */
+.reserved-block.is-editing {
+  --edit-width: max(100%, min(100cqi, 72rem));
+  box-sizing: border-box;
+  width: var(--edit-width);
+  margin-inline: calc((100% - var(--edit-width)) / 2);
+}
 
 /* Edit/delete affordances: quiet until you hover the block (or it's selected). */
 .block-edit__tools {
@@ -303,8 +314,10 @@ function onKeydown(e: KeyboardEvent) {
   padding: 0.6rem;
   align-items: flex-start;
 }
+/* The source takes the larger share of a widened editor: its lines are long
+   (a table row is the whole row), while the preview shrink-wraps anyway. */
 .block-edit__editor {
-  flex: 1 1 18rem;
+  flex: 3 1 18rem;
   min-width: 14rem;
   position: relative;
   display: flex;
@@ -324,7 +337,7 @@ function onKeydown(e: KeyboardEvent) {
   outline-offset: -1px;
 }
 .block-edit__preview {
-  flex: 1 1 16rem;
+  flex: 2 1 16rem;
   min-width: 12rem;
 }
 

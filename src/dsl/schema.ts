@@ -220,8 +220,8 @@ export const BLOCK_SCHEMAS: Record<string, BlockSchema> = {
     ],
     bodyDoc:
       'In a cell, `[x]` is a ticked box and `[ ]` an empty one. `D:KQ62` is a holding ' +
-      '(♦ K Q 6 2); bracket a card to highlight it — `D:[K]Q62`. Text after a ' +
-      '`---` line becomes a footer note.',
+      '(♦ K Q 6 2); bracket a card to highlight it — `D:[K]Q62`. Each ' +
+      '`---` line starts a footer note; line breaks in a note are kept.',
     example:
       'title: Choose the suit\nheader: # | NT | Lead | Suit\n1 | [x] | Partner’s suit | [x]\n' +
       '2 | [ ] | A singleton | [x]\n---\nLead the top of a doubleton: S:[K]5',
