@@ -40,7 +40,10 @@ const schema = computed(() => blockSchema(props.tag))
 
 <style scoped>
 .key-ref {
-  flex: 1 1 15rem;
+  /* Its own row under the source and preview, never a third column beside
+     them: when a widened editor made room, it took a third of the width and
+     left the source box no wider than before. */
+  flex: 1 1 100%;
   min-width: 13rem;
   font-size: 0.72rem;
   line-height: 1.45;

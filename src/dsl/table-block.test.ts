@@ -10,7 +10,15 @@ describe('parseTable', () => {
     expect(t.title).toBe('Choose the suit')
     expect(t.header).toEqual(['#', 'NT', 'Lead', 'Suit'])
     expect(t.rows).toEqual([['1', '[x]', 'Partner’s suit', '[x]']])
-    expect(t.note).toBe('A note.')
+    expect(t.notes).toEqual(['A note.'])
+  })
+
+  it('reads several footer notes, keeping line breaks and skipping empty sections', () => {
+    const t = parseTable(
+      ['a | b', '---', 'First note.', '---', '---', 'Second, line one', '  line two  '].join('\n')
+    )
+    expect(t.notes).toEqual(['First note.', 'Second, line one\nline two'])
+    expect(parseTable('a | b').notes).toEqual([])
   })
 
   it('treats a leading pipe as a blank first cell and pads short rows', () => {
