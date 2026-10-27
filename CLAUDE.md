@@ -22,8 +22,20 @@ They're joined by five versioned contracts in `documentation/contracts/` —
 3. **`quiz-json-schema.md`** (Contract 3) — quiz JSON (PBS emits, we embed).
 4. **`taxonomy-and-front-matter.md`** (Contract 4) — skill paths + front matter.
 5. **`pdf-attachments.md`** (Contract 5) — what a printed lesson PDF carries
-   inside itself (source, provenance, click map, PBN). Owned here **for now**;
-   moves to the presentation tool when that's built.
+   inside itself (source, provenance, click map, PBN). Owned here **for now**.
+   It is planned to move to lesson-stage as a **shared** contract with a
+   second producer, pbn-to-pdf, and a second consumer, bridge-viewer — see
+   `../lesson-stage/docs/contract-5-shared-plan.md`. Until that lands, this
+   copy is normative and this repo emits payload version 1 unchanged.
+
+Sister tools that touch the same PDFs:
+
+- **lesson-stage** (`../lesson-stage`) — the iPad presenter that consumes
+  Contract 5: tap a hand, play it in a popout.
+- **pbn-to-pdf** (`../pbn-to-pdf`) — the Rust PBN → PDF renderer (hand records,
+  declarer's plans, bidding sheets). Planned to produce Contract 5 too.
+- **bridge-viewer** (`../bridge-viewer`) — iPhone/iPad/Mac app over
+  pbn-to-pdf. Planned to embed the payload and build a hand index from it.
 
 Broader design: `documentation/lesson-library-architecture.md` (phased roadmap).
 Planned UX direction: `documentation/lobby-and-session.md` (captured, not built).
