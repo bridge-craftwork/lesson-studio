@@ -19,7 +19,7 @@ export interface LintIssue {
 }
 
 export interface ValidateOptions {
-  /** Valid skill paths (Contract 4). Defaults to the bundled stopgap taxonomy. */
+  /** Valid skill paths (Contract 4). Defaults to the bundled list (scripts/sync-taxonomy.mjs). */
   validSkillPaths?: Set<string>
 }
 

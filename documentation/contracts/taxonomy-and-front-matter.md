@@ -8,6 +8,18 @@ Hand Curator pulldowns, convention-card → skill-path mapping.
 **Schema version:** taxonomy `1` (`schema: "taxonomy/v1"`), front matter `1`.
 **Date:** 2026-07-11
 
+> **2026-11-16: where the vocabulary comes from now.** The list of valid
+> skill paths is no longer a copy of Bridge-Classroom's catalogue. An ID is
+> valid when its owner defines it: conventions, natural methods, skills and
+> judgement entries in
+> [bridge-common-conventions](https://github.com/bridge-craftwork/bridge-common-conventions)
+> (its published snapshot), and a lesson set in the manifest of the
+> collection that holds it (Baker-Bridge). `scripts/sync-taxonomy.mjs`
+> rebuilds the bundled `src/dsl/taxonomy.json` from those two, and records
+> the version of each. The rest of this contract (the front-matter schema)
+> stands; Part A's description of a taxonomy JSON published by
+> Bridge-Classroom is superseded by this note.
+
 ---
 
 ## Purpose

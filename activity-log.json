@@ -1,0 +1,18 @@
+{
+  "version": 1,
+  "workspacePath": "/Volumes/Express2T/Development/GitHub/lesson-studio",
+  "events": [
+    {
+      "timestamp": "2026-10-04T23:52:23.176Z",
+      "type": "session_start",
+      "details": {}
+    },
+    {
+      "timestamp": "2026-10-04T23:54:39.156Z",
+      "type": "session_end",
+      "details": {
+        "durationMinutes": 2
+      }
+    }
+  ]
+}
